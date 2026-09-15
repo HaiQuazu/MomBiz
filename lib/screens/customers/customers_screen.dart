@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/customer.dart';
 import '../../services/customer_service.dart';
+import 'customer_details_screen.dart';
 import 'customer_form_screen.dart';
 
 class CustomersScreen extends StatelessWidget {
@@ -16,14 +17,14 @@ class CustomersScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _openEditCustomer(
+  Future<void> _openCustomer(
     BuildContext context,
     Customer customer,
   ) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CustomerFormScreen(
+        builder: (_) => CustomerDetailsScreen(
           customer: customer,
         ),
       ),
@@ -42,7 +43,7 @@ class CustomersScreen extends StatelessWidget {
         label: const Text('Add Customer'),
       ),
       body: StreamBuilder<List<Customer>>(
-        stream: CustomerService.instance.watchCustomers(),
+        stream: CustomerService.instance.watchActiveCustomers(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
@@ -126,7 +127,7 @@ class CustomersScreen extends StatelessWidget {
                 trailing: const Icon(
                   Icons.chevron_right,
                 ),
-                onTap: () => _openEditCustomer(
+                onTap: () => _openCustomer(
                   context,
                   customer,
                 ),

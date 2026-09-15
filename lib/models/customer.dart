@@ -6,6 +6,7 @@ class Customer {
     required this.name,
     required this.phone,
     required this.note,
+    required this.isArchived,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -14,6 +15,7 @@ class Customer {
   final String name;
   final String phone;
   final String note;
+  final bool isArchived;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -27,6 +29,7 @@ class Customer {
       name: data['name'] as String? ?? '',
       phone: data['phone'] as String? ?? '',
       note: data['note'] as String? ?? '',
+      isArchived: data['isArchived'] as bool? ?? false,
       createdAt:
           (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt:

@@ -24,13 +24,11 @@ class CustomerService {
         .collection('customers');
   }
 
-  Stream<List<Customer>> watchCustomers() {
-    return _customers
-        .orderBy('name')
-        .snapshots()
-        .map(
+  Stream<List<Customer>> watchActiveCustomers() {
+    return _customers.orderBy('name').snapshots().map(
           (snapshot) => snapshot.docs
               .map(Customer.fromFirestore)
+              .where((customer) => !customer.isArchived)
               .toList(),
         );
   }
@@ -46,6 +44,7 @@ class CustomerService {
       'name': name.trim(),
       'phone': phone.trim(),
       'note': note.trim(),
+      'isArchived': false,
       'createdAt': now,
       'updatedAt': now,
     });
@@ -61,6 +60,13 @@ class CustomerService {
       'name': name.trim(),
       'phone': phone.trim(),
       'note': note.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> archiveCustomer(String customerId) async {
+    await _customers.doc(customerId).update({
+      'isArchived': true,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
