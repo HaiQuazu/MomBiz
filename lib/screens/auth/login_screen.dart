@@ -75,45 +75,64 @@ class _LoginScreenState extends State<LoginScreen> {
         return 'Unable to sign in. Please check your email and password.';
     }
   }
+  // Keep your current imports, controllers, _login(),
+  // error handling, dispose(), etc.
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 420,
-              ),
+              constraints: const BoxConstraints(maxWidth: 420),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(
-                      Icons.storefront_rounded,
-                      size: 72,
+                    Center(
+                      child: Container(
+                        width: 88,
+                        height: 88,
+                        decoration: BoxDecoration(
+                          color: colors.primaryContainer,
+                          borderRadius: BorderRadius.circular(28),
+                        ),
+                        child: Icon(
+                          Icons.storefront_rounded,
+                          size: 44,
+                          color: colors.onPrimaryContainer,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 16),
+
+                    const SizedBox(height: 24),
+
                     const Text(
                       'MomBiz',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 36,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
+
                     const SizedBox(height: 8),
-                    const Text(
-                      'Sign in to continue',
+
+                    Text(
+                      'Your business, organized simply.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 16,
+                        color: colors.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: 32),
+
+                    const SizedBox(height: 38),
 
                     TextFormField(
                       controller: _emailController,
@@ -121,8 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
                         labelText: 'Email',
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.mail_outline_rounded),
                       ),
                       validator: (value) {
                         final email = value?.trim() ?? '';
@@ -139,12 +157,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
 
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14),
 
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) {
                         if (!_isLoading) {
                           _login();
@@ -152,8 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.lock_outline_rounded),
                         suffixIcon: IconButton(
                           onPressed: () {
                             setState(() {
@@ -177,39 +193,35 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
 
                     if (_errorMessage != null) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        _errorMessage!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                          fontWeight: FontWeight.w600,
+                      const SizedBox(height: 14),
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: colors.errorContainer,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          _errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: colors.onErrorContainer,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 22),
 
-                    SizedBox(
-                      height: 54,
-                      child: FilledButton(
-                        onPressed: _isLoading ? null : _login,
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                'Sign In',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                      ),
+                    FilledButton(
+                      onPressed: _isLoading ? null : _login,
+                      child: _isLoading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Sign in'),
                     ),
                   ],
                 ),

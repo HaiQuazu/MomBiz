@@ -1,53 +1,53 @@
 import 'package:flutter/material.dart';
 
-import '../../models/customer.dart';
-import '../../services/customer_service.dart';
+import '../../models/product.dart';
+import '../../services/product_service.dart';
 
-class CustomerFormScreen extends StatefulWidget {
-  const CustomerFormScreen({
+class ProductFormScreen extends StatefulWidget {
+  const ProductFormScreen({
     super.key,
-    this.customer,
+    this.product,
   });
 
-  final Customer? customer;
+  final Product? product;
 
   @override
-  State<CustomerFormScreen> createState() => _CustomerFormScreenState();
+  State<ProductFormScreen> createState() => _ProductFormScreenState();
 }
 
-class _CustomerFormScreenState extends State<CustomerFormScreen> {
+class _ProductFormScreenState extends State<ProductFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _nameController;
-  late final TextEditingController _phoneController;
-  late final TextEditingController _noteController;
+  late final TextEditingController _categoryController;
+  late final TextEditingController _unitController;
 
   bool _saving = false;
 
-  bool get _isEditing => widget.customer != null;
+  bool get _editing => widget.product != null;
 
   @override
   void initState() {
     super.initState();
 
     _nameController = TextEditingController(
-      text: widget.customer?.name ?? '',
+      text: widget.product?.name ?? '',
     );
 
-    _phoneController = TextEditingController(
-      text: widget.customer?.phone ?? '',
+    _categoryController = TextEditingController(
+      text: widget.product?.category ?? '',
     );
 
-    _noteController = TextEditingController(
-      text: widget.customer?.note ?? '',
+    _unitController = TextEditingController(
+      text: widget.product?.unit ?? '',
     );
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
-    _noteController.dispose();
+    _categoryController.dispose();
+    _unitController.dispose();
     super.dispose();
   }
 
@@ -59,30 +59,29 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     });
 
     try {
-      if (_isEditing) {
-        await CustomerService.instance.updateCustomer(
-          customerId: widget.customer!.id,
+      if (_editing) {
+        await ProductService.instance.updateProduct(
+          productId: widget.product!.id,
           name: _nameController.text,
-          phone: _phoneController.text,
-          note: _noteController.text,
+          category: _categoryController.text,
+          unit: _unitController.text,
         );
       } else {
-        await CustomerService.instance.addCustomer(
+        await ProductService.instance.addProduct(
           name: _nameController.text,
-          phone: _phoneController.text,
-          note: _noteController.text,
+          category: _categoryController.text,
+          unit: _unitController.text,
         );
       }
 
       if (!mounted) return;
-
       Navigator.pop(context);
     } catch (_) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Could not save customer. Please try again.'),
+          content: Text('Could not save product. Please try again.'),
         ),
       );
     } finally {
@@ -94,6 +93,28 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     }
   }
 
+  Future<void> _archive() async {
+    final product = widget.product;
+    if (product == null) return;
+
+    await ProductService.instance.archiveProduct(product.id);
+
+    if (mounted) {
+      Navigator.pop(context);
+    }
+  }
+
+  Future<void> _restore() async {
+    final product = widget.product;
+    if (product == null) return;
+
+    await ProductService.instance.restoreProduct(product.id);
+
+    if (mounted) {
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
@@ -101,7 +122,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing ? 'Edit customer' : 'New customer',
+          _editing ? 'Edit product' : 'New product',
           style: const TextStyle(
             fontWeight: FontWeight.w700,
           ),
@@ -111,30 +132,26 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
             children: [
               Container(
-                width: 72,
-                height: 72,
+                width: 76,
+                height: 76,
                 decoration: BoxDecoration(
                   color: colors.primaryContainer,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  _isEditing
-                      ? Icons.manage_accounts_rounded
-                      : Icons.person_add_alt_1_rounded,
+                  Icons.inventory_2_outlined,
                   size: 34,
                   color: colors.onPrimaryContainer,
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 20),
 
               Text(
-                _isEditing
-                    ? 'Update customer information'
-                    : 'Add someone to MomBiz',
+                _editing ? 'Update product' : 'Add a product',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
@@ -143,7 +160,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
               const SizedBox(height: 6),
 
               Text(
-                'Only the name is required. Phone and notes can be added later.',
+                'The selling price will be entered manually when creating a sale.',
                 style: TextStyle(
                   color: colors.onSurfaceVariant,
                 ),
@@ -155,13 +172,13 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
                 controller: _nameController,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
-                  labelText: 'Customer name',
-                  hintText: 'Example: Dara',
-                  prefixIcon: Icon(Icons.person_outline_rounded),
+                  labelText: 'Product name',
+                  hintText: 'Example: Chick Feed 25kg',
+                  prefixIcon: Icon(Icons.inventory_2_outlined),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Please enter the customer name.';
+                    return 'Please enter a product name.';
                   }
 
                   return null;
@@ -171,30 +188,23 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
               const SizedBox(height: 14),
 
               TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
+                controller: _categoryController,
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(
-                  labelText: 'Phone number',
-                  hintText: 'Optional',
-                  prefixIcon: Icon(Icons.phone_outlined),
+                  labelText: 'Category',
+                  hintText: 'Example: Animal Feed',
+                  prefixIcon: Icon(Icons.category_outlined),
                 ),
               ),
 
               const SizedBox(height: 14),
 
               TextFormField(
-                controller: _noteController,
-                minLines: 4,
-                maxLines: 6,
+                controller: _unitController,
                 decoration: const InputDecoration(
-                  labelText: 'Note',
-                  hintText: 'Optional information about this customer',
-                  alignLabelWithHint: true,
-                  prefixIcon: Padding(
-                    padding: EdgeInsets.only(bottom: 66),
-                    child: Icon(Icons.notes_rounded),
-                  ),
+                  labelText: 'Unit',
+                  hintText: 'Bag, bottle, chick, kg...',
+                  prefixIcon: Icon(Icons.straighten_rounded),
                 ),
               ),
 
@@ -210,15 +220,28 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
                           strokeWidth: 2,
                         ),
                       )
-                    : Icon(
-                        _isEditing
-                            ? Icons.check_rounded
-                            : Icons.person_add_alt_1_rounded,
-                      ),
+                    : const Icon(Icons.check_rounded),
                 label: Text(
-                  _isEditing ? 'Save changes' : 'Add customer',
+                  _editing ? 'Save changes' : 'Add product',
                 ),
               ),
+
+              if (_editing) ...[
+                const SizedBox(height: 14),
+
+                if (widget.product!.isArchived)
+                  OutlinedButton.icon(
+                    onPressed: _restore,
+                    icon: const Icon(Icons.restore_rounded),
+                    label: const Text('Restore product'),
+                  )
+                else
+                  OutlinedButton.icon(
+                    onPressed: _archive,
+                    icon: const Icon(Icons.archive_outlined),
+                    label: const Text('Archive product'),
+                  ),
+              ],
             ],
           ),
         ),

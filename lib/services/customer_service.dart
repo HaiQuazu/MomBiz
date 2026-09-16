@@ -18,19 +18,16 @@ class CustomerService {
       throw StateError('User must be signed in.');
     }
 
-    return _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('customers');
+    return _firestore.collection('users').doc(user.uid).collection('customers');
   }
 
-  Stream<List<Customer>> watchActiveCustomers() {
-    return _customers.orderBy('name').snapshots().map(
-          (snapshot) => snapshot.docs
-              .map(Customer.fromFirestore)
-              .where((customer) => !customer.isArchived)
-              .toList(),
-        );
+  Stream<List<Customer>> watchCustomers({required bool archived}) {
+    return _customers.orderBy('name').snapshots().map((snapshot) {
+      return snapshot.docs
+          .map(Customer.fromFirestore)
+          .where((customer) => customer.isArchived == archived)
+          .toList();
+    });
   }
 
   Future<void> addCustomer({
@@ -38,15 +35,13 @@ class CustomerService {
     required String phone,
     required String note,
   }) async {
-    final now = FieldValue.serverTimestamp();
-
     await _customers.add({
       'name': name.trim(),
       'phone': phone.trim(),
       'note': note.trim(),
       'isArchived': false,
-      'createdAt': now,
-      'updatedAt': now,
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -69,5 +64,31 @@ class CustomerService {
       'isArchived': true,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  Future<void> restoreCustomer(String customerId) async {
+    await _customers.doc(customerId).update({
+      'isArchived': false,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Stream<Customer?> watchCustomer(String customerId) {
+    return _customers.doc(customerId).snapshots().map((document) {
+      if (!document.exists) {
+        return null;
+      }
+
+      return Customer.fromFirestore(document);
+    });
+  }
+
+  Future<List<Customer>> getActiveCustomers() async {
+    final snapshot = await _customers.orderBy('name').get();
+
+    return snapshot.docs
+        .map(Customer.fromFirestore)
+        .where((customer) => !customer.isArchived)
+        .toList();
   }
 }
