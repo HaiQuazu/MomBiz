@@ -1,34 +1,47 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/chick_reservation.dart';
 import '../../models/customer.dart';
 import '../../services/chick_queue_service.dart';
 import '../../services/customer_service.dart';
 
-class ChickReservationFormScreen extends StatefulWidget {
+class ChickReservationFormScreen
+    extends StatefulWidget {
   const ChickReservationFormScreen({
     super.key,
     this.reservation,
+    this.initialScheduledDate,
   });
 
   final ChickReservation? reservation;
 
+  // Used when tapping + on a batch header.
+  final DateTime? initialScheduledDate;
+
   @override
-  State<ChickReservationFormScreen> createState() =>
-      _ChickReservationFormScreenState();
+  State<ChickReservationFormScreen>
+      createState() =>
+          _ChickReservationFormScreenState();
 }
 
 class _ChickReservationFormScreenState
     extends State<ChickReservationFormScreen> {
-  final _quantityController = TextEditingController();
-  final _noteController = TextEditingController();
+  final _quantityController =
+      TextEditingController();
+
+  final _noteController =
+      TextEditingController();
 
   List<Customer> _customers = [];
 
   String? _customerId;
 
-  DateTime _reservationDate = DateTime.now();
-  DateTime _scheduledDate = DateTime.now();
+  DateTime _reservationDate =
+      DateTime.now();
+
+  DateTime _scheduledDate =
+      DateTime.now();
 
   bool _loading = true;
   bool _saving = false;
@@ -42,18 +55,32 @@ class _ChickReservationFormScreenState
     _loadCustomers();
   }
 
+  DateTime _dateOnly(
+    DateTime value,
+  ) {
+    return DateTime(
+      value.year,
+      value.month,
+      value.day,
+    );
+  }
+
   Future<void> _loadCustomers() async {
     try {
       final customers =
           await CustomerService.instance
               .getActiveCustomers();
 
-      // Editing an existing reservation.
+      // -------------------------
+      // EDIT EXISTING RESERVATION
+      // -------------------------
       if (_isEditing) {
         final reservation =
             widget.reservation!;
 
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
 
         setState(() {
           _customers = customers;
@@ -62,7 +89,8 @@ class _ChickReservationFormScreenState
               reservation.customerId;
 
           _quantityController.text =
-              reservation.quantity.toString();
+              reservation.quantity
+                  .toString();
 
           _reservationDate =
               reservation.reservationDate;
@@ -79,39 +107,85 @@ class _ChickReservationFormScreenState
         return;
       }
 
-      // Creating a new reservation.
+      // -------------------------
+      // ADD TO EXISTING BATCH
+      //
+      // If the Queue batch +
+      // button supplied a date,
+      // use that exact date.
+      // -------------------------
+      if (widget.initialScheduledDate !=
+          null) {
+        if (!mounted) {
+          return;
+        }
+
+        setState(() {
+          _customers = customers;
+
+          _scheduledDate = _dateOnly(
+            widget.initialScheduledDate!,
+          );
+
+          _loading = false;
+        });
+
+        return;
+      }
+
+      // -------------------------
+      // NORMAL NEW RESERVATION
+      //
+      // Suggest last waiting
+      // batch + 5 days.
+      // -------------------------
       final lastBatchDate =
           await ChickQueueService.instance
               .getLastWaitingBatchDate();
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         _customers = customers;
 
         if (lastBatchDate == null) {
           _scheduledDate =
-              DateTime.now().add(
-            const Duration(days: 5),
+              _dateOnly(
+            DateTime.now().add(
+              const Duration(
+                days: 5,
+              ),
+            ),
           );
         } else {
           _scheduledDate =
-              lastBatchDate.add(
-            const Duration(days: 5),
+              _dateOnly(
+            lastBatchDate.add(
+              const Duration(
+                days: 5,
+              ),
+            ),
           );
         }
 
         _loading = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
+      final l10n =
+          AppLocalizations.of(context)!;
 
       setState(() {
         _loading = false;
       });
 
       _showError(
-        'Could not load customers.',
+        l10n.couldNotLoadCustomers,
       );
     }
   }
@@ -130,66 +204,107 @@ class _ChickReservationFormScreenState
     return null;
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(
+    DateTime date,
+  ) {
     return '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/'
         '${date.year}';
   }
 
-  Future<void> _pickReservationDate() async {
-    final picked = await showDatePicker(
+  Future<void>
+      _pickReservationDate() async {
+    final picked =
+        await showDatePicker(
       context: context,
-      initialDate: _reservationDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      initialDate:
+          _reservationDate,
+      firstDate:
+          DateTime(2020),
+      lastDate:
+          DateTime.now(),
     );
 
-    if (picked == null) return;
+    if (picked == null ||
+        !mounted) {
+      return;
+    }
 
     setState(() {
-      _reservationDate = picked;
+      _reservationDate =
+          _dateOnly(picked);
     });
   }
 
-  Future<void> _pickScheduledDate() async {
-    final firstDate = _isEditing
-        ? DateTime(2020)
-        : DateTime.now();
+  Future<void>
+      _pickScheduledDate() async {
+    final firstDate =
+        _isEditing
+            ? DateTime(2020)
+            : DateTime(
+                DateTime.now().year,
+                DateTime.now().month,
+                DateTime.now().day,
+              );
 
-    final picked = await showDatePicker(
+    var initialDate =
+        _scheduledDate;
+
+    // Make sure showDatePicker always
+    // receives a valid initial date.
+    if (initialDate.isBefore(
+      firstDate,
+    )) {
+      initialDate = firstDate;
+    }
+
+    final picked =
+        await showDatePicker(
       context: context,
-      initialDate: _scheduledDate,
-      firstDate: firstDate,
-      lastDate:
-          DateTime(DateTime.now().year + 3),
+      initialDate:
+          initialDate,
+      firstDate:
+          firstDate,
+      lastDate: DateTime(
+        DateTime.now().year + 3,
+      ),
     );
 
-    if (picked == null) return;
+    if (picked == null ||
+        !mounted) {
+      return;
+    }
 
     setState(() {
-      _scheduledDate = picked;
+      _scheduledDate =
+          _dateOnly(picked);
     });
   }
 
   Future<void> _save() async {
+    final l10n =
+        AppLocalizations.of(context)!;
+
     final customer =
         _selectedCustomer;
 
     if (customer == null) {
       _showError(
-        'Please select a customer.',
+        l10n.pleaseSelectCustomer,
       );
       return;
     }
 
-    final quantity = int.tryParse(
+    final quantity =
+        int.tryParse(
       _quantityController.text.trim(),
     );
 
     if (quantity == null ||
         quantity <= 0) {
       _showError(
-        'Please enter a valid chick quantity.',
+        l10n
+            .pleaseEnterValidChickQuantity,
       );
       return;
     }
@@ -200,7 +315,8 @@ class _ChickReservationFormScreenState
 
     try {
       if (_isEditing) {
-        await ChickQueueService.instance
+        await ChickQueueService
+            .instance
             .updateReservation(
           reservationId:
               widget.reservation!.id,
@@ -218,7 +334,8 @@ class _ChickReservationFormScreenState
               _noteController.text,
         );
       } else {
-        await ChickQueueService.instance
+        await ChickQueueService
+            .instance
             .addReservation(
           customerId:
               customer.id,
@@ -235,19 +352,25 @@ class _ChickReservationFormScreenState
         );
       }
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       Navigator.pop(
         context,
         true,
       );
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       _showError(
         _isEditing
-            ? 'Could not update reservation.'
-            : 'Could not save reservation.',
+            ? l10n
+                .couldNotUpdateReservation
+            : l10n
+                .couldNotSaveReservation,
       );
     } finally {
       if (mounted) {
@@ -258,11 +381,14 @@ class _ChickReservationFormScreenState
     }
   }
 
-  void _showError(String message) {
+  void _showError(
+    String message,
+  ) {
     ScaffoldMessenger.of(context)
         .showSnackBar(
       SnackBar(
-        content: Text(message),
+        content:
+            Text(message),
       ),
     );
   }
@@ -276,10 +402,14 @@ class _ChickReservationFormScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n =
+        AppLocalizations.of(context)!;
+
     if (_loading) {
       return const Scaffold(
         body: Center(
-          child: CircularProgressIndicator(),
+          child:
+              CircularProgressIndicator(),
         ),
       );
     }
@@ -288,22 +418,34 @@ class _ChickReservationFormScreenState
       appBar: AppBar(
         title: Text(
           _isEditing
-              ? 'Edit Chick Reservation'
-              : 'New Chick Reservation',
-          style: const TextStyle(
-            fontWeight: FontWeight.w800,
-          ),
+              ? l10n
+                  .editChickReservation
+              : l10n
+                  .newChickReservation,
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(
+                fontWeight:
+                    FontWeight.w700,
+              ),
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding:
+            const EdgeInsets.all(
+          20,
+        ),
         children: [
           DropdownButtonFormField<String>(
-            initialValue: _customerId,
+            initialValue:
+                _customerId,
             decoration:
-                const InputDecoration(
-              labelText: 'Customer',
-              prefixIcon: Icon(
+                InputDecoration(
+              labelText:
+                  l10n.customer,
+              prefixIcon:
+                  const Icon(
                 Icons.person_outline,
               ),
             ),
@@ -311,9 +453,14 @@ class _ChickReservationFormScreenState
                 .map(
                   (customer) =>
                       DropdownMenuItem(
-                    value: customer.id,
+                    value:
+                        customer.id,
                     child: Text(
                       customer.name,
+                      maxLines: 1,
+                      overflow:
+                          TextOverflow
+                              .ellipsis,
                     ),
                   ),
                 )
@@ -325,7 +472,9 @@ class _ChickReservationFormScreenState
             },
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(
+            height: 16,
+          ),
 
           TextField(
             controller:
@@ -333,27 +482,38 @@ class _ChickReservationFormScreenState
             keyboardType:
                 TextInputType.number,
             decoration:
-                const InputDecoration(
+                InputDecoration(
               labelText:
-                  'Number of chicks',
-              hintText: 'Example: 100',
-              prefixIcon: Icon(
-                Icons.egg_alt_outlined,
+                  l10n.numberOfChicks,
+              hintText:
+                  l10n.example100,
+              prefixIcon:
+                  const Icon(
+                Icons
+                    .egg_alt_outlined,
               ),
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(
+            height: 16,
+          ),
 
           InkWell(
+            borderRadius:
+                BorderRadius.circular(
+              18,
+            ),
             onTap:
                 _pickReservationDate,
             child: InputDecorator(
               decoration:
-                  const InputDecoration(
+                  InputDecoration(
                 labelText:
-                    'Reservation date',
-                prefixIcon: Icon(
+                    l10n
+                        .reservationDate,
+                prefixIcon:
+                    const Icon(
                   Icons
                       .calendar_today_outlined,
                 ),
@@ -366,17 +526,25 @@ class _ChickReservationFormScreenState
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(
+            height: 16,
+          ),
 
           InkWell(
+            borderRadius:
+                BorderRadius.circular(
+              18,
+            ),
             onTap:
                 _pickScheduledDate,
             child: InputDecorator(
               decoration:
-                  const InputDecoration(
+                  InputDecoration(
                 labelText:
-                    'Scheduled batch date',
-                prefixIcon: Icon(
+                    l10n
+                        .scheduledBatchDate,
+                prefixIcon:
+                    const Icon(
                   Icons
                       .event_available_outlined,
                 ),
@@ -389,7 +557,9 @@ class _ChickReservationFormScreenState
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(
+            height: 16,
+          ),
 
           TextField(
             controller:
@@ -397,17 +567,23 @@ class _ChickReservationFormScreenState
             minLines: 3,
             maxLines: 5,
             decoration:
-                const InputDecoration(
-              labelText: 'Note',
-              hintText: 'Optional',
+                InputDecoration(
+              labelText:
+                  l10n.note,
+              hintText:
+                  l10n.optional,
             ),
           ),
 
-          const SizedBox(height: 28),
+          const SizedBox(
+            height: 28,
+          ),
 
           FilledButton.icon(
             onPressed:
-                _saving ? null : _save,
+                _saving
+                    ? null
+                    : _save,
             icon: _saving
                 ? const SizedBox(
                     width: 20,
@@ -422,10 +598,12 @@ class _ChickReservationFormScreenState
                   ),
             label: Text(
               _saving
-                  ? 'Saving...'
+                  ? l10n.saving
                   : _isEditing
-                      ? 'Save changes'
-                      : 'Save reservation',
+                      ? l10n
+                          .saveChanges
+                      : l10n
+                          .saveReservation,
             ),
           ),
         ],

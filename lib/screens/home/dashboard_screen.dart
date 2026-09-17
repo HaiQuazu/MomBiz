@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/customer_payment.dart';
 import '../../models/sale.dart';
 import '../../services/payment_service.dart';
@@ -27,11 +28,13 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return StreamBuilder<List<Sale>>(
       stream: SaleService.instance.watchAllSales(),
       builder: (context, saleSnapshot) {
         if (saleSnapshot.hasError) {
-          return const _DashboardError(message: 'Could not load sales.');
+          return _DashboardError(message: l10n.couldNotLoadSales);
         }
 
         if (!saleSnapshot.hasData) {
@@ -44,7 +47,7 @@ class DashboardScreen extends StatelessWidget {
           stream: PaymentService.instance.watchAllPayments(),
           builder: (context, paymentSnapshot) {
             if (paymentSnapshot.hasError) {
-              return const _DashboardError(message: 'Could not load payments.');
+              return _DashboardError(message: l10n.couldNotLoadPayments);
             }
 
             if (!paymentSnapshot.hasData) {
@@ -177,13 +180,14 @@ class _DashboardContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
+    final l10n = AppLocalizations.of(context)!;
+
     return SafeArea(
       child: Column(
         children: [
-          // Fixed header.
           Container(
             color: Theme.of(context).scaffoldBackgroundColor,
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
             child: Row(
               children: [
                 Expanded(
@@ -191,112 +195,117 @@ class _DashboardContent extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'MomBiz',
+                        l10n.appName,
                         style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(fontWeight: FontWeight.w900),
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
-                      const SizedBox(height: 4),
+
+                      const SizedBox(height: 2),
+
                       Text(
-                        'Business overview',
-                        style: TextStyle(color: colors.onSurfaceVariant),
+                        l10n.businessOverview,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
                 ),
+
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 46,
+                  height: 46,
                   decoration: BoxDecoration(
                     color: colors.primaryContainer,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(15),
                   ),
                   child: Icon(
                     Icons.storefront_rounded,
                     color: colors.onPrimaryContainer,
+                    size: 25,
                   ),
                 ),
               ],
             ),
           ),
 
-          // Scrollable dashboard content.
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
               children: [
                 Container(
-                  padding: const EdgeInsets.all(22),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: colors.primary,
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(26),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Outstanding customer debt',
-                        style: TextStyle(
-                          color: colors.onPrimary.withValues(alpha: 0.78),
-                          fontSize: 15,
+                        l10n.outstandingCustomerDebt,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: colors.onPrimary.withValues(alpha: 0.82),
                         ),
                       ),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
 
                       Text(
                         MoneyUtils.format(khrOutstanding, MoneyCurrency.khr),
-                        style: TextStyle(
-                          color: colors.onPrimary,
-                          fontSize: 36,
-                          fontWeight: FontWeight.w900,
-                        ),
+                        style: Theme.of(context).textTheme.headlineLarge
+                            ?.copyWith(
+                              color: colors.onPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
 
                       if (usdOutstanding > 0) ...[
-                        const SizedBox(height: 5),
+                        const SizedBox(height: 3),
+
                         Text(
                           MoneyUtils.format(usdOutstanding, MoneyCurrency.usd),
-                          style: TextStyle(
-                            color: colors.onPrimary,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                color: colors.onPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ],
 
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 7),
 
                       Text(
                         khrOutstanding == 0 && usdOutstanding == 0
-                            ? 'No outstanding customer debt.'
-                            : 'Across all customers',
-                        style: TextStyle(
-                          color: colors.onPrimary.withValues(alpha: 0.7),
+                            ? l10n.noOutstandingDebt
+                            : l10n.acrossAllCustomers,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colors.onPrimary.withValues(alpha: 0.72),
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
 
                 Row(
                   children: [
                     Expanded(
                       child: _TodayCard(
                         icon: Icons.trending_up_rounded,
-                        title: 'Sales today',
+                        title: l10n.salesToday,
                         khr: todaySalesKhr,
                         usd: todaySalesUsd,
                       ),
                     ),
 
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
 
                     Expanded(
                       child: _TodayCard(
                         icon: Icons.payments_outlined,
-                        title: 'Received today',
+                        title: l10n.receivedToday,
                         khr: todayPaymentsKhr,
                         usd: todayPaymentsUsd,
                       ),
@@ -304,85 +313,91 @@ class _DashboardContent extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 28),
+                const SizedBox(height: 22),
 
                 Text(
-                  'Quick actions',
+                  l10n.quickActions,
                   style: Theme.of(
                     context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 9),
 
                 Row(
                   children: [
                     Expanded(
                       child: _QuickAction(
                         icon: Icons.add_shopping_cart_rounded,
-                        title: 'New sale',
+                        title: l10n.newSale,
                         onTap: onNewSaleTap,
                       ),
                     ),
 
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
 
                     Expanded(
                       child: _QuickAction(
                         icon: Icons.people_alt_outlined,
-                        title: 'Customers',
+                        title: l10n.customers,
                         onTap: onCustomersTap,
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 28),
+                const SizedBox(height: 22),
 
                 Row(
                   children: [
                     Expanded(
                       child: Text(
-                        'Recent activity',
+                        l10n.recentActivity,
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
+
                     if (activities.isNotEmpty)
                       Text(
-                        'Latest ${activities.length}',
-                        style: TextStyle(color: colors.onSurfaceVariant),
+                        l10n.latestCount(activities.length),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                        ),
                       ),
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 9),
 
                 if (activities.isEmpty)
                   Card(
                     child: Padding(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(22),
                       child: Column(
                         children: [
                           Icon(
                             Icons.receipt_long_outlined,
-                            size: 42,
+                            size: 38,
                             color: colors.primary,
                           ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'No activity yet',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
+
+                          const SizedBox(height: 10),
+
                           Text(
-                            'Sales and payments will appear here.',
+                            l10n.noActivityYet,
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+
+                          const SizedBox(height: 3),
+
+                          Text(
+                            l10n.activityWillAppearHere,
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: colors.onSurfaceVariant),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: colors.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -391,7 +406,7 @@ class _DashboardContent extends StatelessWidget {
                 else
                   ...activities.map(
                     (activity) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.only(bottom: 8),
                       child: _ActivityCard(activity: activity),
                     ),
                   ),
@@ -414,6 +429,7 @@ class _TodayCard extends StatelessWidget {
 
   final IconData icon;
   final String title;
+
   final int khr;
   final int usd;
 
@@ -423,43 +439,52 @@ class _TodayCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(17),
+        padding: const EdgeInsets.all(15),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 42,
-              height: 42,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 color: colors.primaryContainer,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(13),
               ),
-              child: Icon(icon, size: 21, color: colors.onPrimaryContainer),
+              child: Icon(icon, size: 20, color: colors.onPrimaryContainer),
             ),
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
 
             Text(
               title,
-              style: TextStyle(color: colors.onSurfaceVariant, fontSize: 13),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
             ),
 
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
 
             Text(
               MoneyUtils.format(khr, MoneyCurrency.khr),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
 
             if (usd > 0) ...[
-              const SizedBox(height: 3),
+              const SizedBox(height: 2),
+
               Text(
                 MoneyUtils.format(usd, MoneyCurrency.usd),
-                style: TextStyle(
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: colors.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -492,12 +517,22 @@ class _QuickAction extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 19, horizontal: 12),
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
           child: Column(
             children: [
-              Icon(icon, color: colors.primary, size: 27),
-              const SizedBox(height: 9),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+              Icon(icon, color: colors.primary, size: 26),
+
+              const SizedBox(height: 7),
+
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              ),
             ],
           ),
         ),
@@ -531,12 +566,13 @@ class _ActivityCard extends StatelessWidget {
 
   String _date(DateTime value) {
     return '${value.day.toString().padLeft(2, '0')}/'
-        '${value.month.toString().padLeft(2, '0')}';
+        '${value.month.toString().padLeft(2, '0')}/'
+        '${value.year}';
   }
 
-  String _saleItems(Sale sale) {
+  String _saleItems(Sale sale, AppLocalizations l10n) {
     if (sale.items.isEmpty) {
-      return 'Sale';
+      return l10n.sale;
     }
 
     return sale.items
@@ -544,17 +580,38 @@ class _ActivityCard extends StatelessWidget {
           final unit = item.unit.trim();
 
           if (unit.isEmpty) {
-            return '${item.productName} ${item.quantity}';
+            return '${item.productName} '
+                '${item.quantity}';
           }
 
-          return '${item.productName} ${item.quantity} $unit';
+          return '${item.productName} '
+              '${item.quantity} '
+              '$unit';
         })
         .join(' • ');
+  }
+
+  String _paymentMethodLabel(AppLocalizations l10n, CustomerPayment payment) {
+    switch (payment.method.label) {
+      case 'Cash':
+        return l10n.cash;
+
+      case 'ABA QR':
+        return l10n.abaQr;
+
+      case 'ACLEDA QR':
+        return l10n.acledaQr;
+
+      default:
+        return l10n.other;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+
+    final l10n = AppLocalizations.of(context)!;
 
     if (activity.isSale) {
       final sale = activity.sale!;
@@ -562,6 +619,7 @@ class _ActivityCard extends StatelessWidget {
       return Card(
         clipBehavior: Clip.antiAlias,
         child: ListTile(
+          minTileHeight: 70,
           onTap: () {
             Navigator.push(
               context,
@@ -571,42 +629,40 @@ class _ActivityCard extends StatelessWidget {
             );
           },
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
+            horizontal: 15,
+            vertical: 4,
           ),
           leading: CircleAvatar(
+            radius: 21,
             backgroundColor: colors.primaryContainer,
             child: Icon(
               Icons.receipt_long_outlined,
+              size: 20,
               color: colors.onPrimaryContainer,
             ),
           ),
           title: Text(
             sale.customerName,
-            style: const TextStyle(fontWeight: FontWeight.w700),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
-          subtitle: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _saleItems(sale),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
-
-              const SizedBox(width: 8),
-
-              Text(
-                _date(sale.saleDate),
-                style: TextStyle(color: colors.onSurfaceVariant, fontSize: 12),
-              ),
-            ],
+          subtitle: Text(
+            '${_saleItems(sale, l10n)} • ${_date(sale.saleDate)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
           ),
           trailing: Text(
             '+${MoneyUtils.format(sale.totalMinor, sale.currency)}',
-            style: TextStyle(color: colors.error, fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: colors.error,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       );
@@ -616,25 +672,39 @@ class _ActivityCard extends StatelessWidget {
 
     return Card(
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        minTileHeight: 70,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
         leading: CircleAvatar(
+          radius: 21,
           backgroundColor: colors.secondaryContainer,
           child: Icon(
             Icons.payments_outlined,
+            size: 20,
             color: colors.onSecondaryContainer,
           ),
         ),
         title: Text(
           payment.customerName,
-          style: const TextStyle(fontWeight: FontWeight.w700),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
-          '${payment.method.label} • '
-          '${_date(payment.paymentDate)}',
+          '${_paymentMethodLabel(l10n, payment)} • ${_date(payment.paymentDate)}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
         ),
         trailing: Text(
           '-${MoneyUtils.format(payment.appliedAmountMinor, payment.appliedCurrency)}',
-          style: TextStyle(color: colors.primary, fontWeight: FontWeight.w800),
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: colors.primary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -648,6 +718,8 @@ class _DashboardError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
     return SafeArea(
       child: Center(
         child: Padding(
@@ -655,15 +727,16 @@ class _DashboardError extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline_rounded, size: 48),
-              const SizedBox(height: 12),
+              Icon(Icons.error_outline_rounded, size: 46, color: colors.error),
+
+              const SizedBox(height: 10),
+
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 17,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),

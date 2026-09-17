@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/customer.dart';
 import '../../models/product.dart';
 import '../../models/sale.dart';
@@ -24,7 +25,6 @@ class SaleFormScreen extends StatefulWidget {
 }
 
 class _SaleFormScreenState extends State<SaleFormScreen> {
-  final _buyerController = TextEditingController();
   final _discountController = TextEditingController();
   final _noteController = TextEditingController();
 
@@ -58,9 +58,12 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
         ProductService.instance.getActiveProducts(),
       ]);
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       _customers = results[0] as List<Customer>;
+
       _products = results[1] as List<Product>;
 
       if (widget.initialCustomerId != null &&
@@ -75,7 +78,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
       if (widget.initialQuantity != null &&
           widget.initialQuantity! > 0 &&
           _items.isNotEmpty) {
-        _items.first.quantityController.text = widget.initialQuantity
+        _items.first.quantityController.text = widget.initialQuantity!
             .toString();
       }
 
@@ -83,14 +86,18 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
         _loading = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
+      final l10n = AppLocalizations.of(context)!;
 
       setState(() {
         _loading = false;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not load customers or products.')),
+        SnackBar(content: Text(l10n.couldNotLoadCustomersOrProducts)),
       );
     }
   }
@@ -110,7 +117,9 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
   }
 
   void _removeItem(int index) {
-    if (_items.length == 1) return;
+    if (_items.length == 1) {
+      return;
+    }
 
     _items[index].dispose();
     _items.removeAt(index);
@@ -153,7 +162,9 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
   }
 
   Customer? get _selectedCustomer {
-    if (_customerId == null) return null;
+    if (_customerId == null) {
+      return null;
+    }
 
     for (final customer in _customers) {
       if (customer.id == _customerId) {
@@ -164,6 +175,284 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
     return null;
   }
 
+  Future<void> _pickCustomer() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    final searchController = TextEditingController();
+
+    var search = '';
+
+    final selectedId = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final colors = Theme.of(sheetContext).colorScheme;
+
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final filteredCustomers = _customers.where((customer) {
+              if (search.isEmpty) {
+                return true;
+              }
+
+              // Phone remains searchable,
+              // but is not shown.
+              return customer.name.toLowerCase().contains(search) ||
+                  customer.phone.toLowerCase().contains(search);
+            }).toList();
+
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: SizedBox(
+                  height: MediaQuery.sizeOf(context).height * 0.72,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                        child: Text(
+                          l10n.customer,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: SearchBar(
+                          controller: searchController,
+                          hintText: l10n.searchNameOrPhone,
+                          leading: const Icon(Icons.search_rounded),
+                          elevation: const WidgetStatePropertyAll(0),
+                          onChanged: (value) {
+                            setSheetState(() {
+                              search = value.trim().toLowerCase();
+                            });
+                          },
+                          trailing: [
+                            if (search.isNotEmpty)
+                              IconButton(
+                                onPressed: () {
+                                  searchController.clear();
+
+                                  setSheetState(() {
+                                    search = '';
+                                  });
+                                },
+                                icon: const Icon(Icons.close_rounded),
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      Expanded(
+                        child: filteredCustomers.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(30),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.person_search_rounded,
+                                        size: 42,
+                                        color: colors.primary,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        l10n.noCustomerFound,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        l10n.tryAnotherNameOrPhone,
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: colors.onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : ListView.separated(
+                                padding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  0,
+                                  20,
+                                  24,
+                                ),
+                                itemCount: filteredCustomers.length,
+                                separatorBuilder: (context, index) =>
+                                    const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final customer = filteredCustomers[index];
+
+                                  final selected = customer.id == _customerId;
+
+                                  return Material(
+                                    color: selected
+                                        ? colors.primaryContainer.withValues(
+                                            alpha: 0.7,
+                                          )
+                                        : colors.surfaceContainerLowest,
+                                    borderRadius: BorderRadius.circular(18),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: InkWell(
+                                      onTap: () {
+                                        Navigator.pop(
+                                          sheetContext,
+                                          customer.id,
+                                        );
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 10,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            CircleAvatar(
+                                              radius: 21,
+                                              backgroundColor:
+                                                  colors.primaryContainer,
+                                              child: Text(
+                                                customer.name.trim().isEmpty
+                                                    ? '?'
+                                                    : customer.name
+                                                          .trim()[0]
+                                                          .toUpperCase(),
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .titleSmall
+                                                    ?.copyWith(
+                                                      color: colors
+                                                          .onPrimaryContainer,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                              ),
+                                            ),
+
+                                            const SizedBox(width: 12),
+
+                                            Expanded(
+                                              child: Text(
+                                                customer.name,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .titleMedium
+                                                    ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                              ),
+                                            ),
+
+                                            const SizedBox(width: 8),
+
+                                            if (selected)
+                                              Icon(
+                                                Icons.check_circle_rounded,
+                                                color: colors.primary,
+                                              )
+                                            else
+                                              const Icon(
+                                                Icons.chevron_right_rounded,
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    searchController.dispose();
+
+    if (!mounted || selectedId == null) {
+      return;
+    }
+
+    setState(() {
+      _customerId = selectedId;
+    });
+  }
+
+  String _editablePrice(int amountMinor, MoneyCurrency currency) {
+    switch (currency) {
+      case MoneyCurrency.khr:
+        return amountMinor.toString();
+
+      case MoneyCurrency.usd:
+        final dollars = amountMinor ~/ 100;
+
+        final cents = amountMinor % 100;
+
+        if (cents == 0) {
+          return dollars.toString();
+        }
+
+        return '$dollars.'
+            '${cents.toString().padLeft(2, '0')}';
+    }
+  }
+
+  void _applyProductDefaultPrice(_DraftItem item, Product? product) {
+    if (product == null) {
+      item.priceController.clear();
+      return;
+    }
+
+    if (product.defaultPriceMinor <= 0) {
+      item.priceController.clear();
+      return;
+    }
+
+    if (product.defaultPriceCurrency != _currency) {
+      item.priceController.clear();
+      return;
+    }
+
+    item.priceController.text = _editablePrice(
+      product.defaultPriceMinor,
+      _currency,
+    );
+  }
+
+  void _applyDefaultsForCurrentCurrency() {
+    for (final item in _items) {
+      _applyProductDefaultPrice(item, item.product);
+    }
+  }
+
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -172,7 +461,9 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
       lastDate: DateTime.now(),
     );
 
-    if (picked == null) return;
+    if (picked == null || !mounted) {
+      return;
+    }
 
     setState(() {
       _saleDate = picked;
@@ -180,15 +471,17 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
   }
 
   Future<void> _save() async {
+    final l10n = AppLocalizations.of(context)!;
+
     final customer = _selectedCustomer;
 
     if (customer == null) {
-      _showError('Please select a customer.');
+      _showError(l10n.pleaseSelectCustomer);
       return;
     }
 
     if (_items.isEmpty) {
-      _showError('Add at least one product.');
+      _showError(l10n.addAtLeastOneProduct);
       return;
     }
 
@@ -198,21 +491,21 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
       final product = item.product;
 
       if (product == null) {
-        _showError('Please select a product for every item.');
+        _showError(l10n.pleaseSelectProductEveryItem);
         return;
       }
 
       final quantity = _quantityFor(item);
 
       if (quantity <= 0) {
-        _showError('Quantity must be greater than zero.');
+        _showError(l10n.quantityGreaterThanZero);
         return;
       }
 
       final price = MoneyUtils.parse(item.priceController.text, _currency);
 
       if (price == null || price <= 0) {
-        _showError('Please enter a valid price for every item.');
+        _showError(l10n.validPriceEveryItem);
         return;
       }
 
@@ -231,7 +524,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
     final discount = MoneyUtils.parse(_discountController.text, _currency) ?? 0;
 
     if (discount < 0 || discount > _subtotal) {
-      _showError('Discount cannot be greater than the subtotal.');
+      _showError(l10n.discountCannotExceedSubtotal);
       return;
     }
 
@@ -243,7 +536,11 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
       final saleId = await SaleService.instance.createSale(
         customerId: customer.id,
         customerName: customer.name,
-        buyerName: _buyerController.text,
+
+        // Kept for compatibility
+        // with existing Sale model.
+        buyerName: '',
+
         currency: _currency,
         items: saleItems,
         subtotalMinor: _subtotal,
@@ -253,22 +550,26 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
         note: _noteController.text,
       );
 
-      if (!mounted) return;
-
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       await Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => SaleReceiptScreen(saleId: saleId)),
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       Navigator.pop(context, true);
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
-      _showError('Could not save the sale. Please try again.');
+      _showError(l10n.couldNotSaveSale);
     } finally {
       if (mounted) {
         setState(() {
@@ -292,7 +593,6 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
   @override
   void dispose() {
-    _buyerController.dispose();
     _discountController.dispose();
     _noteController.dispose();
 
@@ -307,59 +607,56 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
+    final l10n = AppLocalizations.of(context)!;
+
+    final selectedCustomer = _selectedCustomer;
+
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'New sale',
-          style: TextStyle(fontWeight: FontWeight.w800),
+        title: Text(
+          l10n.newSale,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
+
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 140),
           children: [
             Text(
-              'Customer',
+              l10n.customer,
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
 
             const SizedBox(height: 10),
 
-            DropdownButtonFormField<String>(
-              initialValue: _customerId,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.person_outline),
-                labelText: 'Customer',
-              ),
-              items: _customers
-                  .map(
-                    (customer) => DropdownMenuItem(
-                      value: customer.id,
-                      child: Text(customer.name),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _customerId = value;
-                });
-              },
-            ),
-
-            const SizedBox(height: 14),
-
-            TextFormField(
-              controller: _buyerController,
-              decoration: const InputDecoration(
-                labelText: 'Who came to buy?',
-                hintText: 'Optional — e.g. Dara\'s son',
-                prefixIcon: Icon(Icons.badge_outlined),
+            InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: _pickCustomer,
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: l10n.customer,
+                  prefixIcon: const Icon(Icons.person_outline_rounded),
+                  suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+                ),
+                child: Text(
+                  selectedCustomer?.name ?? l10n.pleaseSelectCustomer,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: selectedCustomer == null
+                        ? colors.onSurfaceVariant
+                        : colors.onSurface,
+                  ),
+                ),
               ),
             ),
 
@@ -369,9 +666,9 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
               borderRadius: BorderRadius.circular(18),
               onTap: _pickDate,
               child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Sale date',
-                  prefixIcon: Icon(Icons.calendar_today_outlined),
+                decoration: InputDecoration(
+                  labelText: l10n.saleDate,
+                  prefixIcon: const Icon(Icons.calendar_today_outlined),
                 ),
                 child: Text(_formatDate(_saleDate)),
               ),
@@ -380,10 +677,10 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
             const SizedBox(height: 26),
 
             Text(
-              'Currency',
+              l10n.currency,
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
 
             const SizedBox(height: 10),
@@ -400,9 +697,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
                   _discountController.clear();
 
-                  for (final item in _items) {
-                    item.priceController.clear();
-                  }
+                  _applyDefaultsForCurrentCurrency();
                 });
               },
             ),
@@ -413,16 +708,17 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    'Products',
+                    l10n.products,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
+
                 TextButton.icon(
                   onPressed: _addItem,
                   icon: const Icon(Icons.add_rounded),
-                  label: const Text('Add item'),
+                  label: Text(l10n.addItem),
                 ),
               ],
             ),
@@ -441,6 +737,11 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                   canRemove: _items.length > 1,
                   onChanged: _refreshTotals,
                   onRemove: () => _removeItem(index),
+                  onProductChanged: (product) {
+                    _applyProductDefaultPrice(item, product);
+
+                    _refreshTotals();
+                  },
                 ),
               );
             }),
@@ -448,10 +749,10 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
             const SizedBox(height: 12),
 
             Text(
-              'Discount',
+              l10n.discount,
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
 
             const SizedBox(height: 10),
@@ -462,10 +763,10 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                 decimal: true,
               ),
               decoration: InputDecoration(
-                labelText: 'Discount amount',
+                labelText: l10n.discountAmount,
                 hintText: _currency == MoneyCurrency.khr
-                    ? 'Example: 50000'
-                    : 'Example: 5.00',
+                    ? l10n.example50000
+                    : l10n.example500,
                 prefixIcon: const Icon(Icons.discount_outlined),
               ),
             ),
@@ -476,9 +777,9 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
               controller: _noteController,
               minLines: 3,
               maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: 'Note',
-                hintText: 'Optional',
+              decoration: InputDecoration(
+                labelText: l10n.note,
+                hintText: l10n.optional,
                 alignLabelWithHint: true,
               ),
             ),
@@ -494,17 +795,21 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
               child: Column(
                 children: [
                   _TotalRow(
-                    label: 'Subtotal',
+                    label: l10n.subtotal,
                     value: MoneyUtils.format(_subtotal, _currency),
                   ),
+
                   const SizedBox(height: 10),
+
                   _TotalRow(
-                    label: 'Discount',
+                    label: l10n.discount,
                     value: '- ${MoneyUtils.format(_discount, _currency)}',
                   ),
+
                   const Divider(height: 28),
+
                   _TotalRow(
-                    label: 'Total',
+                    label: l10n.total,
                     value: MoneyUtils.format(_total, _currency),
                     strong: true,
                   ),
@@ -530,8 +835,8 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                 : const Icon(Icons.check_rounded),
             label: Text(
               _saving
-                  ? 'Saving...'
-                  : 'Save sale • ${MoneyUtils.format(_total, _currency)}',
+                  ? l10n.saving
+                  : l10n.saveSaleAmount(MoneyUtils.format(_total, _currency)),
             ),
           ),
         ),
@@ -561,23 +866,287 @@ class _SaleItemCard extends StatefulWidget {
     required this.canRemove,
     required this.onChanged,
     required this.onRemove,
+    required this.onProductChanged,
   });
 
   final _DraftItem item;
   final List<Product> products;
   final MoneyCurrency currency;
+
   final bool canRemove;
 
   final VoidCallback onChanged;
   final VoidCallback onRemove;
+
+  final ValueChanged<Product?> onProductChanged;
 
   @override
   State<_SaleItemCard> createState() => _SaleItemCardState();
 }
 
 class _SaleItemCardState extends State<_SaleItemCard> {
+  Future<void> _pickProduct() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    final searchController = TextEditingController();
+
+    var search = '';
+
+    final selectedProduct = await showModalBottomSheet<Product>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final colors = Theme.of(sheetContext).colorScheme;
+
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final filteredProducts = widget.products.where((product) {
+              if (search.isEmpty) {
+                return true;
+              }
+
+              return product.name.toLowerCase().contains(search) ||
+                  product.category.toLowerCase().contains(search) ||
+                  product.unit.toLowerCase().contains(search);
+            }).toList();
+
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: SizedBox(
+                  height: MediaQuery.sizeOf(context).height * 0.68,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                        child: Text(
+                          l10n.products,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: SearchBar(
+                          controller: searchController,
+                          hintText: l10n.searchProducts,
+                          leading: const Icon(Icons.search_rounded),
+                          elevation: const WidgetStatePropertyAll(0),
+                          onChanged: (value) {
+                            setSheetState(() {
+                              search = value.trim().toLowerCase();
+                            });
+                          },
+                          trailing: [
+                            if (search.isNotEmpty)
+                              IconButton(
+                                onPressed: () {
+                                  searchController.clear();
+
+                                  setSheetState(() {
+                                    search = '';
+                                  });
+                                },
+                                icon: const Icon(Icons.close_rounded),
+                              ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      Expanded(
+                        child: filteredProducts.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(30),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.inventory_2_outlined,
+                                        size: 42,
+                                        color: colors.primary,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        l10n.noProductsYet,
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : ListView.separated(
+                                padding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  0,
+                                  20,
+                                  24,
+                                ),
+                                itemCount: filteredProducts.length,
+                                separatorBuilder: (context, index) =>
+                                    const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final product = filteredProducts[index];
+
+                                  final selected =
+                                      widget.item.product?.id == product.id;
+
+                                  return Material(
+                                    color: selected
+                                        ? colors.primaryContainer.withValues(
+                                            alpha: 0.7,
+                                          )
+                                        : colors.surfaceContainerLowest,
+                                    borderRadius: BorderRadius.circular(18),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: InkWell(
+                                      onTap: () {
+                                        Navigator.pop(sheetContext, product);
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 11,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 44,
+                                              height: 44,
+                                              decoration: BoxDecoration(
+                                                color: colors.primaryContainer,
+                                                borderRadius:
+                                                    BorderRadius.circular(14),
+                                              ),
+                                              child: Icon(
+                                                Icons.inventory_2_outlined,
+                                                size: 21,
+                                                color:
+                                                    colors.onPrimaryContainer,
+                                              ),
+                                            ),
+
+                                            const SizedBox(width: 12),
+
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    product.name,
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .titleMedium
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
+                                                  ),
+
+                                                  if (product.category
+                                                          .trim()
+                                                          .isNotEmpty ||
+                                                      product.unit
+                                                          .trim()
+                                                          .isNotEmpty) ...[
+                                                    const SizedBox(height: 2),
+                                                    Text(
+                                                      [
+                                                        if (product.category
+                                                            .trim()
+                                                            .isNotEmpty)
+                                                          product.category,
+                                                        if (product.unit
+                                                            .trim()
+                                                            .isNotEmpty)
+                                                          product.unit,
+                                                      ].join(' • '),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: Theme.of(context)
+                                                          .textTheme
+                                                          .bodySmall
+                                                          ?.copyWith(
+                                                            color: colors
+                                                                .onSurfaceVariant,
+                                                          ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                            ),
+
+                                            const SizedBox(width: 8),
+
+                                            if (selected)
+                                              Icon(
+                                                Icons.check_circle_rounded,
+                                                color: colors.primary,
+                                              )
+                                            else
+                                              const Icon(
+                                                Icons.chevron_right_rounded,
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    searchController.dispose();
+
+    if (!mounted || selectedProduct == null) {
+      return;
+    }
+
+    setState(() {
+      widget.item.product = selectedProduct;
+    });
+
+    // Keep default product
+    // price auto-fill working.
+    widget.onProductChanged(selectedProduct);
+
+    widget.onChanged();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final colors = Theme.of(context).colorScheme;
+
     final quantity = int.tryParse(widget.item.quantityController.text) ?? 0;
 
     final price =
@@ -585,6 +1154,8 @@ class _SaleItemCardState extends State<_SaleItemCard> {
         0;
 
     final lineTotal = quantity * price;
+
+    final selectedProduct = widget.item.product;
 
     return Card(
       child: Padding(
@@ -594,39 +1165,39 @@ class _SaleItemCardState extends State<_SaleItemCard> {
             Row(
               children: [
                 Expanded(
-                  child: DropdownButtonFormField<Product>(
-                    initialValue: widget.item.product,
-                    decoration: const InputDecoration(
-                      labelText: 'Product',
-                      prefixIcon: Icon(Icons.inventory_2_outlined),
+                  child: InkWell(
+                    onTap: _pickProduct,
+                    borderRadius: BorderRadius.circular(18),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: l10n.product,
+                        prefixIcon: const Icon(Icons.inventory_2_outlined),
+                        suffixIcon: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                        ),
+                      ),
+                      child: Text(
+                        selectedProduct?.name ?? l10n.product,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: selectedProduct == null
+                              ? colors.onSurfaceVariant
+                              : colors.onSurface,
+                        ),
+                      ),
                     ),
-                    items: widget.products
-                        .map(
-                          (product) => DropdownMenuItem(
-                            value: product,
-                            child: Text(
-                              product.name,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (product) {
-                      setState(() {
-                        widget.item.product = product;
-                      });
-
-                      widget.onChanged();
-                    },
                   ),
                 ),
 
-                if (widget.canRemove)
+                if (widget.canRemove) ...[
+                  const SizedBox(width: 4),
                   IconButton(
-                    tooltip: 'Remove item',
+                    tooltip: l10n.removeItem,
                     onPressed: widget.onRemove,
                     icon: const Icon(Icons.close_rounded),
                   ),
+                ],
               ],
             ),
 
@@ -640,13 +1211,14 @@ class _SaleItemCardState extends State<_SaleItemCard> {
                     keyboardType: TextInputType.number,
                     onChanged: (_) {
                       setState(() {});
+
                       widget.onChanged();
                     },
                     decoration: InputDecoration(
-                      labelText: 'Quantity',
-                      suffixText: widget.item.product?.unit.isEmpty ?? true
+                      labelText: l10n.quantity,
+                      suffixText: selectedProduct?.unit.isEmpty ?? true
                           ? null
-                          : widget.item.product!.unit,
+                          : selectedProduct!.unit,
                     ),
                   ),
                 ),
@@ -661,10 +1233,11 @@ class _SaleItemCardState extends State<_SaleItemCard> {
                     ),
                     onChanged: (_) {
                       setState(() {});
+
                       widget.onChanged();
                     },
                     decoration: InputDecoration(
-                      labelText: 'Price each',
+                      labelText: l10n.priceEach,
                       prefixText: widget.currency == MoneyCurrency.usd
                           ? '\$ '
                           : null,
@@ -681,18 +1254,21 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
             Row(
               children: [
-                Text(
-                  'Line total',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                Expanded(
+                  child: Text(
+                    l10n.lineTotal,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
                   ),
                 ),
-                const Spacer(),
+
+                const SizedBox(width: 8),
+
                 Text(
                   MoneyUtils.format(lineTotal, widget.currency),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 17,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -719,20 +1295,30 @@ class _TotalRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontWeight: strong ? FontWeight.w800 : FontWeight.w500,
-            fontSize: strong ? 18 : 15,
+        Expanded(
+          child: Text(
+            label,
+            style:
+                (strong
+                        ? Theme.of(context).textTheme.titleMedium
+                        : Theme.of(context).textTheme.bodyMedium)
+                    ?.copyWith(
+                      fontWeight: strong ? FontWeight.w700 : FontWeight.w500,
+                    ),
           ),
         ),
-        const Spacer(),
+
+        const SizedBox(width: 10),
+
         Text(
           value,
-          style: TextStyle(
-            fontWeight: strong ? FontWeight.w900 : FontWeight.w600,
-            fontSize: strong ? 22 : 15,
-          ),
+          style:
+              (strong
+                      ? Theme.of(context).textTheme.titleLarge
+                      : Theme.of(context).textTheme.bodyMedium)
+                  ?.copyWith(
+                    fontWeight: strong ? FontWeight.w700 : FontWeight.w600,
+                  ),
         ),
       ],
     );

@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/customer.dart';
 import '../../services/customer_service.dart';
 
 class CustomerFormScreen extends StatefulWidget {
-  const CustomerFormScreen({
-    super.key,
-    this.customer,
-  });
+  const CustomerFormScreen({super.key, this.customer});
 
   final Customer? customer;
 
@@ -19,7 +17,9 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _nameController;
+
   late final TextEditingController _phoneController;
+
   late final TextEditingController _noteController;
 
   bool _saving = false;
@@ -30,17 +30,13 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
   void initState() {
     super.initState();
 
-    _nameController = TextEditingController(
-      text: widget.customer?.name ?? '',
-    );
+    _nameController = TextEditingController(text: widget.customer?.name ?? '');
 
     _phoneController = TextEditingController(
       text: widget.customer?.phone ?? '',
     );
 
-    _noteController = TextEditingController(
-      text: widget.customer?.note ?? '',
-    );
+    _noteController = TextEditingController(text: widget.customer?.note ?? '');
   }
 
   @override
@@ -48,11 +44,14 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     _nameController.dispose();
     _phoneController.dispose();
     _noteController.dispose();
+
     super.dispose();
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
     setState(() {
       _saving = true;
@@ -74,17 +73,21 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         );
       }
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       Navigator.pop(context);
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not save customer. Please try again.'),
-        ),
-      );
+      final l10n = AppLocalizations.of(context)!;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.couldNotSaveCustomer)));
     } finally {
       if (mounted) {
         setState(() {
@@ -96,72 +99,40 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing ? 'Edit customer' : 'New customer',
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
+          _isEditing ? l10n.editCustomer : l10n.newCustomer,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
+
       body: SafeArea(
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 130),
             children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: colors.primaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  _isEditing
-                      ? Icons.manage_accounts_rounded
-                      : Icons.person_add_alt_1_rounded,
-                  size: 34,
-                  color: colors.onPrimaryContainer,
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              Text(
-                _isEditing
-                    ? 'Update customer information'
-                    : 'Add someone to MomBiz',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-              ),
-
-              const SizedBox(height: 6),
-
-              Text(
-                'Only the name is required. Phone and notes can be added later.',
-                style: TextStyle(
-                  color: colors.onSurfaceVariant,
-                ),
-              ),
-
-              const SizedBox(height: 28),
-
+              // -----------------------
+              // CUSTOMER NAME
+              // -----------------------
               TextFormField(
                 controller: _nameController,
+                textCapitalization: TextCapitalization.words,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Customer name',
-                  hintText: 'Example: Dara',
-                  prefixIcon: Icon(Icons.person_outline_rounded),
+                autofocus: !_isEditing,
+                decoration: InputDecoration(
+                  labelText: l10n.customerName,
+                  hintText: l10n.exampleDara,
+                  prefixIcon: const Icon(Icons.person_outline_rounded),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Please enter the customer name.';
+                    return l10n.pleaseEnterCustomerName;
                   }
 
                   return null;
@@ -170,56 +141,69 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
 
               const SizedBox(height: 14),
 
+              // -----------------------
+              // PHONE
+              // -----------------------
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Phone number',
-                  hintText: 'Optional',
-                  prefixIcon: Icon(Icons.phone_outlined),
+                decoration: InputDecoration(
+                  labelText: l10n.phoneNumber,
+                  hintText: l10n.optional,
+                  prefixIcon: const Icon(Icons.phone_outlined),
                 ),
               ),
 
               const SizedBox(height: 14),
 
+              // -----------------------
+              // NOTE
+              // -----------------------
               TextFormField(
                 controller: _noteController,
-                minLines: 4,
-                maxLines: 6,
-                decoration: const InputDecoration(
-                  labelText: 'Note',
-                  hintText: 'Optional information about this customer',
+                minLines: 3,
+                maxLines: 5,
+                textInputAction: TextInputAction.newline,
+                decoration: InputDecoration(
+                  labelText: l10n.note,
+                  hintText: l10n.optionalCustomerInformation,
                   alignLabelWithHint: true,
-                  prefixIcon: Padding(
-                    padding: EdgeInsets.only(bottom: 66),
-                    child: Icon(Icons.notes_rounded),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 28),
-
-              FilledButton.icon(
-                onPressed: _saving ? null : _save,
-                icon: _saving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : Icon(
-                        _isEditing
-                            ? Icons.check_rounded
-                            : Icons.person_add_alt_1_rounded,
-                      ),
-                label: Text(
-                  _isEditing ? 'Save changes' : 'Add customer',
+                  prefixIcon: const Icon(Icons.notes_rounded),
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+
+      // -----------------------
+      // SAVE BUTTON
+      // -----------------------
+      bottomSheet: SafeArea(
+        child: Container(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          child: FilledButton.icon(
+            onPressed: _saving ? null : _save,
+            icon: _saving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : Icon(
+                    _isEditing
+                        ? Icons.check_rounded
+                        : Icons.person_add_alt_1_rounded,
+                  ),
+            label: Text(
+              _saving
+                  ? '${l10n.save}...'
+                  : _isEditing
+                  ? l10n.saveChanges
+                  : l10n.addCustomer,
+            ),
           ),
         ),
       ),

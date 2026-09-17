@@ -1,9 +1,7 @@
 enum MoneyCurrency {
   khr,
-  usd,
-}
+  usd;
 
-extension MoneyCurrencyX on MoneyCurrency {
   String get code {
     switch (this) {
       case MoneyCurrency.khr:
@@ -22,10 +20,20 @@ extension MoneyCurrencyX on MoneyCurrency {
     }
   }
 
-  static MoneyCurrency fromCode(String code) {
-    switch (code) {
+  String get label {
+    switch (this) {
+      case MoneyCurrency.khr:
+        return 'KHR';
+      case MoneyCurrency.usd:
+        return 'USD';
+    }
+  }
+
+  static MoneyCurrency fromCode(String? value) {
+    switch (value?.toUpperCase()) {
       case 'USD':
         return MoneyCurrency.usd;
+
       case 'KHR':
       default:
         return MoneyCurrency.khr;
@@ -34,61 +42,67 @@ extension MoneyCurrencyX on MoneyCurrency {
 }
 
 class MoneyUtils {
-  static int? parse(
-    String input,
-    MoneyCurrency currency,
-  ) {
-    final value = input
+  MoneyUtils._();
+
+  static int? parse(String input, MoneyCurrency currency) {
+    final cleaned = input
         .trim()
         .replaceAll(',', '')
-        .replaceAll(' ', '');
+        .replaceAll('៛', '')
+        .replaceAll('\$', '');
 
-    if (value.isEmpty) {
+    if (cleaned.isEmpty) {
       return null;
     }
 
-    if (currency == MoneyCurrency.khr) {
-      if (!RegExp(r'^\d+$').hasMatch(value)) {
-        return null;
-      }
+    switch (currency) {
+      case MoneyCurrency.khr:
+        final value = num.tryParse(cleaned);
 
-      return int.tryParse(value);
+        if (value == null) {
+          return null;
+        }
+
+        return value.round();
+
+      case MoneyCurrency.usd:
+        final value = double.tryParse(cleaned);
+
+        if (value == null) {
+          return null;
+        }
+
+        return (value * 100).round();
     }
-
-    if (!RegExp(r'^\d+(\.\d{0,2})?$').hasMatch(value)) {
-      return null;
-    }
-
-    final parts = value.split('.');
-
-    final dollars = int.tryParse(parts[0]) ?? 0;
-
-    var cents = 0;
-
-    if (parts.length == 2) {
-      final decimal = parts[1].padRight(2, '0');
-      cents = int.tryParse(decimal) ?? 0;
-    }
-
-    return (dollars * 100) + cents;
   }
 
-  static String format(
-    int amount,
-    MoneyCurrency currency,
-  ) {
-    if (currency == MoneyCurrency.khr) {
-      return '${_withCommas(amount)}៛';
+  static String format(int amountMinor, MoneyCurrency currency) {
+    switch (currency) {
+      case MoneyCurrency.khr:
+        return '${_withCommas(amountMinor)}៛';
+
+      case MoneyCurrency.usd:
+        final negative = amountMinor < 0;
+
+        final absolute = amountMinor.abs();
+
+        final dollars = absolute ~/ 100;
+
+        final cents = absolute % 100;
+
+        final formatted =
+            '\$${_withCommas(dollars)}.'
+            '${cents.toString().padLeft(2, '0')}';
+
+        return negative ? '-$formatted' : formatted;
     }
-
-    final dollars = amount ~/ 100;
-    final cents = amount % 100;
-
-    return '\$${_withCommas(dollars)}.${cents.toString().padLeft(2, '0')}';
   }
 
   static String _withCommas(int value) {
-    final text = value.toString();
+    final negative = value < 0;
+
+    final text = value.abs().toString();
+
     final buffer = StringBuffer();
 
     for (var i = 0; i < text.length; i++) {
@@ -99,6 +113,14 @@ class MoneyUtils {
       buffer.write(text[i]);
     }
 
-    return buffer.toString();
+    return negative ? '-$buffer' : buffer.toString();
+  }
+}
+
+class MoneyCurrencyX {
+  MoneyCurrencyX._();
+
+  static MoneyCurrency fromCode(String? value) {
+    return MoneyCurrency.fromCode(value);
   }
 }

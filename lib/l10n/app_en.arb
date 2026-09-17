@@ -1,0 +1,381 @@
+{
+  "@@locale": "en",
+
+  "appName": "MomBiz",
+
+  "home": "Home",
+  "customers": "Customers",
+  "queue": "Queue",
+  "more": "More",
+
+  "language": "Language",
+  "english": "English",
+  "khmer": "Khmer",
+  "chooseLanguage": "Choose app language",
+
+  "settings": "Settings",
+
+  "products": "Products",
+  "productsSubtitle": "Animal feed, vaccine, fertilizer and more",
+
+  "exchangeRate": "Exchange Rate",
+  "exchangeRateSubtitle": "NBC official USD / KHR rate",
+
+  "signOut": "Sign out",
+
+  "newSale": "New sale",
+  "payment": "Payment",
+  "save": "Save",
+  "cancel": "Cancel",
+
+  "systemTheme": "System default",
+  "lightTheme": "Light",
+  "darkTheme": "Dark",
+
+  "businessOverview": "Business overview",
+  "outstandingCustomerDebt": "Outstanding customer debt",
+  "noOutstandingDebt": "No outstanding customer debt.",
+  "acrossAllCustomers": "Across all customers",
+
+  "salesToday": "Sales today",
+  "receivedToday": "Received today",
+
+  "quickActions": "Quick actions",
+
+  "recentActivity": "Recent activity",
+
+  "latestCount": "Latest {count}",
+  "@latestCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "noActivityYet": "No activity yet",
+  "activityWillAppearHere": "Sales and payments will appear here.",
+
+  "sale": "Sale",
+
+  "couldNotLoadSales": "Could not load sales.",
+  "couldNotLoadPayments": "Could not load payments.",
+
+  "addCustomer": "Add customer",
+  "searchNameOrPhone": "Search name or phone",
+  "active": "Active",
+  "archived": "Archived",
+  "couldNotLoadCustomers": "Could not load customers",
+  "pleaseTryAgain": "Please try again.",
+  "noCustomerFound": "No customer found",
+  "noArchivedCustomers": "No archived customers",
+  "noCustomersYet": "No customers yet",
+  "tryAnotherNameOrPhone": "Try another name or phone number.",
+  "archivedCustomersAppearHere": "Archived customers will appear here.",
+  "addFirstCustomer": "Add your first MomBiz customer.",
+  "noPhoneNumber": "No phone number",
+"editCustomer": "Edit customer",
+"newCustomer": "New customer",
+"updateCustomerInformation": "Update customer information",
+"addSomeoneToMomBiz": "Add someone to MomBiz",
+"onlyNameRequired": "Only the name is required. Phone and notes can be added later.",
+"customerName": "Customer name",
+"exampleDara": "Example: Dara",
+"pleaseEnterCustomerName": "Please enter the customer name.",
+"phoneNumber": "Phone number",
+"optional": "Optional",
+"note": "Note",
+"optionalCustomerInformation": "Optional information about this customer",
+"saveChanges": "Save changes",
+"couldNotSaveCustomer": "Could not save customer. Please try again.",
+"noOutstandingBalance": "This customer has no outstanding balance.",
+"archiveCustomerQuestion": "Archive customer?",
+"archiveCustomerMessage": "{name} will be hidden from active customers.\n\nTheir sales and payments will remain safe.",
+"@archiveCustomerMessage": {
+  "placeholders": {
+    "name": {
+      "type": "String"
+    }
+  }
+},
+"archive": "Archive",
+"customerRestored": "{name} restored.",
+"@customerRestored": {
+  "placeholders": {
+    "name": {
+      "type": "String"
+    }
+  }
+},
+"couldNotLoadCustomer": "Could not load customer.",
+"customerNotFound": "Customer not found.",
+"outstandingBalance": "Outstanding balance",
+"salesMinusPayments": "Sales minus payments",
+"customerFullyPaid": "This customer is fully paid.",
+"activity": "Activity",
+"recordsCount": "{count} records",
+"@recordsCount": {
+  "placeholders": {
+    "count": {
+      "type": "int"
+    }
+  }
+},
+"customerInformation": "Customer information",
+"phone": "Phone",
+"notProvided": "Not provided",
+"noNote": "No note",
+"restoreCustomer": "Restore customer",
+"archiveCustomer": "Archive customer",
+"paymentReceived": "Payment received",
+"receivedAmount": "Received {amount}",
+"@receivedAmount": {
+  "placeholders": {
+    "amount": {
+      "type": "String"
+    }
+  }
+},
+"recordPayment": "Record payment",
+"recordMoneyReceived": "Record money received from this customer.",
+"payingWhichBalance": "Paying which balance?",
+"customerPaidIn": "Customer paid in",
+"amountReceived": "Amount received",
+"example100000": "Example: 100000",
+"example2500": "Example: 25.00",
+"paymentMethod": "Payment method",
+"paymentDate": "Payment date",
+"received": "Received",
+"appliedToDebt": "Applied to debt",
+"balanceBefore": "Balance before",
+"balanceAfter": "Balance after",
+"savePayment": "Save payment",
+"saving": "Saving...",
+"gettingNbcRate": "Getting NBC exchange rate...",
+"tryAgain": "Try again",
+"nbcOfficialRate": "NBC official rate",
+"oneUsdEqualsKhr": "1 USD = {rate} KHR",
+"@oneUsdEqualsKhr": {
+  "placeholders": {
+    "rate": {
+      "type": "int"
+    }
+  }
+},
+"effectiveDateValue": "Effective date: {date}",
+"@effectiveDateValue": {
+  "placeholders": {
+    "date": {
+      "type": "String"
+    }
+  }
+},
+"refreshRate": "Refresh rate",
+"couldNotGetNbcRateForDate": "Could not get the NBC rate for this date.",
+"pleaseEnterPaymentAmount": "Please enter a payment amount.",
+"nbcRateRequiredForConversion": "NBC exchange rate is required for this conversion.",
+"paymentAmountInvalid": "The payment amount is invalid.",
+"paymentGreaterThanBalance": "This payment is greater than the outstanding balance.",
+"paymentSavedSuccessfully": "Payment saved successfully.",
+"couldNotSavePayment": "Could not save payment. Please try again.",
+"cash": "Cash",
+"abaQr": "ABA QR",
+"acledaQr": "ACLEDA QR",
+"other": "Other",
+"customer": "Customer",
+"whoCameToBuy": "Who came to buy?",
+"buyerExample": "Optional — e.g. Dara's son",
+"saleDate": "Sale date",
+"currency": "Currency",
+"addItem": "Add item",
+"product": "Product",
+"quantity": "Quantity",
+"priceEach": "Price each",
+"lineTotal": "Line total",
+"discount": "Discount",
+"discountAmount": "Discount amount",
+"example50000": "Example: 50000",
+"example500": "Example: 5.00",
+"subtotal": "Subtotal",
+"total": "Total",
+"removeItem": "Remove item",
+"saveSaleAmount": "Save sale • {amount}",
+"@saveSaleAmount": {
+  "placeholders": {
+    "amount": {
+      "type": "String"
+    }
+  }
+},
+"couldNotLoadCustomersOrProducts": "Could not load customers or products.",
+"pleaseSelectCustomer": "Please select a customer.",
+"addAtLeastOneProduct": "Add at least one product.",
+"pleaseSelectProductEveryItem": "Please select a product for every item.",
+"quantityGreaterThanZero": "Quantity must be greater than zero.",
+"validPriceEveryItem": "Please enter a valid price for every item.",
+"discountCannotExceedSubtotal": "Discount cannot be greater than the subtotal.",
+"couldNotSaveSale": "Could not save the sale. Please try again."
+,
+"receipt": "Receipt",
+"saleReceipt": "SALE RECEIPT",
+"buyer": "Buyer",
+"date": "Date",
+"couldNotLoadReceipt": "Could not load receipt.",
+"saleNotFound": "Sale not found.",
+"amountDueForSale": "Amount due for this sale",
+"shareReceipt": "Share receipt",
+"openingShare": "Opening share...",
+"done": "Done",
+"couldNotShareReceipt": "Could not share receipt image.",
+"receiptForCustomer": "Receipt for {name}",
+"@receiptForCustomer": {
+  "placeholders": {
+    "name": {
+      "type": "String"
+    }
+  }
+},
+"addProduct": "Add product",
+"editProduct": "Edit product",
+"searchProducts": "Search products",
+"couldNotLoadProducts": "Could not load products.",
+"noArchivedProducts": "No archived products",
+"noProductsYet": "No products yet",
+"archivedProductsAppearHere": "Archived products will appear here.",
+"addProductsMomSells": "Add the products your mom sells.",
+"productName": "Product name",
+"exampleChickenFood": "Example: Chicken food",
+"category": "Category",
+"exampleFeed": "Example: Feed",
+"unit": "Unit",
+"exampleUnits": "Example: bag, bottle, kg",
+"defaultPrice": "Default price",
+"defaultPriceHelp": "This price will be suggested when creating a sale. You can still change the price for each sale.",
+"defaultPriceOptional": "Optional — leave this blank if the product has no usual price.",
+"example65000": "Example: 65000",
+"example1600": "Example: 16.00",
+"pleaseEnterProductName": "Please enter a product name.",
+"pleaseEnterCategory": "Please enter a category.",
+"pleaseEnterUnit": "Please enter a unit.",
+"pleaseEnterValidDefaultPrice": "Please enter a valid default price.",
+"couldNotUpdateProduct": "Could not update product.",
+"couldNotAddProduct": "Could not add product.",
+"chickQueue": "Chick Queue",
+"addReservation": "Add reservation",
+"waiting": "Waiting",
+"history": "History",
+"couldNotLoadChickQueue": "Could not load chick queue.",
+"noHistoryYet": "No history yet.",
+"noCustomersWaitingForChicks": "No customers waiting for chicks.",
+"batchDateValue": "Batch: {date}",
+"@batchDateValue": {
+  "placeholders": {
+    "date": {
+      "type": "String"
+    }
+  }
+},
+"currentBatchValue": "Current batch: {date}",
+"@currentBatchValue": {
+  "placeholders": {
+    "date": {
+      "type": "String"
+    }
+  }
+},
+"customerCount": "{count, plural, =1{1 customer} other{{count} customers}}",
+"@customerCount": {
+  "placeholders": {
+    "count": {
+      "type": "int"
+    }
+  }
+},
+"chickCount": "{count, plural, =1{1 chick} other{{count} chicks}}",
+"@chickCount": {
+  "placeholders": {
+    "count": {
+      "type": "int"
+    }
+  }
+},
+"cancelReservationQuestion": "Cancel reservation?",
+"nextCustomer": "Next customer",
+"moveCustomerForwardQuestion": "Move {name} forward to {date}?",
+"@moveCustomerForwardQuestion": {
+  "placeholders": {
+    "name": {
+      "type": "String"
+    },
+    "date": {
+      "type": "String"
+    }
+  }
+},
+"keepReservation": "Keep reservation",
+"cancelOnly": "Cancel only",
+"cancelAndMoveNext": "Cancel & move next",
+"reservationCancelledAndMoved": "Reservation cancelled and next customer moved forward.",
+"reservationCancelled": "Reservation cancelled.",
+"couldNotCancelReservation": "Could not cancel reservation.",
+"customerPickedUpChicksQuestion": "Customer picked up chicks?",
+"saleCreatedBeforePickup": "A sale will be created before this reservation is marked as picked up.",
+"createSale": "Create sale",
+"customerMarkedPickedUp": "{name} marked as picked up.",
+"@customerMarkedPickedUp": {
+  "placeholders": {
+    "name": {
+      "type": "String"
+    }
+  }
+},
+"saleSavedButPickupFailed": "Sale was saved, but the reservation could not be marked as picked up.",
+"editReservation": "Edit reservation",
+"pickedUpCreateSale": "Picked up / Create sale",
+"cancelReservation": "Cancel reservation",
+"pickedUp": "Picked up",
+"cancelled": "Cancelled",
+"editChickReservation": "Edit Chick Reservation",
+"newChickReservation": "New Chick Reservation",
+"numberOfChicks": "Number of chicks",
+"example100": "Example: 100",
+"reservationDate": "Reservation date",
+"scheduledBatchDate": "Scheduled batch date",
+"pleaseEnterValidChickQuantity": "Please enter a valid chick quantity.",
+"couldNotUpdateReservation": "Could not update reservation.",
+"couldNotSaveReservation": "Could not save reservation.",
+"saveReservation": "Save reservation",
+"latestOfficialNbcRate": "Latest official NBC rate",
+"notLoaded": "Not loaded",
+"rateSource": "Rate source",
+"nbcViaFrankfurter": "NBC via Frankfurter",
+"getNbcRate": "Get NBC rate",
+"refreshNbcRate": "Refresh NBC rate",
+"nbcRateUpdated": "NBC rate updated: 1 USD = {rate} KHR",
+"@nbcRateUpdated": {
+  "placeholders": {
+    "rate": {
+      "type": "String"
+    }
+  }
+},
+"couldNotUpdateNbcRate": "Could not update NBC rate.\n{error}",
+"@couldNotUpdateNbcRate": {
+  "placeholders": {
+    "error": {
+      "type": "String"
+    }
+  }
+},
+"couldNotLoadSavedExchangeRate": "Could not load the saved exchange rate.\n\n{error}",
+"@couldNotLoadSavedExchangeRate": {
+  "placeholders": {
+    "error": {
+      "type": "String"
+    }
+  }
+},
+"exchangeRateExplanation": "MomBiz keeps the latest official NBC reference rate. The next working-day rate is normally published later in the working day, so the effective date may still show the previous day before the new rate is published.",
+"theme": "Theme",
+"chooseTheme": "Choose app appearance"
+}

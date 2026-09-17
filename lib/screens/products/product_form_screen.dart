@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/product.dart';
 import '../../services/product_service.dart';
+import '../../utils/money_utils.dart';
 
 class ProductFormScreen extends StatefulWidget {
-  const ProductFormScreen({
-    super.key,
-    this.product,
-  });
+  const ProductFormScreen({super.key, this.product});
 
   final Product? product;
 
@@ -16,73 +15,138 @@ class ProductFormScreen extends StatefulWidget {
 }
 
 class _ProductFormScreenState extends State<ProductFormScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
 
-  late final TextEditingController _nameController;
-  late final TextEditingController _categoryController;
-  late final TextEditingController _unitController;
+  final _categoryController = TextEditingController();
+
+  final _unitController = TextEditingController();
+
+  final _priceController = TextEditingController();
+
+  MoneyCurrency _priceCurrency = MoneyCurrency.khr;
 
   bool _saving = false;
 
-  bool get _editing => widget.product != null;
+  bool get _isEditing => widget.product != null;
 
   @override
   void initState() {
     super.initState();
 
-    _nameController = TextEditingController(
-      text: widget.product?.name ?? '',
-    );
+    final product = widget.product;
 
-    _categoryController = TextEditingController(
-      text: widget.product?.category ?? '',
-    );
+    if (product != null) {
+      _nameController.text = product.name;
 
-    _unitController = TextEditingController(
-      text: widget.product?.unit ?? '',
-    );
+      _categoryController.text = product.category;
+
+      _unitController.text = product.unit;
+
+      _priceCurrency = product.defaultPriceCurrency;
+
+      if (product.defaultPriceMinor > 0) {
+        _priceController.text = _editablePrice(
+          product.defaultPriceMinor,
+          product.defaultPriceCurrency,
+        );
+      }
+    }
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _categoryController.dispose();
-    _unitController.dispose();
-    super.dispose();
+  String _editablePrice(int amountMinor, MoneyCurrency currency) {
+    switch (currency) {
+      case MoneyCurrency.khr:
+        return amountMinor.toString();
+
+      case MoneyCurrency.usd:
+        final dollars = amountMinor ~/ 100;
+
+        final cents = amountMinor % 100;
+
+        if (cents == 0) {
+          return dollars.toString();
+        }
+
+        return '$dollars.'
+            '${cents.toString().padLeft(2, '0')}';
+    }
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    final l10n = AppLocalizations.of(context)!;
+
+    final name = _nameController.text.trim();
+
+    final category = _categoryController.text.trim();
+
+    final unit = _unitController.text.trim();
+
+    if (name.isEmpty) {
+      _showError(l10n.pleaseEnterProductName);
+      return;
+    }
+
+    if (category.isEmpty) {
+      _showError(l10n.pleaseEnterCategory);
+      return;
+    }
+
+    if (unit.isEmpty) {
+      _showError(l10n.pleaseEnterUnit);
+      return;
+    }
+
+    var defaultPriceMinor = 0;
+
+    final priceText = _priceController.text.trim();
+
+    if (priceText.isNotEmpty) {
+      final parsed = MoneyUtils.parse(priceText, _priceCurrency);
+
+      if (parsed == null || parsed < 0) {
+        _showError(l10n.pleaseEnterValidDefaultPrice);
+        return;
+      }
+
+      defaultPriceMinor = parsed;
+    }
 
     setState(() {
       _saving = true;
     });
 
     try {
-      if (_editing) {
+      if (_isEditing) {
         await ProductService.instance.updateProduct(
           productId: widget.product!.id,
-          name: _nameController.text,
-          category: _categoryController.text,
-          unit: _unitController.text,
+          name: name,
+          category: category,
+          unit: unit,
+          defaultPriceMinor: defaultPriceMinor,
+          defaultPriceCurrency: _priceCurrency,
         );
       } else {
         await ProductService.instance.addProduct(
-          name: _nameController.text,
-          category: _categoryController.text,
-          unit: _unitController.text,
+          name: name,
+          category: category,
+          unit: unit,
+          defaultPriceMinor: defaultPriceMinor,
+          defaultPriceCurrency: _priceCurrency,
         );
       }
 
-      if (!mounted) return;
-      Navigator.pop(context);
-    } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not save product. Please try again.'),
-        ),
+      Navigator.pop(context, true);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      _showError(
+        _isEditing ? l10n.couldNotUpdateProduct : l10n.couldNotAddProduct,
       );
     } finally {
       if (mounted) {
@@ -93,156 +157,181 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
   }
 
-  Future<void> _archive() async {
-    final product = widget.product;
-    if (product == null) return;
-
-    await ProductService.instance.archiveProduct(product.id);
-
-    if (mounted) {
-      Navigator.pop(context);
-    }
+  void _showError(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _restore() async {
-    final product = widget.product;
-    if (product == null) return;
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _categoryController.dispose();
+    _unitController.dispose();
+    _priceController.dispose();
 
-    await ProductService.instance.restoreProduct(product.id);
-
-    if (mounted) {
-      Navigator.pop(context);
-    }
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _editing ? 'Edit product' : 'New product',
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
+          _isEditing ? l10n.editProduct : l10n.addProduct,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
+
       body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
-            children: [
-              Container(
-                width: 76,
-                height: 76,
-                decoration: BoxDecoration(
-                  color: colors.primaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.inventory_2_outlined,
-                  size: 34,
-                  color: colors.onPrimaryContainer,
-                ),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 130),
+          children: [
+            TextField(
+              controller: _nameController,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: l10n.productName,
+                hintText: l10n.exampleChickenFood,
+                prefixIcon: const Icon(Icons.inventory_2_outlined),
               ),
+            ),
 
-              const SizedBox(height: 20),
+            const SizedBox(height: 14),
 
-              Text(
-                _editing ? 'Update product' : 'Add a product',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
+            TextField(
+              controller: _categoryController,
+              textCapitalization: TextCapitalization.words,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: l10n.category,
+                hintText: l10n.exampleFeed,
+                prefixIcon: const Icon(Icons.category_outlined),
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            TextField(
+              controller: _unitController,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: l10n.unit,
+                hintText: l10n.exampleUnits,
+                prefixIcon: const Icon(Icons.straighten_outlined),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.defaultPrice,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-              ),
-
-              const SizedBox(height: 6),
-
-              Text(
-                'The selling price will be entered manually when creating a sale.',
-                style: TextStyle(
-                  color: colors.onSurfaceVariant,
+                  ),
                 ),
-              ),
 
-              const SizedBox(height: 28),
-
-              TextFormField(
-                controller: _nameController,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Product name',
-                  hintText: 'Example: Chick Feed 25kg',
-                  prefixIcon: Icon(Icons.inventory_2_outlined),
+                Text(
+                  l10n.optional,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a product name.';
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Center(
+              child: SegmentedButton<MoneyCurrency>(
+                segments: const [
+                  ButtonSegment(value: MoneyCurrency.khr, label: Text('KHR ៛')),
+                  ButtonSegment(
+                    value: MoneyCurrency.usd,
+                    label: Text('USD \$'),
+                  ),
+                ],
+                selected: {_priceCurrency},
+                onSelectionChanged: (selection) {
+                  final newCurrency = selection.first;
+
+                  if (newCurrency == _priceCurrency) {
+                    return;
                   }
 
-                  return null;
+                  setState(() {
+                    _priceCurrency = newCurrency;
+
+                    // Prevent a KHR value
+                    // from becoming USD,
+                    // or vice versa.
+                    _priceController.clear();
+                  });
                 },
               ),
+            ),
 
-              const SizedBox(height: 14),
+            const SizedBox(height: 12),
 
-              TextFormField(
-                controller: _categoryController,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Category',
-                  hintText: 'Example: Animal Feed',
-                  prefixIcon: Icon(Icons.category_outlined),
-                ),
+            TextField(
+              controller: _priceController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
               ),
-
-              const SizedBox(height: 14),
-
-              TextFormField(
-                controller: _unitController,
-                decoration: const InputDecoration(
-                  labelText: 'Unit',
-                  hintText: 'Bag, bottle, chick, kg...',
-                  prefixIcon: Icon(Icons.straighten_rounded),
-                ),
+              decoration: InputDecoration(
+                labelText: l10n.defaultPrice,
+                hintText: _priceCurrency == MoneyCurrency.khr
+                    ? l10n.example65000
+                    : l10n.example1600,
+                prefixIcon: const Icon(Icons.sell_outlined),
+                prefixText: _priceCurrency == MoneyCurrency.usd ? '\$ ' : null,
+                suffixText: _priceCurrency == MoneyCurrency.khr ? '៛' : null,
               ),
+            ),
 
-              const SizedBox(height: 28),
+            const SizedBox(height: 7),
 
-              FilledButton.icon(
-                onPressed: _saving ? null : _save,
-                icon: _saving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Icon(Icons.check_rounded),
-                label: Text(
-                  _editing ? 'Save changes' : 'Add product',
-                ),
-              ),
+            Text(
+              l10n.defaultPriceOptional,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
 
-              if (_editing) ...[
-                const SizedBox(height: 14),
-
-                if (widget.product!.isArchived)
-                  OutlinedButton.icon(
-                    onPressed: _restore,
-                    icon: const Icon(Icons.restore_rounded),
-                    label: const Text('Restore product'),
+      bottomSheet: SafeArea(
+        child: Container(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          child: FilledButton.icon(
+            onPressed: _saving ? null : _save,
+            icon: _saving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                else
-                  OutlinedButton.icon(
-                    onPressed: _archive,
-                    icon: const Icon(Icons.archive_outlined),
-                    label: const Text('Archive product'),
-                  ),
-              ],
-            ],
+                : const Icon(Icons.check_rounded),
+            label: Text(
+              _saving
+                  ? l10n.saving
+                  : _isEditing
+                  ? l10n.saveChanges
+                  : l10n.addProduct,
+            ),
           ),
         ),
       ),

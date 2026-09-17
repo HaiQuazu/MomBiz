@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/exchange_rate.dart';
 import '../../services/exchange_rate_service.dart';
 
@@ -40,7 +41,12 @@ class _ExchangeRateScreenState
   }
 
   Future<void> _refreshRate() async {
-    if (_refreshing) return;
+    if (_refreshing) {
+      return;
+    }
+
+    final l10n =
+        AppLocalizations.of(context)!;
 
     setState(() {
       _refreshing = true;
@@ -48,26 +54,38 @@ class _ExchangeRateScreenState
 
     try {
       final rate =
-          await ExchangeRateService.instance
+          await ExchangeRateService
+              .instance
               .fetchNbcRate();
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
           content: Text(
-            'NBC rate updated: '
-            '1 USD = ${_formatRate(rate.khrPerUsd)} KHR',
+            l10n.nbcRateUpdated(
+              _formatRate(
+                rate.khrPerUsd,
+              ),
+            ),
           ),
         ),
       );
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         SnackBar(
           content: Text(
-            'Could not update NBC rate.\n$error',
+            l10n.couldNotUpdateNbcRate(
+              error.toString(),
+            ),
           ),
         ),
       );
@@ -81,32 +99,53 @@ class _ExchangeRateScreenState
   }
 
   @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance
+        .addPostFrameCallback(
+      (_) {
+        ExchangeRateService.instance
+            .refreshIfNeeded();
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors =
         Theme.of(context).colorScheme;
 
+    final l10n =
+        AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Exchange Rate',
-          style: TextStyle(
+        title: Text(
+          l10n.exchangeRate,
+          style: const TextStyle(
             fontWeight: FontWeight.w800,
           ),
         ),
       ),
       body: StreamBuilder<ExchangeRate?>(
-        stream: ExchangeRateService.instance
+        stream: ExchangeRateService
+            .instance
             .watchCurrentRate(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(
               child: Padding(
                 padding:
-                    const EdgeInsets.all(24),
+                    const EdgeInsets.all(
+                  24,
+                ),
                 child: Text(
-                  'Could not load the saved '
-                  'exchange rate.\n\n'
-                  '${snapshot.error}',
+                  l10n
+                      .couldNotLoadSavedExchangeRate(
+                    snapshot.error
+                        .toString(),
+                  ),
                   textAlign:
                       TextAlign.center,
                 ),
@@ -135,24 +174,32 @@ class _ExchangeRateScreenState
             children: [
               Container(
                 padding:
-                    const EdgeInsets.all(24),
-                decoration: BoxDecoration(
+                    const EdgeInsets.all(
+                  24,
+                ),
+                decoration:
+                    BoxDecoration(
                   color: colors.primary,
                   borderRadius:
-                      BorderRadius.circular(28),
+                      BorderRadius.circular(
+                    28,
+                  ),
                 ),
                 child: Column(
                   children: [
                     Container(
                       width: 60,
                       height: 60,
-                      decoration: BoxDecoration(
-                        color: colors.onPrimary
+                      decoration:
+                          BoxDecoration(
+                        color: colors
+                            .onPrimary
                             .withValues(
                           alpha: 0.12,
                         ),
                         borderRadius:
-                            BorderRadius.circular(
+                            BorderRadius
+                                .circular(
                           18,
                         ),
                       ),
@@ -165,13 +212,18 @@ class _ExchangeRateScreenState
                       ),
                     ),
 
-                    const SizedBox(height: 18),
+                    const SizedBox(
+                      height: 18,
+                    ),
 
                     Text(
-                      'National Bank of Cambodia',
-                      textAlign: TextAlign.center,
+                      l10n
+                          .latestOfficialNbcRate,
+                      textAlign:
+                          TextAlign.center,
                       style: TextStyle(
-                        color: colors.onPrimary
+                        color: colors
+                            .onPrimary
                             .withValues(
                           alpha: 0.8,
                         ),
@@ -179,24 +231,30 @@ class _ExchangeRateScreenState
                       ),
                     ),
 
-                    const SizedBox(height: 18),
+                    const SizedBox(
+                      height: 18,
+                    ),
 
                     Text(
                       '1 USD',
                       style: TextStyle(
-                        color: colors.onPrimary,
+                        color:
+                            colors.onPrimary,
                         fontSize: 22,
                         fontWeight:
                             FontWeight.w700,
                       ),
                     ),
 
-                    const SizedBox(height: 5),
+                    const SizedBox(
+                      height: 5,
+                    ),
 
                     Text(
                       '=',
                       style: TextStyle(
-                        color: colors.onPrimary
+                        color: colors
+                            .onPrimary
                             .withValues(
                           alpha: 0.65,
                         ),
@@ -204,14 +262,19 @@ class _ExchangeRateScreenState
                       ),
                     ),
 
-                    const SizedBox(height: 5),
+                    const SizedBox(
+                      height: 5,
+                    ),
 
                     Text(
                       rate == null
-                          ? 'Not loaded'
+                          ? l10n.notLoaded
                           : '${_formatRate(rate.khrPerUsd)} KHR',
+                      textAlign:
+                          TextAlign.center,
                       style: TextStyle(
-                        color: colors.onPrimary,
+                        color:
+                            colors.onPrimary,
                         fontSize: 34,
                         fontWeight:
                             FontWeight.w900,
@@ -224,10 +287,17 @@ class _ExchangeRateScreenState
                       ),
 
                       Text(
-                        'Rate date: '
-                        '${_formatDate(rate.rateDate)}',
+                        l10n
+                            .effectiveDateValue(
+                          _formatDate(
+                            rate.rateDate,
+                          ),
+                        ),
+                        textAlign:
+                            TextAlign.center,
                         style: TextStyle(
-                          color: colors.onPrimary
+                          color: colors
+                              .onPrimary
                               .withValues(
                             alpha: 0.75,
                           ),
@@ -238,45 +308,59 @@ class _ExchangeRateScreenState
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(
+                height: 18,
+              ),
 
               Card(
                 child: Padding(
                   padding:
-                      const EdgeInsets.all(18),
+                      const EdgeInsets.all(
+                    18,
+                  ),
                   child: Row(
                     crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                        CrossAxisAlignment
+                            .start,
                     children: [
                       Icon(
                         Icons
                             .verified_outlined,
-                        color: colors.primary,
+                        color:
+                            colors.primary,
                       ),
+
                       const SizedBox(
                         width: 14,
                       ),
+
                       Expanded(
                         child: Column(
                           crossAxisAlignment:
                               CrossAxisAlignment
                                   .start,
                           children: [
-                            const Text(
-                              'Rate source',
-                              style: TextStyle(
+                            Text(
+                              l10n
+                                  .rateSource,
+                              style:
+                                  const TextStyle(
                                 fontWeight:
                                     FontWeight
                                         .w700,
                               ),
                             ),
+
                             const SizedBox(
                               height: 5,
                             ),
+
                             Text(
                               rate?.source ??
-                                  'NBC via Frankfurter',
-                              style: TextStyle(
+                                  l10n
+                                      .nbcViaFrankfurter,
+                              style:
+                                  TextStyle(
                                 color: colors
                                     .onSurfaceVariant,
                               ),
@@ -289,12 +373,15 @@ class _ExchangeRateScreenState
                 ),
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(
+                height: 18,
+              ),
 
               FilledButton.icon(
-                onPressed: _refreshing
-                    ? null
-                    : _refreshRate,
+                onPressed:
+                    _refreshing
+                        ? null
+                        : _refreshRate,
                 icon: _refreshing
                     ? const SizedBox(
                         width: 20,
@@ -305,27 +392,35 @@ class _ExchangeRateScreenState
                         ),
                       )
                     : const Icon(
-                        Icons.refresh_rounded,
+                        Icons
+                            .refresh_rounded,
                       ),
                 label: Text(
                   _refreshing
-                      ? 'Getting NBC rate...'
+                      ? l10n
+                          .gettingNbcRate
                       : rate == null
-                          ? 'Get NBC rate'
-                          : 'Refresh NBC rate',
+                          ? l10n
+                              .getNbcRate
+                          : l10n
+                              .refreshNbcRate,
+                  textAlign:
+                      TextAlign.center,
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(
+                height: 12,
+              ),
 
               Text(
-                'The fetched rate is saved in '
-                'MomBiz so payments can use the '
-                'same historical rate later.',
-                textAlign: TextAlign.center,
+                l10n
+                    .exchangeRateExplanation,
+                textAlign:
+                    TextAlign.center,
                 style: TextStyle(
-                  color:
-                      colors.onSurfaceVariant,
+                  color: colors
+                      .onSurfaceVariant,
                   fontSize: 13,
                 ),
               ),

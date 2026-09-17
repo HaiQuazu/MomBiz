@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/customer.dart';
 import '../../models/customer_payment.dart';
 import '../../models/sale.dart';
@@ -8,9 +9,9 @@ import '../../services/payment_service.dart';
 import '../../services/sale_service.dart';
 import '../../utils/money_utils.dart';
 import '../payments/payment_form_screen.dart';
+import '../receipts/sale_receipt_screen.dart';
 import '../sales/sale_form_screen.dart';
 import 'customer_form_screen.dart';
-import '../receipts/sale_receipt_screen.dart';
 
 class CustomerDetailsScreen extends StatelessWidget {
   const CustomerDetailsScreen({super.key, required this.customerId});
@@ -39,13 +40,12 @@ class CustomerDetailsScreen extends StatelessWidget {
     int khrBalance,
     int usdBalance,
   ) async {
-    if (khrBalance <= 0 && usdBalance <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This customer has no outstanding balance.'),
-        ),
-      );
+    final l10n = AppLocalizations.of(context)!;
 
+    if (khrBalance <= 0 && usdBalance <= 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.noOutstandingBalance)));
       return;
     }
 
@@ -62,27 +62,26 @@ class CustomerDetailsScreen extends StatelessWidget {
   }
 
   Future<void> _archive(BuildContext context, Customer customer) async {
+    final l10n = AppLocalizations.of(context)!;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Archive customer?'),
-          content: Text(
-            '${customer.name} will be hidden from active customers.\n\n'
-            'Their sales and payments will remain safe.',
-          ),
+          title: Text(l10n.archiveCustomerQuestion),
+          content: Text(l10n.archiveCustomerMessage(customer.name)),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.pop(dialogContext, false);
               },
-              child: const Text('Cancel'),
+              child: Text(l10n.cancel),
             ),
             FilledButton(
               onPressed: () {
                 Navigator.pop(dialogContext, true);
               },
-              child: const Text('Archive'),
+              child: Text(l10n.archive),
             ),
           ],
         );
@@ -107,19 +106,24 @@ class CustomerDetailsScreen extends StatelessWidget {
       return;
     }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('${customer.name} restored.')));
+    final l10n = AppLocalizations.of(context)!;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.customerRestored(customer.name))),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return StreamBuilder<Customer?>(
       stream: CustomerService.instance.watchCustomer(customerId),
       builder: (context, customerSnapshot) {
         if (customerSnapshot.hasError) {
-          return const Scaffold(
-            body: Center(child: Text('Could not load customer.')),
+          return Scaffold(
+            appBar: AppBar(),
+            body: Center(child: Text(l10n.couldNotLoadCustomer)),
           );
         }
 
@@ -132,8 +136,9 @@ class CustomerDetailsScreen extends StatelessWidget {
         final customer = customerSnapshot.data;
 
         if (customer == null) {
-          return const Scaffold(
-            body: Center(child: Text('Customer not found.')),
+          return Scaffold(
+            appBar: AppBar(),
+            body: Center(child: Text(l10n.customerNotFound)),
           );
         }
 
@@ -141,8 +146,9 @@ class CustomerDetailsScreen extends StatelessWidget {
           stream: SaleService.instance.watchSalesForCustomer(customer.id),
           builder: (context, saleSnapshot) {
             if (saleSnapshot.hasError) {
-              return const Scaffold(
-                body: Center(child: Text('Could not load sales.')),
+              return Scaffold(
+                appBar: AppBar(),
+                body: Center(child: Text(l10n.couldNotLoadSales)),
               );
             }
 
@@ -160,8 +166,9 @@ class CustomerDetailsScreen extends StatelessWidget {
               ),
               builder: (context, paymentSnapshot) {
                 if (paymentSnapshot.hasError) {
-                  return const Scaffold(
-                    body: Center(child: Text('Could not load payments.')),
+                  return Scaffold(
+                    appBar: AppBar(),
+                    body: Center(child: Text(l10n.couldNotLoadPayments)),
                   );
                 }
 
@@ -261,6 +268,8 @@ class _CustomerDetailsContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
+    final l10n = AppLocalizations.of(context)!;
+
     final activities = <_ActivityItem>[];
 
     for (final sale in sales) {
@@ -285,231 +294,268 @@ class _CustomerDetailsContent extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        title: Text(
+          l10n.customer,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
         actions: [
           IconButton(
-            tooltip: 'Edit customer',
+            tooltip: l10n.editCustomer,
             onPressed: onEdit,
             icon: const Icon(Icons.edit_outlined),
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 40),
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 36,
-                backgroundColor: colors.primaryContainer,
-                child: Text(
-                  customer.name.isEmpty ? '?' : customer.name[0].toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 27,
-                    fontWeight: FontWeight.w800,
-                    color: colors.onPrimaryContainer,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      customer.name,
-                      style: Theme.of(context).textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      customer.phone.isEmpty
-                          ? 'No phone number'
-                          : customer.phone,
-                      style: TextStyle(color: colors.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
 
-          const SizedBox(height: 28),
-
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              color: colors.primary,
-              borderRadius: BorderRadius.circular(26),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 6, 20, 36),
+          children: [
+            Row(
               children: [
-                Text(
-                  'Outstanding balance',
-                  style: TextStyle(
-                    color: colors.onPrimary.withValues(alpha: 0.78),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  MoneyUtils.format(khrBalance, MoneyCurrency.khr),
-                  style: TextStyle(
-                    color: colors.onPrimary,
-                    fontSize: 34,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                if (usdBalance > 0) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    MoneyUtils.format(usdBalance, MoneyCurrency.usd),
-                    style: TextStyle(
-                      color: colors.onPrimary,
-                      fontSize: 23,
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: colors.primaryContainer,
+                  child: Text(
+                    customer.name.trim().isEmpty
+                        ? '?'
+                        : customer.name.trim()[0].toUpperCase(),
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: colors.onPrimaryContainer,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                ],
-                const SizedBox(height: 10),
-                Text(
-                  hasDebt
-                      ? 'Sales minus payments'
-                      : 'This customer is fully paid.',
-                  style: TextStyle(
-                    color: colors.onPrimary.withValues(alpha: 0.72),
+                ),
+
+                const SizedBox(width: 14),
+
+                Expanded(
+                  child: Text(
+                    customer.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
             ),
-          ),
 
-          const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-          Row(
-            children: [
-              Expanded(
-                child: _ActionButton(
-                  icon: Icons.add_shopping_cart_rounded,
-                  label: 'New sale',
-                  onTap: onNewSale,
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: colors.primary,
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.outstandingBalance,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colors.onPrimary.withValues(alpha: 0.8),
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  if (khrBalance > 0)
+                    Text(
+                      MoneyUtils.format(khrBalance, MoneyCurrency.khr),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            color: colors.onPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+
+                  if (khrBalance > 0 && usdBalance > 0)
+                    const SizedBox(height: 3),
+
+                  if (usdBalance > 0)
+                    Text(
+                      MoneyUtils.format(usdBalance, MoneyCurrency.usd),
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: colors.onPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                  if (!hasDebt)
+                    Text(
+                      MoneyUtils.format(0, MoneyCurrency.khr),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            color: colors.onPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+
+                  const SizedBox(height: 7),
+
+                  Text(
+                    hasDebt ? l10n.salesMinusPayments : l10n.customerFullyPaid,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colors.onPrimary.withValues(alpha: 0.75),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // Larger quick actions.
+            Row(
+              children: [
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.add_shopping_cart_rounded,
+                    label: l10n.newSale,
+                    onTap: onNewSale,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _ActionButton(
-                  icon: Icons.payments_outlined,
-                  label: 'Payment',
-                  onTap: onPayment,
-                  enabled: hasDebt,
+
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: _ActionButton(
+                    icon: Icons.payments_outlined,
+                    label: l10n.payment,
+                    onTap: onPayment,
+                    enabled: hasDebt,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          const SizedBox(height: 28),
+            const SizedBox(height: 24),
 
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Activity',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.activity,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
-              ),
-              Text(
-                '${activities.length} records',
-                style: TextStyle(color: colors.onSurfaceVariant),
-              ),
-            ],
-          ),
 
-          const SizedBox(height: 12),
+                Text(
+                  l10n.recordsCount(activities.length),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
 
-          if (activities.isEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
+            const SizedBox(height: 10),
+
+            if (activities.isEmpty)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 24,
+                ),
+                decoration: BoxDecoration(
+                  color: colors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(20),
+                ),
                 child: Column(
                   children: [
                     Icon(
                       Icons.history_rounded,
-                      size: 42,
+                      size: 38,
                       color: colors.primary,
                     ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'No activity yet',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
+                    const SizedBox(height: 10),
+                    Text(
+                      l10n.noActivityYet,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
                     Text(
-                      'Sales and payments will appear here.',
+                      l10n.activityWillAppearHere,
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: colors.onSurfaceVariant),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            )
-          else
-            ...activities.map(
-              (activity) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _ActivityCard(activity: activity),
-              ),
-            ),
-
-          const SizedBox(height: 18),
-
-          Text(
-            'Customer information',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-          ),
-
-          const SizedBox(height: 12),
-
-          Card(
-            child: Column(
-              children: [
-                _InfoTile(
-                  icon: Icons.phone_outlined,
-                  title: 'Phone',
-                  value: customer.phone.isEmpty
-                      ? 'Not provided'
-                      : customer.phone,
+              )
+            else
+              ...activities.map(
+                (activity) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _ActivityCard(activity: activity),
                 ),
-                const Divider(height: 1),
-                _InfoTile(
-                  icon: Icons.notes_outlined,
-                  title: 'Note',
-                  value: customer.note.isEmpty ? 'No note' : customer.note,
-                ),
-              ],
-            ),
-          ),
+              ),
 
-          const SizedBox(height: 28),
+            const SizedBox(height: 18),
 
-          if (customer.isArchived)
-            FilledButton.icon(
-              onPressed: onRestore,
-              icon: const Icon(Icons.restore_rounded),
-              label: const Text('Restore customer'),
-            )
-          else
-            OutlinedButton.icon(
-              onPressed: onArchive,
-              icon: const Icon(Icons.archive_outlined),
-              label: const Text('Archive customer'),
+            Text(
+              l10n.customerInformation,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
-        ],
+
+            const SizedBox(height: 10),
+
+            Container(
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  _InfoTile(
+                    icon: Icons.phone_outlined,
+                    title: l10n.phone,
+                    value: customer.phone.trim().isEmpty
+                        ? l10n.notProvided
+                        : customer.phone,
+                  ),
+                  const Divider(height: 1),
+                  _InfoTile(
+                    icon: Icons.notes_outlined,
+                    title: l10n.note,
+                    value: customer.note.trim().isEmpty
+                        ? l10n.noNote
+                        : customer.note,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            if (customer.isArchived)
+              FilledButton.icon(
+                onPressed: onRestore,
+                icon: const Icon(Icons.restore_rounded),
+                label: Text(l10n.restoreCustomer),
+              )
+            else
+              OutlinedButton.icon(
+                onPressed: onArchive,
+                icon: const Icon(Icons.archive_outlined),
+                label: Text(l10n.archiveCustomer),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -544,9 +590,9 @@ class _ActivityCard extends StatelessWidget {
         '${value.year}';
   }
 
-  String _saleTitle(Sale sale) {
+  String _saleTitle(Sale sale, AppLocalizations l10n) {
     if (sale.items.isEmpty) {
-      return 'Sale';
+      return l10n.sale;
     }
 
     return sale.items.map((item) => item.productName).join(' • ');
@@ -570,14 +616,33 @@ class _ActivityCard extends StatelessWidget {
         .join(' • ');
   }
 
+  String _paymentMethodLabel(AppLocalizations l10n, PaymentMethodType method) {
+    switch (method.label) {
+      case 'Cash':
+        return l10n.cash;
+      case 'ABA QR':
+        return l10n.abaQr;
+      case 'ACLEDA QR':
+        return l10n.acledaQr;
+      default:
+        return l10n.other;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
+    final l10n = AppLocalizations.of(context)!;
+
     if (activity.isSale) {
       final sale = activity.sale!;
 
-      return Card(
+      final quantityText = _saleQuantitySummary(sale);
+
+      return Material(
+        color: colors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(18),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
@@ -589,62 +654,66 @@ class _ActivityCard extends StatelessWidget {
             );
           },
           child: Padding(
-            padding: const EdgeInsets.all(17),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             child: Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     color: colors.primaryContainer,
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(13),
                   ),
                   child: Icon(
                     Icons.receipt_long_outlined,
+                    size: 21,
                     color: colors.onPrimaryContainer,
                   ),
                 ),
 
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
 
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _saleTitle(sale),
+                        _saleTitle(sale, l10n),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
 
                       const SizedBox(height: 4),
 
+                      // Example:
+                      // 1 bottle • 16/09/2026
                       Row(
                         children: [
-                          Expanded(
-                            child: Text(
-                              _saleQuantitySummary(sale),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: colors.onSurfaceVariant,
-                                fontSize: 13,
+                          if (quantityText.isNotEmpty)
+                            Flexible(
+                              child: Text(
+                                quantityText,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: colors.onSurfaceVariant),
                               ),
                             ),
-                          ),
 
-                          const SizedBox(width: 8),
+                          if (quantityText.isNotEmpty)
+                            Text(
+                              ' • ',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: colors.onSurfaceVariant),
+                            ),
 
                           Text(
                             _formatDate(sale.saleDate),
-                            style: TextStyle(
-                              color: colors.onSurfaceVariant,
-                              fontSize: 12,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: colors.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -656,9 +725,9 @@ class _ActivityCard extends StatelessWidget {
 
                 Text(
                   '+${MoneyUtils.format(sale.totalMinor, sale.currency)}',
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: colors.error,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -670,69 +739,83 @@ class _ActivityCard extends StatelessWidget {
 
     final payment = activity.payment!;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(17),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: colors.secondaryContainer,
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Icon(
-                Icons.payments_outlined,
-                color: colors.onSecondaryContainer,
-              ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: colors.secondaryContainer,
+              borderRadius: BorderRadius.circular(13),
             ),
+            child: Icon(
+              Icons.payments_outlined,
+              size: 21,
+              color: colors.onSecondaryContainer,
+            ),
+          ),
 
-            const SizedBox(width: 14),
+          const SizedBox(width: 12),
 
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Payment received',
-                    style: TextStyle(fontWeight: FontWeight.w700),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.paymentReceived,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                ),
+
+                const SizedBox(height: 4),
+
+                // Example:
+                // Cash • 17/09/2026
+                Text(
+                  '${_paymentMethodLabel(l10n, payment.method)} • '
+                  '${_formatDate(payment.paymentDate)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
                   ),
-                  const SizedBox(height: 4),
+                ),
+
+                if (payment.paidCurrency != payment.appliedCurrency) ...[
+                  const SizedBox(height: 2),
                   Text(
-                    '${payment.method.label} • '
-                    '${_formatDate(payment.paymentDate)}',
-                    style: TextStyle(
-                      color: colors.onSurfaceVariant,
-                      fontSize: 13,
-                    ),
-                  ),
-                  if (payment.paidCurrency != payment.appliedCurrency) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      'Received '
-                      '${MoneyUtils.format(payment.paidAmountMinor, payment.paidCurrency)}',
-                      style: TextStyle(
-                        color: colors.onSurfaceVariant,
-                        fontSize: 12,
+                    l10n.receivedAmount(
+                      MoneyUtils.format(
+                        payment.paidAmountMinor,
+                        payment.paidCurrency,
                       ),
                     ),
-                  ],
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
                 ],
-              ),
+              ],
             ),
+          ),
 
-            const SizedBox(width: 10),
+          const SizedBox(width: 10),
 
-            Text(
-              '-${MoneyUtils.format(payment.appliedAmountMinor, payment.appliedCurrency)}',
-              style: TextStyle(
-                color: colors.primary,
-                fontWeight: FontWeight.w800,
-              ),
+          Text(
+            '-${MoneyUtils.format(payment.appliedAmountMinor, payment.appliedCurrency)}',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: colors.primary,
+              fontWeight: FontWeight.w700,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -759,24 +842,31 @@ class _ActionButton extends StatelessWidget {
       color: enabled
           ? colors.surfaceContainerLowest
           : colors.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: enabled ? onTap : null,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 17),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 icon,
+                size: 25,
                 color: enabled ? colors.primary : colors.onSurfaceVariant,
               ),
+
               const SizedBox(height: 7),
+
               Text(
                 label,
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: enabled ? null : colors.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -803,30 +893,32 @@ class _InfoTile extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: colors.primary),
-          const SizedBox(width: 14),
+          Icon(icon, size: 21, color: colors.primary),
+
+          const SizedBox(width: 12),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
-                    fontSize: 13,
                   ),
                 ),
-                const SizedBox(height: 4),
+
+                const SizedBox(height: 3),
+
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
                 ),
               ],
             ),

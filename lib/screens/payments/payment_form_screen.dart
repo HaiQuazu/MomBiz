@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/customer.dart';
 import '../../models/customer_payment.dart';
 import '../../models/exchange_rate.dart';
@@ -24,12 +25,12 @@ class PaymentFormScreen extends StatefulWidget {
   final int usdOutstanding;
 
   @override
-  State<PaymentFormScreen> createState() =>
-      _PaymentFormScreenState();
+  State<PaymentFormScreen> createState() => _PaymentFormScreenState();
 }
 
 class _PaymentFormScreenState extends State<PaymentFormScreen> {
   final _amountController = TextEditingController();
+
   final _noteController = TextEditingController();
 
   late MoneyCurrency _appliedCurrency;
@@ -80,11 +81,7 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
   }
 
   int get _paidAmount {
-    return MoneyUtils.parse(
-          _amountController.text,
-          _paidCurrency,
-        ) ??
-        0;
+    return MoneyUtils.parse(_amountController.text, _paidCurrency) ?? 0;
   }
 
   int get _appliedAmount {
@@ -105,21 +102,13 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
     }
 
     // Customer paid KHR toward USD debt.
-    //
-    // Example:
-    // 405,300 KHR
-    // rate = 4,053 KHR / USD
-    //
-    // becomes $100.00 = 10,000 cents.
     if (_paidCurrency == MoneyCurrency.khr &&
         _appliedCurrency == MoneyCurrency.usd) {
       return ((paidAmount * 100) + (rate ~/ 2)) ~/ rate;
     }
 
     // Customer paid USD toward KHR debt.
-    //
     // USD is stored as cents.
-    // $100.00 = 10,000 cents.
     return ((paidAmount * rate) + 50) ~/ 100;
   }
 
@@ -146,25 +135,29 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
     });
 
     try {
-      final rate = await ExchangeRateService.instance
-          .fetchNbcRateForDate(
+      final rate = await ExchangeRateService.instance.fetchNbcRateForDate(
         _paymentDate,
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       setState(() {
         _nbcRate = rate;
         _loadingRate = false;
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
+
+      final l10n = AppLocalizations.of(context)!;
 
       setState(() {
         _nbcRate = null;
         _loadingRate = false;
-        _rateError =
-            'Could not get the NBC rate for this date.';
+        _rateError = l10n.couldNotGetNbcRateForDate;
       });
     }
   }
@@ -177,7 +170,9 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
       lastDate: DateTime.now(),
     );
 
-    if (selected == null) return;
+    if (selected == null || !mounted) {
+      return;
+    }
 
     setState(() {
       _paymentDate = selected;
@@ -194,44 +189,168 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
         '${value.year}';
   }
 
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
+  String _paymentMethodLabel(AppLocalizations l10n, PaymentMethodType method) {
+    switch (method.label) {
+      case 'Cash':
+        return l10n.cash;
+
+      case 'ABA QR':
+        return l10n.abaQr;
+
+      case 'ACLEDA QR':
+        return l10n.acledaQr;
+
+      default:
+        return l10n.other;
+    }
+  }
+
+  IconData _paymentMethodIcon(PaymentMethodType method) {
+    switch (method.label) {
+      case 'Cash':
+        return Icons.payments_outlined;
+
+      case 'ABA QR':
+        return Icons.qr_code_2_rounded;
+
+      case 'ACLEDA QR':
+        return Icons.qr_code_2_rounded;
+
+      default:
+        return Icons.account_balance_wallet_outlined;
+    }
+  }
+
+  Future<void> _pickPaymentMethod() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    final selected = await showModalBottomSheet<PaymentMethodType>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final colors = Theme.of(sheetContext).colorScheme;
+
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.paymentMethod,
+                  style: Theme.of(
+                    sheetContext,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
+
+                const SizedBox(height: 14),
+
+                ...PaymentMethodType.values.map((method) {
+                  final isSelected = method == _method;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Material(
+                      color: isSelected
+                          ? colors.primaryContainer.withValues(alpha: 0.7)
+                          : colors.surfaceContainerLowest,
+                      borderRadius: BorderRadius.circular(18),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pop(sheetContext, method);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 11,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: colors.primaryContainer,
+                                  borderRadius: BorderRadius.circular(13),
+                                ),
+                                child: Icon(
+                                  _paymentMethodIcon(method),
+                                  size: 21,
+                                  color: colors.onPrimaryContainer,
+                                ),
+                              ),
+
+                              const SizedBox(width: 12),
+
+                              Expanded(
+                                child: Text(
+                                  _paymentMethodLabel(l10n, method),
+                                  style: Theme.of(sheetContext)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                              ),
+
+                              if (isSelected)
+                                Icon(
+                                  Icons.check_circle_rounded,
+                                  color: colors.primary,
+                                )
+                              else
+                                const Icon(Icons.chevron_right_rounded),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
     );
+
+    if (!mounted || selected == null) {
+      return;
+    }
+
+    setState(() {
+      _method = selected;
+    });
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _save() async {
-    if (_paidAmount <= 0) {
-      _showError(
-        'Please enter a payment amount.',
-      );
+    final l10n = AppLocalizations.of(context)!;
 
+    if (_paidAmount <= 0) {
+      _showError(l10n.pleaseEnterPaymentAmount);
       return;
     }
 
     if (_needsConversion && _nbcRate == null) {
-      _showError(
-        'NBC exchange rate is required for this conversion.',
-      );
-
+      _showError(l10n.nbcRateRequiredForConversion);
       return;
     }
 
     if (_appliedAmount <= 0) {
-      _showError(
-        'The payment amount is invalid.',
-      );
-
+      _showError(l10n.paymentAmountInvalid);
       return;
     }
 
     if (_appliedAmount > _selectedOutstanding) {
-      _showError(
-        'This payment is greater than the outstanding balance.',
-      );
-
+      _showError(l10n.paymentGreaterThanBalance);
       return;
     }
 
@@ -248,40 +367,36 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
         appliedCurrency: _appliedCurrency,
         appliedAmountMinor: _appliedAmount,
 
-        exchangeRateKhrPerUsd:
-            _needsConversion ? _nbcRate!.khrPerUsd : null,
+        exchangeRateKhrPerUsd: _needsConversion ? _nbcRate!.khrPerUsd : null,
 
-        exchangeRateSource:
-            _needsConversion ? _nbcRate!.source : null,
+        exchangeRateSource: _needsConversion ? _nbcRate!.source : null,
 
-        exchangeRateDate:
-            _needsConversion ? _nbcRate!.rateDate : null,
+        exchangeRateDate: _needsConversion ? _nbcRate!.rateDate : null,
 
-        exchangeRateFetchedAt:
-            _needsConversion ? _nbcRate!.updatedAt : null,
+        exchangeRateFetchedAt: _needsConversion ? _nbcRate!.updatedAt : null,
 
         method: _method,
+
         paymentDate: _paymentDate,
+
         note: _noteController.text,
       );
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Payment saved successfully.',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.paymentSavedSuccessfully)));
 
       Navigator.pop(context);
-    } catch (error) {
-      if (!mounted) return;
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
 
-      _showError(
-        'Could not save payment. Please try again.',
-      );
+      _showError(l10n.couldNotSavePayment);
     } finally {
       if (mounted) {
         setState(() {
@@ -295,18 +410,16 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
-    final balanceSegments =
-        <ButtonSegment<MoneyCurrency>>[];
+    final l10n = AppLocalizations.of(context)!;
+
+    final balanceSegments = <ButtonSegment<MoneyCurrency>>[];
 
     if (widget.khrOutstanding > 0) {
       balanceSegments.add(
         ButtonSegment(
           value: MoneyCurrency.khr,
           label: Text(
-            MoneyUtils.format(
-              widget.khrOutstanding,
-              MoneyCurrency.khr,
-            ),
+            MoneyUtils.format(widget.khrOutstanding, MoneyCurrency.khr),
           ),
         ),
       );
@@ -317,156 +430,209 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
         ButtonSegment(
           value: MoneyCurrency.usd,
           label: Text(
-            MoneyUtils.format(
-              widget.usdOutstanding,
-              MoneyCurrency.usd,
-            ),
+            MoneyUtils.format(widget.usdOutstanding, MoneyCurrency.usd),
           ),
         ),
       );
     }
 
+    // Safety fallback.
+    if (balanceSegments.isEmpty) {
+      balanceSegments.add(
+        ButtonSegment(
+          value: _appliedCurrency,
+          label: Text(MoneyUtils.format(0, _appliedCurrency)),
+        ),
+      );
+    }
+
+    final compactSegmentStyle = ButtonStyle(
+      visualDensity: const VisualDensity(horizontal: -2, vertical: -2),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: WidgetStateProperty.all(
+        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+    );
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Record Payment',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-          ),
+        title: Text(
+          l10n.recordPayment,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
       ),
+
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            20,
-            8,
-            20,
-            140,
-          ),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 140),
           children: [
-            Text(
-              widget.customer.name,
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(
-                    fontWeight: FontWeight.w800,
+            // -----------------------
+            // CUSTOMER
+            // -----------------------
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: colors.primaryContainer.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 22,
+                    backgroundColor: colors.primaryContainer,
+                    child: Text(
+                      widget.customer.name.trim().isEmpty
+                          ? '?'
+                          : widget.customer.name.trim()[0].toUpperCase(),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: colors.onPrimaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-            ),
 
-            const SizedBox(height: 5),
+                  const SizedBox(width: 12),
 
-            Text(
-              'Record money received from this customer.',
-              style: TextStyle(
-                color: colors.onSurfaceVariant,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.customer.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+
+                        const SizedBox(height: 2),
+
+                        Text(
+                          l10n.recordMoneyReceived,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: colors.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-
-            const SizedBox(height: 28),
-
-            const Text(
-              'Paying which balance?',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            SegmentedButton<MoneyCurrency>(
-              segments: balanceSegments,
-              selected: {
-                _appliedCurrency,
-              },
-              onSelectionChanged: (selection) {
-                setState(() {
-                  _appliedCurrency = selection.first;
-
-                  // Default to paying in the same currency.
-                  _paidCurrency = _appliedCurrency;
-
-                  _amountController.clear();
-                  _nbcRate = null;
-                  _rateError = null;
-                });
-              },
-            ),
-
-            const SizedBox(height: 26),
-
-            const Text(
-              'Customer paid in',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            SegmentedButton<MoneyCurrency>(
-              segments: const [
-                ButtonSegment(
-                  value: MoneyCurrency.khr,
-                  label: Text('KHR ៛'),
-                ),
-                ButtonSegment(
-                  value: MoneyCurrency.usd,
-                  label: Text('USD \$'),
-                ),
-              ],
-              selected: {
-                _paidCurrency,
-              },
-              onSelectionChanged: (selection) async {
-                setState(() {
-                  _paidCurrency = selection.first;
-                  _amountController.clear();
-                  _nbcRate = null;
-                  _rateError = null;
-                });
-
-                if (_needsConversion) {
-                  await _loadNbcRate();
-                }
-              },
             ),
 
             const SizedBox(height: 16),
 
+            // -----------------------
+            // COMPACT CURRENCY CARD
+            // -----------------------
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  _CompactChoiceRow(
+                    label: l10n.payingWhichBalance,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: SegmentedButton<MoneyCurrency>(
+                        style: compactSegmentStyle,
+                        segments: balanceSegments,
+                        selected: {_appliedCurrency},
+                        onSelectionChanged: (selection) {
+                          setState(() {
+                            _appliedCurrency = selection.first;
+
+                            _paidCurrency = _appliedCurrency;
+
+                            _amountController.clear();
+
+                            _nbcRate = null;
+
+                            _rateError = null;
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    child: Divider(height: 1),
+                  ),
+
+                  _CompactChoiceRow(
+                    label: l10n.customerPaidIn,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: SegmentedButton<MoneyCurrency>(
+                        style: compactSegmentStyle,
+                        segments: const [
+                          ButtonSegment(
+                            value: MoneyCurrency.khr,
+                            label: Text('KHR ៛'),
+                          ),
+                          ButtonSegment(
+                            value: MoneyCurrency.usd,
+                            label: Text('USD \$'),
+                          ),
+                        ],
+                        selected: {_paidCurrency},
+                        onSelectionChanged: (selection) async {
+                          setState(() {
+                            _paidCurrency = selection.first;
+
+                            _amountController.clear();
+
+                            _nbcRate = null;
+
+                            _rateError = null;
+                          });
+
+                          if (_needsConversion) {
+                            await _loadNbcRate();
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 14),
+
+            // -----------------------
+            // AMOUNT
+            // -----------------------
             TextField(
               controller: _amountController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(
+              keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
               onChanged: (_) {
                 setState(() {});
               },
               decoration: InputDecoration(
-                labelText: 'Amount received',
-                hintText:
-                    _paidCurrency == MoneyCurrency.khr
-                        ? 'Example: 100000'
-                        : 'Example: 25.00',
-                prefixIcon: const Icon(
-                  Icons.payments_outlined,
-                ),
-                prefixText:
-                    _paidCurrency == MoneyCurrency.usd
-                        ? '\$ '
-                        : null,
-                suffixText:
-                    _paidCurrency == MoneyCurrency.khr
-                        ? '៛'
-                        : null,
+                labelText: l10n.amountReceived,
+                hintText: _paidCurrency == MoneyCurrency.khr
+                    ? l10n.example100000
+                    : l10n.example2500,
+                prefixIcon: const Icon(Icons.payments_outlined),
+                prefixText: _paidCurrency == MoneyCurrency.usd ? '\$ ' : null,
+                suffixText: _paidCurrency == MoneyCurrency.khr ? '៛' : null,
               ),
             ),
 
             if (_needsConversion) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
               _NbcRateCard(
                 loading: _loadingRate,
@@ -477,73 +643,68 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
               ),
             ],
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
-            DropdownButtonFormField<PaymentMethodType>(
-              initialValue: _method,
-              decoration: const InputDecoration(
-                labelText: 'Payment method',
-                prefixIcon: Icon(
-                  Icons.account_balance_wallet_outlined,
+            // -----------------------
+            // PAYMENT METHOD
+            // -----------------------
+            InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: _pickPaymentMethod,
+              child: InputDecorator(
+                decoration: InputDecoration(
+                  labelText: l10n.paymentMethod,
+                  prefixIcon: Icon(_paymentMethodIcon(_method)),
+                  suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+                ),
+                child: Text(
+                  _paymentMethodLabel(l10n, _method),
+                  style: Theme.of(context).textTheme.bodyLarge,
                 ),
               ),
-              items: PaymentMethodType.values
-                  .map(
-                    (method) => DropdownMenuItem(
-                      value: method,
-                      child: Text(
-                        method.label,
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                if (value == null) return;
-
-                setState(() {
-                  _method = value;
-                });
-              },
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
+            // -----------------------
+            // DATE
+            // -----------------------
             InkWell(
               borderRadius: BorderRadius.circular(18),
               onTap: _pickDate,
               child: InputDecorator(
-                decoration: const InputDecoration(
-                  labelText: 'Payment date',
-                  prefixIcon: Icon(
-                    Icons.calendar_today_outlined,
-                  ),
+                decoration: InputDecoration(
+                  labelText: l10n.paymentDate,
+                  prefixIcon: const Icon(Icons.calendar_today_outlined),
                 ),
-                child: Text(
-                  _formatDate(_paymentDate),
-                ),
+                child: Text(_formatDate(_paymentDate)),
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
+            // -----------------------
+            // NOTE
+            // -----------------------
             TextField(
               controller: _noteController,
               minLines: 3,
               maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: 'Note',
-                hintText: 'Optional',
+              decoration: InputDecoration(
+                labelText: l10n.note,
+                hintText: l10n.optional,
                 alignLabelWithHint: true,
-                prefixIcon: Icon(
-                  Icons.notes_rounded,
-                ),
+                prefixIcon: const Icon(Icons.notes_rounded),
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
+            // -----------------------
+            // SUMMARY
+            // -----------------------
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: colors.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(22),
@@ -551,17 +712,15 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
               child: Column(
                 children: [
                   _SummaryRow(
-                    label: 'Received',
-                    value: MoneyUtils.format(
-                      _paidAmount,
-                      _paidCurrency,
-                    ),
+                    label: l10n.received,
+                    value: MoneyUtils.format(_paidAmount, _paidCurrency),
                   ),
 
                   if (_needsConversion) ...[
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
+
                     _SummaryRow(
-                      label: 'Applied to debt',
+                      label: l10n.appliedToDebt,
                       value: MoneyUtils.format(
                         _appliedAmount,
                         _appliedCurrency,
@@ -569,26 +728,21 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                     ),
                   ],
 
-                  const Divider(
-                    height: 28,
-                  ),
+                  const Divider(height: 26),
 
                   _SummaryRow(
-                    label: 'Balance before',
+                    label: l10n.balanceBefore,
                     value: MoneyUtils.format(
                       _selectedOutstanding,
                       _appliedCurrency,
                     ),
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
 
                   _SummaryRow(
-                    label: 'Balance after',
-                    value: MoneyUtils.format(
-                      _balanceAfter,
-                      _appliedCurrency,
-                    ),
+                    label: l10n.balanceAfter,
+                    value: MoneyUtils.format(_balanceAfter, _appliedCurrency),
                     strong: true,
                   ),
                 ],
@@ -601,33 +755,49 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
       bottomSheet: SafeArea(
         child: Container(
           color: Theme.of(context).scaffoldBackgroundColor,
-          padding: const EdgeInsets.fromLTRB(
-            20,
-            12,
-            20,
-            16,
-          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
           child: FilledButton.icon(
             onPressed: _saving ? null : _save,
             icon: _saving
                 ? const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(
-                    Icons.check_rounded,
-                  ),
-            label: Text(
-              _saving
-                  ? 'Saving...'
-                  : 'Save payment',
-            ),
+                : const Icon(Icons.check_rounded),
+            label: Text(_saving ? l10n.saving : l10n.savePayment),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _CompactChoiceRow extends StatelessWidget {
+  const _CompactChoiceRow({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
+        Flexible(
+          child: Align(alignment: Alignment.centerRight, child: child),
+        ),
+      ],
     );
   }
 }
@@ -646,67 +816,65 @@ class _NbcRateCard extends StatelessWidget {
   final String? error;
 
   final String Function(DateTime) formatDate;
+
   final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
 
+    final l10n = AppLocalizations.of(context)!;
+
     if (loading) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Row(
-            children: [
-              const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                ),
-              ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Text(
-                  'Getting NBC exchange rate...',
-                ),
-              ),
-            ],
-          ),
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+
+            const SizedBox(width: 12),
+
+            Expanded(child: Text(l10n.gettingNbcRate)),
+          ],
         ),
       );
     }
 
     if (error != null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: colors.error,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(error!),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: onRefresh,
-                icon: const Icon(
-                  Icons.refresh_rounded,
-                ),
-                label: const Text(
-                  'Try again',
-                ),
-              ),
-            ],
-          ),
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colors.errorContainer.withValues(alpha: 0.35),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Icon(Icons.error_outline_rounded, color: colors.error),
+
+                const SizedBox(width: 10),
+
+                Expanded(child: Text(error!)),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            OutlinedButton.icon(
+              onPressed: onRefresh,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(l10n.tryAgain),
+            ),
+          ],
         ),
       );
     }
@@ -715,65 +883,68 @@ class _NbcRateCard extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: colors.primaryContainer,
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Icon(
-                Icons.currency_exchange_rounded,
-                color: colors.onPrimaryContainer,
-              ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.primaryContainer.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: colors.primaryContainer,
+              borderRadius: BorderRadius.circular(14),
             ),
-
-            const SizedBox(width: 14),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'NBC official rate',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '1 USD = ${rate!.khrPerUsd} KHR',
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Rate date: ${formatDate(rate!.rateDate)}',
-                    style: TextStyle(
-                      color: colors.onSurfaceVariant,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
+            child: Icon(
+              Icons.currency_exchange_rounded,
+              size: 22,
+              color: colors.onPrimaryContainer,
             ),
+          ),
 
-            IconButton(
-              tooltip: 'Refresh rate',
-              onPressed: onRefresh,
-              icon: const Icon(
-                Icons.refresh_rounded,
-              ),
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.nbcOfficialRate,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                ),
+
+                const SizedBox(height: 3),
+
+                Text(
+                  l10n.oneUsdEqualsKhr(rate!.khrPerUsd),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+
+                const SizedBox(height: 2),
+
+                Text(
+                  l10n.effectiveDateValue(formatDate(rate!.rateDate)),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          IconButton(
+            tooltip: l10n.refreshRate,
+            onPressed: onRefresh,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
       ),
     );
   }
@@ -794,23 +965,30 @@ class _SummaryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontWeight:
-                strong ? FontWeight.w800 : FontWeight.w500,
+        Expanded(
+          child: Text(
+            label,
+            style:
+                (strong
+                        ? Theme.of(context).textTheme.titleMedium
+                        : Theme.of(context).textTheme.bodyMedium)
+                    ?.copyWith(
+                      fontWeight: strong ? FontWeight.w700 : FontWeight.w500,
+                    ),
           ),
         ),
 
-        const Spacer(),
+        const SizedBox(width: 12),
 
         Text(
           value,
-          style: TextStyle(
-            fontSize: strong ? 20 : 15,
-            fontWeight:
-                strong ? FontWeight.w900 : FontWeight.w700,
-          ),
+          style:
+              (strong
+                      ? Theme.of(context).textTheme.titleLarge
+                      : Theme.of(context).textTheme.bodyMedium)
+                  ?.copyWith(
+                    fontWeight: strong ? FontWeight.w700 : FontWeight.w600,
+                  ),
         ),
       ],
     );

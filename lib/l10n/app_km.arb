@@ -1,0 +1,381 @@
+{
+  "@@locale": "km",
+
+  "appName": "MomBiz",
+
+  "home": "ទំព័រដើម",
+  "customers": "អតិថិជន",
+  "queue": "ជួររង់ចាំ",
+  "more": "ផ្សេងៗ",
+
+  "language": "ភាសា",
+  "english": "English",
+  "khmer": "ខ្មែរ",
+  "chooseLanguage": "ជ្រើសរើសភាសារបស់កម្មវិធី",
+
+  "settings": "ការកំណត់",
+
+  "products": "ផលិតផល",
+  "productsSubtitle": "ចំណីសត្វ វ៉ាក់សាំង ជី និងផ្សេងៗ",
+
+  "exchangeRate": "អត្រាប្តូរប្រាក់",
+  "exchangeRateSubtitle": "អត្រា USD / KHR ផ្លូវការរបស់ NBC",
+
+  "signOut": "ចាកចេញ",
+
+  "newSale": "លក់ថ្មី",
+  "payment": "ការទូទាត់",
+  "save": "រក្សាទុក",
+  "cancel": "បោះបង់",
+
+  "systemTheme": "តាមប្រព័ន្ធ",
+  "lightTheme": "ភ្លឺ",
+  "darkTheme": "ងងឹត",
+
+  "businessOverview": "ទិដ្ឋភាពអាជីវកម្ម",
+  "outstandingCustomerDebt": "បំណុលអតិថិជននៅសល់",
+  "noOutstandingDebt": "មិនមានបំណុលអតិថិជននៅសល់ទេ។",
+  "acrossAllCustomers": "សរុបពីអតិថិជនទាំងអស់",
+
+  "salesToday": "ការលក់ថ្ងៃនេះ",
+  "receivedToday": "ទទួលប្រាក់ថ្ងៃនេះ",
+
+  "quickActions": "សកម្មភាពរហ័ស",
+
+  "recentActivity": "សកម្មភាពថ្មីៗ",
+
+  "latestCount": "ចុងក្រោយ {count}",
+  "@latestCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "noActivityYet": "មិនទាន់មានសកម្មភាព",
+  "activityWillAppearHere": "ការលក់ និងការទូទាត់នឹងបង្ហាញនៅទីនេះ។",
+
+  "sale": "ការលក់",
+
+  "couldNotLoadSales": "មិនអាចទាញយកការលក់បានទេ។",
+  "couldNotLoadPayments": "មិនអាចទាញយកការទូទាត់បានទេ។",
+
+  "addCustomer": "បន្ថែមអតិថិជន",
+  "searchNameOrPhone": "ស្វែងរកតាមឈ្មោះ ឬលេខទូរស័ព្ទ",
+  "active": "កំពុងប្រើ",
+  "archived": "បានទុកក្នុងបណ្ណសារ",
+  "couldNotLoadCustomers": "មិនអាចទាញយកអតិថិជនបានទេ",
+  "pleaseTryAgain": "សូមព្យាយាមម្តងទៀត។",
+  "noCustomerFound": "រកមិនឃើញអតិថិជន",
+  "noArchivedCustomers": "មិនមានអតិថិជនក្នុងបណ្ណសារ",
+  "noCustomersYet": "មិនទាន់មានអតិថិជន",
+  "tryAnotherNameOrPhone": "សាកល្បងឈ្មោះ ឬលេខទូរស័ព្ទផ្សេងទៀត។",
+  "archivedCustomersAppearHere": "អតិថិជនដែលបានដាក់ក្នុងបណ្ណសារនឹងបង្ហាញនៅទីនេះ។",
+  "addFirstCustomer": "បន្ថែមអតិថិជនដំបូងរបស់ MomBiz។",
+  "noPhoneNumber": "គ្មានលេខទូរស័ព្ទ",
+"editCustomer": "កែប្រែអតិថិជន",
+"newCustomer": "អតិថិជនថ្មី",
+"updateCustomerInformation": "កែប្រែព័ត៌មានអតិថិជន",
+"addSomeoneToMomBiz": "បន្ថែមអតិថិជនទៅ MomBiz",
+"onlyNameRequired": "ត្រូវការតែឈ្មោះប៉ុណ្ណោះ។ លេខទូរស័ព្ទ និងកំណត់ចំណាំអាចបន្ថែមពេលក្រោយបាន។",
+"customerName": "ឈ្មោះអតិថិជន",
+"exampleDara": "ឧទាហរណ៍៖ ដារ៉ា",
+"pleaseEnterCustomerName": "សូមបញ្ចូលឈ្មោះអតិថិជន។",
+"phoneNumber": "លេខទូរស័ព្ទ",
+"optional": "មិនចាំបាច់",
+"note": "កំណត់ចំណាំ",
+"optionalCustomerInformation": "ព័ត៌មានបន្ថែមអំពីអតិថិជននេះ",
+"saveChanges": "រក្សាទុកការកែប្រែ",
+"couldNotSaveCustomer": "មិនអាចរក្សាទុកអតិថិជនបានទេ។ សូមព្យាយាមម្តងទៀត។",
+"noOutstandingBalance": "អតិថិជននេះមិនមានបំណុលនៅសល់ទេ។",
+"archiveCustomerQuestion": "ដាក់អតិថិជនក្នុងបណ្ណសារ?",
+"archiveCustomerMessage": "{name} នឹងត្រូវលាក់ពីបញ្ជីអតិថិជនកំពុងប្រើ។\n\nប្រវត្តិការលក់ និងការទូទាត់របស់ពួកគេនឹងនៅដដែល។",
+"@archiveCustomerMessage": {
+  "placeholders": {
+    "name": {
+      "type": "String"
+    }
+  }
+},
+"archive": "ដាក់ក្នុងបណ្ណសារ",
+"customerRestored": "បានស្ដារ {name}។",
+"@customerRestored": {
+  "placeholders": {
+    "name": {
+      "type": "String"
+    }
+  }
+},
+"couldNotLoadCustomer": "មិនអាចទាញយកអតិថិជនបានទេ។",
+"customerNotFound": "រកមិនឃើញអតិថិជន។",
+"outstandingBalance": "បំណុលនៅសល់",
+"salesMinusPayments": "ការលក់ ដក ការទូទាត់",
+"customerFullyPaid": "អតិថិជននេះបានបង់ប្រាក់គ្រប់ហើយ។",
+"activity": "សកម្មភាព",
+"recordsCount": "{count} កំណត់ត្រា",
+"@recordsCount": {
+  "placeholders": {
+    "count": {
+      "type": "int"
+    }
+  }
+},
+"customerInformation": "ព័ត៌មានអតិថិជន",
+"phone": "ទូរស័ព្ទ",
+"notProvided": "មិនបានបញ្ចូល",
+"noNote": "គ្មានកំណត់ចំណាំ",
+"restoreCustomer": "ស្ដារអតិថិជន",
+"archiveCustomer": "ដាក់អតិថិជនក្នុងបណ្ណសារ",
+"paymentReceived": "បានទទួលការទូទាត់",
+"receivedAmount": "បានទទួល {amount}",
+"@receivedAmount": {
+  "placeholders": {
+    "amount": {
+      "type": "String"
+    }
+  }
+},
+"recordPayment": "កត់ត្រាការទូទាត់",
+"recordMoneyReceived": "កត់ត្រាប្រាក់ដែលបានទទួលពីអតិថិជននេះ។",
+"payingWhichBalance": "បង់បំណុលមួយណា?",
+"customerPaidIn": "អតិថិជនបានបង់ជា",
+"amountReceived": "ចំនួនប្រាក់ដែលបានទទួល",
+"example100000": "ឧទាហរណ៍៖ 100000",
+"example2500": "ឧទាហរណ៍៖ 25.00",
+"paymentMethod": "វិធីទូទាត់",
+"paymentDate": "កាលបរិច្ឆេទទូទាត់",
+"received": "បានទទួល",
+"appliedToDebt": "ដកពីបំណុល",
+"balanceBefore": "បំណុលមុនបង់",
+"balanceAfter": "បំណុលក្រោយបង់",
+"savePayment": "រក្សាទុកការទូទាត់",
+"saving": "កំពុងរក្សាទុក...",
+"gettingNbcRate": "កំពុងទាញយកអត្រាប្តូរប្រាក់ NBC...",
+"tryAgain": "ព្យាយាមម្តងទៀត",
+"nbcOfficialRate": "អត្រាផ្លូវការរបស់ NBC",
+"oneUsdEqualsKhr": "1 USD = {rate} KHR",
+"@oneUsdEqualsKhr": {
+  "placeholders": {
+    "rate": {
+      "type": "int"
+    }
+  }
+},
+"effectiveDateValue": "កាលបរិច្ឆេទមានប្រសិទ្ធភាព៖ {date}",
+"@effectiveDateValue": {
+  "placeholders": {
+    "date": {
+      "type": "String"
+    }
+  }
+},
+"refreshRate": "ធ្វើបច្ចុប្បន្នភាពអត្រា",
+"couldNotGetNbcRateForDate": "មិនអាចទាញយកអត្រា NBC សម្រាប់កាលបរិច្ឆេទនេះបានទេ។",
+"pleaseEnterPaymentAmount": "សូមបញ្ចូលចំនួនប្រាក់ទូទាត់។",
+"nbcRateRequiredForConversion": "ត្រូវការអត្រាប្តូរប្រាក់ NBC សម្រាប់ការប្តូររូបិយប័ណ្ណនេះ។",
+"paymentAmountInvalid": "ចំនួនប្រាក់ទូទាត់មិនត្រឹមត្រូវ។",
+"paymentGreaterThanBalance": "ការទូទាត់នេះច្រើនជាងបំណុលដែលនៅសល់។",
+"paymentSavedSuccessfully": "បានរក្សាទុកការទូទាត់ដោយជោគជ័យ។",
+"couldNotSavePayment": "មិនអាចរក្សាទុកការទូទាត់បានទេ។ សូមព្យាយាមម្តងទៀត។",
+"cash": "សាច់ប្រាក់",
+"abaQr": "ABA QR",
+"acledaQr": "ACLEDA QR",
+"other": "ផ្សេងៗ",
+"customer": "អតិថិជន",
+"whoCameToBuy": "អ្នកណាមកទិញ?",
+"buyerExample": "មិនចាំបាច់ — ឧ. កូនរបស់ដារ៉ា",
+"saleDate": "កាលបរិច្ឆេទលក់",
+"currency": "រូបិយប័ណ្ណ",
+"addItem": "បន្ថែមទំនិញ",
+"product": "ផលិតផល",
+"quantity": "ចំនួន",
+"priceEach": "តម្លៃក្នុងមួយ",
+"lineTotal": "សរុប",
+"discount": "បញ្ចុះតម្លៃ",
+"discountAmount": "ចំនួនបញ្ចុះតម្លៃ",
+"example50000": "ឧទាហរណ៍៖ 50000",
+"example500": "ឧទាហរណ៍៖ 5.00",
+"subtotal": "សរុបមុនបញ្ចុះតម្លៃ",
+"total": "សរុប",
+"removeItem": "លុបទំនិញ",
+"saveSaleAmount": "រក្សាទុកការលក់ • {amount}",
+"@saveSaleAmount": {
+  "placeholders": {
+    "amount": {
+      "type": "String"
+    }
+  }
+},
+"couldNotLoadCustomersOrProducts": "មិនអាចទាញយកអតិថិជន ឬផលិតផលបានទេ។",
+"pleaseSelectCustomer": "សូមជ្រើសរើសអតិថិជន។",
+"addAtLeastOneProduct": "សូមបន្ថែមផលិតផលយ៉ាងហោចណាស់មួយ។",
+"pleaseSelectProductEveryItem": "សូមជ្រើសរើសផលិតផលសម្រាប់ទំនិញនីមួយៗ។",
+"quantityGreaterThanZero": "ចំនួនត្រូវតែធំជាងសូន្យ។",
+"validPriceEveryItem": "សូមបញ្ចូលតម្លៃត្រឹមត្រូវសម្រាប់ទំនិញនីមួយៗ។",
+"discountCannotExceedSubtotal": "ការបញ្ចុះតម្លៃមិនអាចច្រើនជាងសរុបមុនបញ្ចុះតម្លៃបានទេ។",
+"couldNotSaveSale": "មិនអាចរក្សាទុកការលក់បានទេ។ សូមព្យាយាមម្តងទៀត។"
+,
+"receipt": "បង្កាន់ដៃ",
+"saleReceipt": "បង្កាន់ដៃលក់",
+"buyer": "អ្នកមកទិញ",
+"date": "កាលបរិច្ឆេទ",
+"couldNotLoadReceipt": "មិនអាចទាញយកបង្កាន់ដៃបានទេ។",
+"saleNotFound": "រកមិនឃើញការលក់។",
+"amountDueForSale": "ចំនួនត្រូវបង់សម្រាប់ការលក់នេះ",
+"shareReceipt": "ចែករំលែកបង្កាន់ដៃ",
+"openingShare": "កំពុងបើកការចែករំលែក...",
+"done": "រួចរាល់",
+"couldNotShareReceipt": "មិនអាចចែករំលែករូបភាពបង្កាន់ដៃបានទេ។",
+"receiptForCustomer": "បង្កាន់ដៃសម្រាប់ {name}",
+"@receiptForCustomer": {
+  "placeholders": {
+    "name": {
+      "type": "String"
+    }
+  }
+},
+"addProduct": "បន្ថែមផលិតផល",
+"editProduct": "កែប្រែផលិតផល",
+"searchProducts": "ស្វែងរកផលិតផល",
+"couldNotLoadProducts": "មិនអាចទាញយកផលិតផលបានទេ។",
+"noArchivedProducts": "មិនមានផលិតផលក្នុងបណ្ណសារ",
+"noProductsYet": "មិនទាន់មានផលិតផល",
+"archivedProductsAppearHere": "ផលិតផលដែលបានដាក់ក្នុងបណ្ណសារនឹងបង្ហាញនៅទីនេះ។",
+"addProductsMomSells": "បន្ថែមផលិតផលដែលម៉ាក់លក់។",
+"productName": "ឈ្មោះផលិតផល",
+"exampleChickenFood": "ឧទាហរណ៍៖ ចំណីមាន់",
+"category": "ប្រភេទ",
+"exampleFeed": "ឧទាហរណ៍៖ ចំណី",
+"unit": "ឯកតា",
+"exampleUnits": "ឧទាហរណ៍៖ បាវ ដប គីឡូ",
+"defaultPrice": "តម្លៃធម្មតា",
+"defaultPriceHelp": "តម្លៃនេះនឹងត្រូវណែនាំពេលបង្កើតការលក់។ អ្នកនៅតែអាចកែតម្លៃសម្រាប់ការលក់នីមួយៗបាន។",
+"defaultPriceOptional": "មិនចាំបាច់ — ទុកទទេបើផលិតផលនេះមិនមានតម្លៃធម្មតា។",
+"example65000": "ឧទាហរណ៍៖ 65000",
+"example1600": "ឧទាហរណ៍៖ 16.00",
+"pleaseEnterProductName": "សូមបញ្ចូលឈ្មោះផលិតផល។",
+"pleaseEnterCategory": "សូមបញ្ចូលប្រភេទផលិតផល។",
+"pleaseEnterUnit": "សូមបញ្ចូលឯកតា។",
+"pleaseEnterValidDefaultPrice": "សូមបញ្ចូលតម្លៃធម្មតាដែលត្រឹមត្រូវ។",
+"couldNotUpdateProduct": "មិនអាចកែប្រែផលិតផលបានទេ។",
+"couldNotAddProduct": "មិនអាចបន្ថែមផលិតផលបានទេ។",
+"chickQueue": "ជួររង់ចាំកូនមាន់",
+"addReservation": "បន្ថែមការកក់",
+"waiting": "កំពុងរង់ចាំ",
+"history": "ប្រវត្តិ",
+"couldNotLoadChickQueue": "មិនអាចទាញយកជួររង់ចាំកូនមាន់បានទេ។",
+"noHistoryYet": "មិនទាន់មានប្រវត្តិ។",
+"noCustomersWaitingForChicks": "មិនមានអតិថិជនកំពុងរង់ចាំកូនមាន់ទេ។",
+"batchDateValue": "ជើងកូនមាន់៖ {date}",
+"@batchDateValue": {
+  "placeholders": {
+    "date": {
+      "type": "String"
+    }
+  }
+},
+"currentBatchValue": "ជើងបច្ចុប្បន្ន៖ {date}",
+"@currentBatchValue": {
+  "placeholders": {
+    "date": {
+      "type": "String"
+    }
+  }
+},
+"customerCount": "{count} អតិថិជន",
+"@customerCount": {
+  "placeholders": {
+    "count": {
+      "type": "int"
+    }
+  }
+},
+"chickCount": "{count} កូនមាន់",
+"@chickCount": {
+  "placeholders": {
+    "count": {
+      "type": "int"
+    }
+  }
+},
+"cancelReservationQuestion": "បោះបង់ការកក់?",
+"nextCustomer": "អតិថិជនបន្ទាប់",
+"moveCustomerForwardQuestion": "ផ្លាស់ទី {name} មកកាន់ថ្ងៃទី {date}?",
+"@moveCustomerForwardQuestion": {
+  "placeholders": {
+    "name": {
+      "type": "String"
+    },
+    "date": {
+      "type": "String"
+    }
+  }
+},
+"keepReservation": "រក្សាការកក់",
+"cancelOnly": "បោះបង់តែការកក់",
+"cancelAndMoveNext": "បោះបង់ និងផ្លាស់ទីអ្នកបន្ទាប់",
+"reservationCancelledAndMoved": "បានបោះបង់ការកក់ និងផ្លាស់ទីអតិថិជនបន្ទាប់មកមុន។",
+"reservationCancelled": "បានបោះបង់ការកក់។",
+"couldNotCancelReservation": "មិនអាចបោះបង់ការកក់បានទេ។",
+"customerPickedUpChicksQuestion": "អតិថិជនបានមកយកកូនមាន់ហើយ?",
+"saleCreatedBeforePickup": "ការលក់នឹងត្រូវបង្កើតមុនពេលសម្គាល់ការកក់នេះថាបានមកយកហើយ។",
+"createSale": "បង្កើតការលក់",
+"customerMarkedPickedUp": "បានសម្គាល់ {name} ថាបានមកយកហើយ។",
+"@customerMarkedPickedUp": {
+  "placeholders": {
+    "name": {
+      "type": "String"
+    }
+  }
+},
+"saleSavedButPickupFailed": "ការលក់បានរក្សាទុក ប៉ុន្តែមិនអាចសម្គាល់ការកក់ថាបានមកយកហើយបានទេ។",
+"editReservation": "កែប្រែការកក់",
+"pickedUpCreateSale": "បានមកយក / បង្កើតការលក់",
+"cancelReservation": "បោះបង់ការកក់",
+"pickedUp": "បានមកយក",
+"cancelled": "បានបោះបង់",
+"editChickReservation": "កែប្រែការកក់កូនមាន់",
+"newChickReservation": "ការកក់កូនមាន់ថ្មី",
+"numberOfChicks": "ចំនួនកូនមាន់",
+"example100": "ឧទាហរណ៍៖ 100",
+"reservationDate": "កាលបរិច្ឆេទកក់",
+"scheduledBatchDate": "កាលបរិច្ឆេទជើងកូនមាន់",
+"pleaseEnterValidChickQuantity": "សូមបញ្ចូលចំនួនកូនមាន់ឱ្យត្រឹមត្រូវ។",
+"couldNotUpdateReservation": "មិនអាចកែប្រែការកក់បានទេ។",
+"couldNotSaveReservation": "មិនអាចរក្សាទុកការកក់បានទេ។",
+"saveReservation": "រក្សាទុកការកក់",
+"latestOfficialNbcRate": "អត្រាផ្លូវការ NBC ចុងក្រោយ",
+"notLoaded": "មិនទាន់បានទាញយក",
+"rateSource": "ប្រភពអត្រា",
+"nbcViaFrankfurter": "NBC តាមរយៈ Frankfurter",
+"getNbcRate": "ទាញយកអត្រា NBC",
+"refreshNbcRate": "ធ្វើបច្ចុប្បន្នភាពអត្រា NBC",
+"nbcRateUpdated": "បានធ្វើបច្ចុប្បន្នភាពអត្រា NBC៖ 1 USD = {rate} KHR",
+"@nbcRateUpdated": {
+  "placeholders": {
+    "rate": {
+      "type": "String"
+    }
+  }
+},
+"couldNotUpdateNbcRate": "មិនអាចធ្វើបច្ចុប្បន្នភាពអត្រា NBC បានទេ។\n{error}",
+"@couldNotUpdateNbcRate": {
+  "placeholders": {
+    "error": {
+      "type": "String"
+    }
+  }
+},
+"couldNotLoadSavedExchangeRate": "មិនអាចទាញយកអត្រាប្តូរប្រាក់ដែលបានរក្សាទុកបានទេ។\n\n{error}",
+"@couldNotLoadSavedExchangeRate": {
+  "placeholders": {
+    "error": {
+      "type": "String"
+    }
+  }
+},
+"exchangeRateExplanation": "MomBiz រក្សាទុកអត្រាយោងផ្លូវការ NBC ចុងក្រោយ។ អត្រាសម្រាប់ថ្ងៃធ្វើការបន្ទាប់ជាទូទៅត្រូវបានផ្សព្វផ្សាយនៅពេលក្រោយក្នុងថ្ងៃធ្វើការ ដូច្នេះកាលបរិច្ឆេទមានប្រសិទ្ធភាពអាចនៅតែបង្ហាញថ្ងៃមុន រហូតដល់អត្រាថ្មីត្រូវបានផ្សព្វផ្សាយ។",
+"theme": "រូបរាងកម្មវិធី",
+"chooseTheme": "ជ្រើសរើសរូបរាងកម្មវិធី"
+}
