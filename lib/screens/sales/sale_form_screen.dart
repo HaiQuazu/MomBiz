@@ -7,6 +7,7 @@ import '../../models/sale.dart';
 import '../../services/customer_service.dart';
 import '../../services/product_service.dart';
 import '../../services/sale_service.dart';
+import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
 import '../receipts/sale_receipt_screen.dart';
 
@@ -63,7 +64,6 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
       }
 
       _customers = results[0] as List<Customer>;
-
       _products = results[1] as List<Product>;
 
       if (widget.initialCustomerId != null &&
@@ -106,7 +106,6 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
     final item = _DraftItem();
 
     item.quantityController.addListener(_refreshTotals);
-
     item.priceController.addListener(_refreshTotals);
 
     _items.add(item);
@@ -176,6 +175,10 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
   }
 
   Future<void> _pickCustomer() async {
+    if (_saving) {
+      return;
+    }
+
     final l10n = AppLocalizations.of(context)!;
 
     final searchController = TextEditingController();
@@ -187,7 +190,13 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
       isScrollControlled: true,
       showDragHandle: true,
       builder: (sheetContext) {
-        final colors = Theme.of(sheetContext).colorScheme;
+        final theme = Theme.of(sheetContext);
+        final colors = theme.colorScheme;
+
+        final isKhmer =
+            Localizations.localeOf(sheetContext).languageCode == 'km';
+
+        final titleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
 
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -196,8 +205,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                 return true;
               }
 
-              // Phone remains searchable,
-              // but is not shown.
+              // Phone stays searchable but hidden.
               return customer.name.toLowerCase().contains(search) ||
                   customer.phone.toLowerCase().contains(search);
             }).toList();
@@ -217,8 +225,9 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
                         child: Text(
                           l10n.customer,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: titleWeight,
+                          ),
                         ),
                       ),
 
@@ -227,8 +236,20 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                         child: SearchBar(
                           controller: searchController,
                           hintText: l10n.searchNameOrPhone,
-                          leading: const Icon(Icons.search_rounded),
+                          leading: const Icon(AppIcons.search, size: 21),
                           elevation: const WidgetStatePropertyAll(0),
+                          backgroundColor: WidgetStatePropertyAll(
+                            colors.surfaceContainerLow,
+                          ),
+                          shape: WidgetStatePropertyAll(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          constraints: const BoxConstraints(
+                            minHeight: 52,
+                            maxHeight: 52,
+                          ),
                           onChanged: (value) {
                             setSheetState(() {
                               search = value.trim().toLowerCase();
@@ -244,7 +265,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                                     search = '';
                                   });
                                 },
-                                icon: const Icon(Icons.close_rounded),
+                                icon: const Icon(AppIcons.close, size: 20),
                               ),
                           ],
                         ),
@@ -261,27 +282,26 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
-                                        Icons.person_search_rounded,
-                                        size: 42,
+                                        AppIcons.customers,
+                                        size: 38,
                                         color: colors.primary,
                                       ),
                                       const SizedBox(height: 10),
                                       Text(
                                         l10n.noCustomerFound,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
+                                        textAlign: TextAlign.center,
+                                        style: theme.textTheme.titleMedium
                                             ?.copyWith(
-                                              fontWeight: FontWeight.w600,
+                                              fontWeight: isKhmer
+                                                  ? FontWeight.w500
+                                                  : FontWeight.w600,
                                             ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         l10n.tryAnotherNameOrPhone,
                                         textAlign: TextAlign.center,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
+                                        style: theme.textTheme.bodySmall
                                             ?.copyWith(
                                               color: colors.onSurfaceVariant,
                                             ),
@@ -291,6 +311,8 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                                 ),
                               )
                             : ListView.separated(
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
                                 padding: const EdgeInsets.fromLTRB(
                                   20,
                                   0,
@@ -314,6 +336,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                                     borderRadius: BorderRadius.circular(18),
                                     clipBehavior: Clip.antiAlias,
                                     child: InkWell(
+                                      borderRadius: BorderRadius.circular(18),
                                       onTap: () {
                                         Navigator.pop(
                                           sheetContext,
@@ -337,7 +360,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                                                     : customer.name
                                                           .trim()[0]
                                                           .toUpperCase(),
-                                                style: Theme.of(context)
+                                                style: theme
                                                     .textTheme
                                                     .titleSmall
                                                     ?.copyWith(
@@ -356,12 +379,13 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                                                 customer.name,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: Theme.of(context)
+                                                style: theme
                                                     .textTheme
                                                     .titleMedium
                                                     ?.copyWith(
-                                                      fontWeight:
-                                                          FontWeight.w600,
+                                                      fontWeight: isKhmer
+                                                          ? FontWeight.w500
+                                                          : FontWeight.w600,
                                                     ),
                                               ),
                                             ),
@@ -370,12 +394,14 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
                                             if (selected)
                                               Icon(
-                                                Icons.check_circle_rounded,
+                                                AppIcons.selected,
+                                                size: 21,
                                                 color: colors.primary,
                                               )
                                             else
                                               const Icon(
-                                                Icons.chevron_right_rounded,
+                                                AppIcons.chevronRight,
+                                                size: 20,
                                               ),
                                           ],
                                         ),
@@ -413,7 +439,6 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
       case MoneyCurrency.usd:
         final dollars = amountMinor ~/ 100;
-
         final cents = amountMinor % 100;
 
         if (cents == 0) {
@@ -454,6 +479,10 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
   }
 
   Future<void> _pickDate() async {
+    if (_saving) {
+      return;
+    }
+
     final picked = await showDatePicker(
       context: context,
       initialDate: _saleDate,
@@ -536,11 +565,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
       final saleId = await SaleService.instance.createSale(
         customerId: customer.id,
         customerName: customer.name,
-
-        // Kept for compatibility
-        // with existing Sale model.
         buyerName: '',
-
         currency: _currency,
         items: saleItems,
         subtotalMinor: _subtotal,
@@ -605,53 +630,91 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
 
     final selectedCustomer = _selectedCustomer;
 
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    final pageTitleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
+
+    final sectionWeight = isKhmer ? FontWeight.w500 : FontWeight.w600;
+
+    final largeSectionWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
+
+    final compactSegmentStyle = ButtonStyle(
+      visualDensity: const VisualDensity(horizontal: -1, vertical: -2),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: WidgetStateProperty.all(
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+      ),
+    );
+
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            l10n.newSale,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: pageTitleWeight,
+            ),
+          ),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
+      // ====================================================
+      // FIXED APP BAR
+      // ====================================================
       appBar: AppBar(
         title: Text(
           l10n.newSale,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: pageTitleWeight,
+          ),
         ),
       ),
 
+      // ====================================================
+      // SCROLLABLE BODY
+      // ====================================================
       body: SafeArea(
+        top: false,
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 140),
           children: [
+            // ------------------------------------------------
+            // CUSTOMER
+            // ------------------------------------------------
             Text(
               l10n.customer,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: sectionWeight,
+              ),
             ),
 
             const SizedBox(height: 10),
 
             InkWell(
               borderRadius: BorderRadius.circular(18),
-              onTap: _pickCustomer,
+              onTap: _saving ? null : _pickCustomer,
               child: InputDecorator(
                 decoration: InputDecoration(
                   labelText: l10n.customer,
-                  prefixIcon: const Icon(Icons.person_outline_rounded),
-                  suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+                  prefixIcon: const Icon(AppIcons.customer, size: 21),
+                  suffixIcon: const Icon(AppIcons.chevronDown, size: 20),
                 ),
                 child: Text(
                   selectedCustomer?.name ?? l10n.pleaseSelectCustomer,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  style: theme.textTheme.bodyLarge?.copyWith(
                     color: selectedCustomer == null
                         ? colors.onSurfaceVariant
                         : colors.onSurface,
@@ -662,62 +725,87 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
             const SizedBox(height: 14),
 
+            // ------------------------------------------------
+            // SALE DATE
+            // ------------------------------------------------
             InkWell(
               borderRadius: BorderRadius.circular(18),
-              onTap: _pickDate,
+              onTap: _saving ? null : _pickDate,
               child: InputDecorator(
                 decoration: InputDecoration(
                   labelText: l10n.saleDate,
-                  prefixIcon: const Icon(Icons.calendar_today_outlined),
+                  prefixIcon: const Icon(AppIcons.calendar, size: 21),
                 ),
                 child: Text(_formatDate(_saleDate)),
               ),
             ),
 
-            const SizedBox(height: 26),
+            const SizedBox(height: 24),
 
+            // ------------------------------------------------
+            // CURRENCY
+            // ------------------------------------------------
             Text(
               l10n.currency,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: sectionWeight,
+              ),
             ),
 
             const SizedBox(height: 10),
 
-            SegmentedButton<MoneyCurrency>(
-              segments: const [
-                ButtonSegment(value: MoneyCurrency.khr, label: Text('KHR ៛')),
-                ButtonSegment(value: MoneyCurrency.usd, label: Text('USD \$')),
-              ],
-              selected: {_currency},
-              onSelectionChanged: (selection) {
-                setState(() {
-                  _currency = selection.first;
+            Center(
+              child: SizedBox(
+                width: 230,
+                child: SegmentedButton<MoneyCurrency>(
+                  expandedInsets: EdgeInsets.zero,
+                  selectedIcon: const Icon(AppIcons.check, size: 18),
+                  style: compactSegmentStyle,
+                  segments: const [
+                    ButtonSegment<MoneyCurrency>(
+                      value: MoneyCurrency.khr,
+                      label: Text('KHR ៛', maxLines: 1, softWrap: false),
+                    ),
+                    ButtonSegment<MoneyCurrency>(
+                      value: MoneyCurrency.usd,
+                      label: Text('USD \$', maxLines: 1, softWrap: false),
+                    ),
+                  ],
+                  selected: {_currency},
+                  onSelectionChanged: _saving
+                      ? null
+                      : (selection) {
+                          setState(() {
+                            _currency = selection.first;
 
-                  _discountController.clear();
+                            _discountController.clear();
 
-                  _applyDefaultsForCurrentCurrency();
-                });
-              },
+                            _applyDefaultsForCurrentCurrency();
+                          });
+                        },
+                ),
+              ),
             ),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 26),
 
+            // =================================================
+            // PRODUCTS
+            // =================================================
             Row(
               children: [
                 Expanded(
                   child: Text(
                     l10n.products,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: largeSectionWeight,
                     ),
                   ),
                 ),
 
                 TextButton.icon(
-                  onPressed: _addItem,
-                  icon: const Icon(Icons.add_rounded),
+                  onPressed: _saving ? null : _addItem,
+                  icon: const Icon(AppIcons.add, size: 19),
                   label: Text(l10n.addItem),
                 ),
               ],
@@ -729,14 +817,17 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
               final item = _items[index];
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.only(bottom: 12),
                 child: _SaleItemCard(
                   item: item,
                   products: _products,
                   currency: _currency,
                   canRemove: _items.length > 1,
+                  enabled: !_saving,
                   onChanged: _refreshTotals,
-                  onRemove: () => _removeItem(index),
+                  onRemove: () {
+                    _removeItem(index);
+                  },
                   onProductChanged: (product) {
                     _applyProductDefaultPrice(item, product);
 
@@ -746,19 +837,23 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
               );
             }),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
 
+            // ------------------------------------------------
+            // DISCOUNT
+            // ------------------------------------------------
             Text(
               l10n.discount,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: sectionWeight,
+              ),
             ),
 
             const SizedBox(height: 10),
 
             TextField(
               controller: _discountController,
+              enabled: !_saving,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -767,27 +862,37 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                 hintText: _currency == MoneyCurrency.khr
                     ? l10n.example50000
                     : l10n.example500,
-                prefixIcon: const Icon(Icons.discount_outlined),
+                prefixIcon: const Icon(AppIcons.discount, size: 21),
+                prefixText: _currency == MoneyCurrency.usd ? '\$ ' : null,
+                suffixText: _currency == MoneyCurrency.khr ? '៛' : null,
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
+            // ------------------------------------------------
+            // NOTE
+            // ------------------------------------------------
             TextField(
               controller: _noteController,
+              enabled: !_saving,
               minLines: 3,
               maxLines: 5,
               decoration: InputDecoration(
                 labelText: l10n.note,
                 hintText: l10n.optional,
                 alignLabelWithHint: true,
+                prefixIcon: const Icon(AppIcons.note, size: 21),
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
 
+            // =================================================
+            // TOTAL SUMMARY
+            // =================================================
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: colors.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(22),
@@ -820,23 +925,36 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
         ),
       ),
 
+      // ====================================================
+      // FIXED SAVE AREA
+      // ====================================================
       bottomSheet: SafeArea(
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-          color: Theme.of(context).scaffoldBackgroundColor,
-          child: FilledButton.icon(
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.check_rounded),
-            label: Text(
-              _saving
-                  ? l10n.saving
-                  : l10n.saveSaleAmount(MoneyUtils.format(_total, _currency)),
+        top: false,
+        child: Material(
+          color: theme.scaffoldBackgroundColor,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(AppIcons.check, size: 20),
+                label: Text(
+                  _saving
+                      ? l10n.saving
+                      : l10n.saveSaleAmount(
+                          MoneyUtils.format(_total, _currency),
+                        ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ),
           ),
         ),
@@ -844,6 +962,10 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
     );
   }
 }
+
+// ============================================================
+// DRAFT ITEM
+// ============================================================
 
 class _DraftItem {
   Product? product;
@@ -858,12 +980,17 @@ class _DraftItem {
   }
 }
 
+// ============================================================
+// SALE ITEM CARD
+// ============================================================
+
 class _SaleItemCard extends StatefulWidget {
   const _SaleItemCard({
     required this.item,
     required this.products,
     required this.currency,
     required this.canRemove,
+    required this.enabled,
     required this.onChanged,
     required this.onRemove,
     required this.onProductChanged,
@@ -872,8 +999,8 @@ class _SaleItemCard extends StatefulWidget {
   final _DraftItem item;
   final List<Product> products;
   final MoneyCurrency currency;
-
   final bool canRemove;
+  final bool enabled;
 
   final VoidCallback onChanged;
   final VoidCallback onRemove;
@@ -886,6 +1013,10 @@ class _SaleItemCard extends StatefulWidget {
 
 class _SaleItemCardState extends State<_SaleItemCard> {
   Future<void> _pickProduct() async {
+    if (!widget.enabled) {
+      return;
+    }
+
     final l10n = AppLocalizations.of(context)!;
 
     final searchController = TextEditingController();
@@ -897,7 +1028,14 @@ class _SaleItemCardState extends State<_SaleItemCard> {
       isScrollControlled: true,
       showDragHandle: true,
       builder: (sheetContext) {
-        final colors = Theme.of(sheetContext).colorScheme;
+        final theme = Theme.of(sheetContext);
+
+        final colors = theme.colorScheme;
+
+        final isKhmer =
+            Localizations.localeOf(sheetContext).languageCode == 'km';
+
+        final titleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
 
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -926,8 +1064,9 @@ class _SaleItemCardState extends State<_SaleItemCard> {
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
                         child: Text(
                           l10n.products,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: titleWeight,
+                          ),
                         ),
                       ),
 
@@ -936,8 +1075,20 @@ class _SaleItemCardState extends State<_SaleItemCard> {
                         child: SearchBar(
                           controller: searchController,
                           hintText: l10n.searchProducts,
-                          leading: const Icon(Icons.search_rounded),
+                          leading: const Icon(AppIcons.search, size: 21),
                           elevation: const WidgetStatePropertyAll(0),
+                          backgroundColor: WidgetStatePropertyAll(
+                            colors.surfaceContainerLow,
+                          ),
+                          shape: WidgetStatePropertyAll(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          constraints: const BoxConstraints(
+                            minHeight: 52,
+                            maxHeight: 52,
+                          ),
                           onChanged: (value) {
                             setSheetState(() {
                               search = value.trim().toLowerCase();
@@ -953,7 +1104,7 @@ class _SaleItemCardState extends State<_SaleItemCard> {
                                     search = '';
                                   });
                                 },
-                                icon: const Icon(Icons.close_rounded),
+                                icon: const Icon(AppIcons.close, size: 20),
                               ),
                           ],
                         ),
@@ -970,19 +1121,19 @@ class _SaleItemCardState extends State<_SaleItemCard> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
-                                        Icons.inventory_2_outlined,
-                                        size: 42,
+                                        AppIcons.product,
+                                        size: 38,
                                         color: colors.primary,
                                       ),
                                       const SizedBox(height: 10),
                                       Text(
                                         l10n.noProductsYet,
                                         textAlign: TextAlign.center,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleMedium
+                                        style: theme.textTheme.titleMedium
                                             ?.copyWith(
-                                              fontWeight: FontWeight.w600,
+                                              fontWeight: isKhmer
+                                                  ? FontWeight.w500
+                                                  : FontWeight.w600,
                                             ),
                                       ),
                                     ],
@@ -990,6 +1141,8 @@ class _SaleItemCardState extends State<_SaleItemCard> {
                                 ),
                               )
                             : ListView.separated(
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
                                 padding: const EdgeInsets.fromLTRB(
                                   20,
                                   0,
@@ -1014,6 +1167,7 @@ class _SaleItemCardState extends State<_SaleItemCard> {
                                     borderRadius: BorderRadius.circular(18),
                                     clipBehavior: Clip.antiAlias,
                                     child: InkWell(
+                                      borderRadius: BorderRadius.circular(18),
                                       onTap: () {
                                         Navigator.pop(sheetContext, product);
                                       },
@@ -1027,13 +1181,14 @@ class _SaleItemCardState extends State<_SaleItemCard> {
                                             Container(
                                               width: 44,
                                               height: 44,
+                                              alignment: Alignment.center,
                                               decoration: BoxDecoration(
                                                 color: colors.primaryContainer,
                                                 borderRadius:
                                                     BorderRadius.circular(14),
                                               ),
                                               child: Icon(
-                                                Icons.inventory_2_outlined,
+                                                AppIcons.product,
                                                 size: 21,
                                                 color:
                                                     colors.onPrimaryContainer,
@@ -1052,12 +1207,13 @@ class _SaleItemCardState extends State<_SaleItemCard> {
                                                     maxLines: 1,
                                                     overflow:
                                                         TextOverflow.ellipsis,
-                                                    style: Theme.of(context)
+                                                    style: theme
                                                         .textTheme
                                                         .titleMedium
                                                         ?.copyWith(
-                                                          fontWeight:
-                                                              FontWeight.w600,
+                                                          fontWeight: isKhmer
+                                                              ? FontWeight.w500
+                                                              : FontWeight.w600,
                                                         ),
                                                   ),
 
@@ -1082,12 +1238,38 @@ class _SaleItemCardState extends State<_SaleItemCard> {
                                                       maxLines: 1,
                                                       overflow:
                                                           TextOverflow.ellipsis,
-                                                      style: Theme.of(context)
+                                                      style: theme
                                                           .textTheme
                                                           .bodySmall
                                                           ?.copyWith(
                                                             color: colors
                                                                 .onSurfaceVariant,
+                                                          ),
+                                                    ),
+                                                  ],
+
+                                                  if (product
+                                                          .defaultPriceMinor >
+                                                      0) ...[
+                                                    const SizedBox(height: 3),
+                                                    Text(
+                                                      MoneyUtils.format(
+                                                        product
+                                                            .defaultPriceMinor,
+                                                        product
+                                                            .defaultPriceCurrency,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: theme
+                                                          .textTheme
+                                                          .bodySmall
+                                                          ?.copyWith(
+                                                            color:
+                                                                colors.primary,
+                                                            fontWeight:
+                                                                FontWeight.w500,
                                                           ),
                                                     ),
                                                   ],
@@ -1099,12 +1281,14 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                                             if (selected)
                                               Icon(
-                                                Icons.check_circle_rounded,
+                                                AppIcons.selected,
+                                                size: 21,
                                                 color: colors.primary,
                                               )
                                             else
                                               const Icon(
-                                                Icons.chevron_right_rounded,
+                                                AppIcons.chevronRight,
+                                                size: 20,
                                               ),
                                           ],
                                         ),
@@ -1134,8 +1318,6 @@ class _SaleItemCardState extends State<_SaleItemCard> {
       widget.item.product = selectedProduct;
     });
 
-    // Keep default product
-    // price auto-fill working.
     widget.onProductChanged(selectedProduct);
 
     widget.onChanged();
@@ -1143,9 +1325,10 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
-    final colors = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     final quantity = int.tryParse(widget.item.quantityController.text) ?? 0;
 
@@ -1158,29 +1341,31 @@ class _SaleItemCardState extends State<_SaleItemCard> {
     final selectedProduct = widget.item.product;
 
     return Card(
+      clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // --------------------------------------------
+            // PRODUCT PICKER
+            // --------------------------------------------
             Row(
               children: [
                 Expanded(
                   child: InkWell(
-                    onTap: _pickProduct,
                     borderRadius: BorderRadius.circular(18),
+                    onTap: widget.enabled ? _pickProduct : null,
                     child: InputDecorator(
                       decoration: InputDecoration(
                         labelText: l10n.product,
-                        prefixIcon: const Icon(Icons.inventory_2_outlined),
-                        suffixIcon: const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                        ),
+                        prefixIcon: const Icon(AppIcons.product, size: 21),
+                        suffixIcon: const Icon(AppIcons.chevronDown, size: 20),
                       ),
                       child: Text(
                         selectedProduct?.name ?? l10n.product,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        style: theme.textTheme.bodyLarge?.copyWith(
                           color: selectedProduct == null
                               ? colors.onSurfaceVariant
                               : colors.onSurface,
@@ -1192,10 +1377,11 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                 if (widget.canRemove) ...[
                   const SizedBox(width: 4),
+
                   IconButton(
                     tooltip: l10n.removeItem,
-                    onPressed: widget.onRemove,
-                    icon: const Icon(Icons.close_rounded),
+                    onPressed: widget.enabled ? widget.onRemove : null,
+                    icon: const Icon(AppIcons.close, size: 20),
                   ),
                 ],
               ],
@@ -1203,15 +1389,18 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
             const SizedBox(height: 12),
 
+            // --------------------------------------------
+            // QUANTITY + PRICE
+            // --------------------------------------------
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: widget.item.quantityController,
+                    enabled: widget.enabled,
                     keyboardType: TextInputType.number,
                     onChanged: (_) {
                       setState(() {});
-
                       widget.onChanged();
                     },
                     decoration: InputDecoration(
@@ -1228,12 +1417,12 @@ class _SaleItemCardState extends State<_SaleItemCard> {
                 Expanded(
                   child: TextField(
                     controller: widget.item.priceController,
+                    enabled: widget.enabled,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
                     onChanged: (_) {
                       setState(() {});
-
                       widget.onChanged();
                     },
                     decoration: InputDecoration(
@@ -1252,23 +1441,34 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
             const SizedBox(height: 14),
 
+            // --------------------------------------------
+            // LINE TOTAL
+            // --------------------------------------------
             Row(
               children: [
                 Expanded(
                   child: Text(
                     l10n.lineTotal,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: colors.onSurfaceVariant,
                     ),
                   ),
                 ),
 
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
 
-                Text(
-                  MoneyUtils.format(lineTotal, widget.currency),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 160),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      MoneyUtils.format(lineTotal, widget.currency),
+                      maxLines: 1,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -1279,6 +1479,10 @@ class _SaleItemCardState extends State<_SaleItemCard> {
     );
   }
 }
+
+// ============================================================
+// TOTAL ROW
+// ============================================================
 
 class _TotalRow extends StatelessWidget {
   const _TotalRow({
@@ -1293,32 +1497,48 @@ class _TotalRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    final labelStyle = strong
+        ? theme.textTheme.titleMedium
+        : theme.textTheme.bodyMedium;
+
+    final valueStyle = strong
+        ? theme.textTheme.titleLarge
+        : theme.textTheme.bodyMedium;
+
     return Row(
       children: [
         Expanded(
           child: Text(
             label,
-            style:
-                (strong
-                        ? Theme.of(context).textTheme.titleMedium
-                        : Theme.of(context).textTheme.bodyMedium)
-                    ?.copyWith(
-                      fontWeight: strong ? FontWeight.w700 : FontWeight.w500,
-                    ),
+            style: labelStyle?.copyWith(
+              fontWeight: strong
+                  ? isKhmer
+                        ? FontWeight.w600
+                        : FontWeight.w700
+                  : FontWeight.w500,
+            ),
           ),
         ),
 
         const SizedBox(width: 10),
 
-        Text(
-          value,
-          style:
-              (strong
-                      ? Theme.of(context).textTheme.titleLarge
-                      : Theme.of(context).textTheme.bodyMedium)
-                  ?.copyWith(
-                    fontWeight: strong ? FontWeight.w700 : FontWeight.w600,
-                  ),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 180),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: valueStyle?.copyWith(
+                fontWeight: strong ? FontWeight.w700 : FontWeight.w600,
+              ),
+            ),
+          ),
         ),
       ],
     );

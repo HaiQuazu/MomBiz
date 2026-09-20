@@ -7,6 +7,7 @@ import '../../models/sale.dart';
 import '../../services/customer_service.dart';
 import '../../services/payment_service.dart';
 import '../../services/sale_service.dart';
+import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
 import 'customer_details_screen.dart';
 import 'customer_form_screen.dart';
@@ -22,7 +23,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
   final _searchController = TextEditingController();
 
   late final Stream<List<Customer>> _activeCustomersStream;
-
   late final Stream<List<Customer>> _archivedCustomersStream;
 
   String _search = '';
@@ -32,12 +32,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
   void initState() {
     super.initState();
 
-    // Keep both Active and Archived
-    // streams subscribed all the time.
-    //
-    // Switching the segmented button
-    // now only changes which cached
-    // list is visible.
+    // Keep both streams alive while switching tabs.
     _activeCustomersStream = CustomerService.instance.watchCustomers(
       archived: false,
     );
@@ -50,7 +45,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
   @override
   void dispose() {
     _searchController.dispose();
-
     super.dispose();
   }
 
@@ -85,7 +79,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _CustomerMessage(
-            icon: Icons.error_outline_rounded,
+            icon: AppIcons.error,
             title: l10n.couldNotLoadCustomers,
             message: l10n.pleaseTryAgain,
           );
@@ -97,11 +91,14 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
         final allCustomers = snapshot.data!;
 
-        // Count duplicate names.
+        // =====================================================
+        // DUPLICATE NAME COUNT
         //
-        // Phone is only displayed when
-        // duplicate names need to be
-        // distinguished.
+        // Phone stays searchable for every customer,
+        // but is only displayed when duplicate names
+        // need to be distinguished.
+        // =====================================================
+
         final nameCounts = <String, int>{};
 
         for (final customer in allCustomers) {
@@ -114,6 +111,10 @@ class _CustomersScreenState extends State<CustomersScreen> {
           nameCounts[key] = (nameCounts[key] ?? 0) + 1;
         }
 
+        // =====================================================
+        // SEARCH
+        // =====================================================
+
         final customers = allCustomers.where((customer) {
           if (_search.isEmpty) {
             return true;
@@ -125,9 +126,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
         if (customers.isEmpty) {
           return _CustomerMessage(
-            icon: archived
-                ? Icons.archive_outlined
-                : Icons.people_outline_rounded,
+            icon: archived ? AppIcons.archive : AppIcons.customers,
             title: _search.isNotEmpty
                 ? l10n.noCustomerFound
                 : archived
@@ -141,10 +140,15 @@ class _CustomersScreenState extends State<CustomersScreen> {
           );
         }
 
+        // =====================================================
+        // CUSTOMER LIST
+        // =====================================================
+
         return ListView.separated(
           key: PageStorageKey(
             archived ? 'archived_customers_list' : 'active_customers_list',
           ),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
           itemCount: customers.length,
           separatorBuilder: (context, index) => const SizedBox(height: 10),
@@ -159,7 +163,9 @@ class _CustomersScreenState extends State<CustomersScreen> {
               customer: customer,
               archived: archived,
               showPhone: duplicateName && customer.phone.trim().isNotEmpty,
-              onTap: () => _openCustomer(customer),
+              onTap: () {
+                _openCustomer(customer);
+              },
             );
           },
         );
@@ -169,27 +175,41 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    final colors = theme.colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
 
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    final headingWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
+
     return SafeArea(
       child: Scaffold(
+        // ====================================================
+        // ADD CUSTOMER
+        // ====================================================
         floatingActionButton: _showArchived
             ? null
             : FloatingActionButton.extended(
                 heroTag: 'customers_add_customer',
                 onPressed: _addCustomer,
-                icon: const Icon(Icons.person_add_alt_1_rounded),
-                label: Text(l10n.addCustomer),
+                icon: const Icon(AppIcons.customerAdd, size: 21),
+                label: Text(
+                  l10n.addCustomer,
+                  style: TextStyle(
+                    fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+                  ),
+                ),
               ),
 
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // -----------------------
-            // HEADER
-            // -----------------------
+            // =================================================
+            // FIXED HEADER
+            // =================================================
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
@@ -197,21 +217,23 @@ class _CustomersScreenState extends State<CustomersScreen> {
                   Expanded(
                     child: Text(
                       l10n.customers,
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: headingWeight,
+                      ),
                     ),
                   ),
 
                   Container(
                     width: 46,
                     height: 46,
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: colors.primaryContainer,
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: Icon(
-                      Icons.people_alt_rounded,
-                      size: 25,
+                      AppIcons.customers,
+                      size: 23,
                       color: colors.onPrimaryContainer,
                     ),
                   ),
@@ -221,16 +243,15 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
             const SizedBox(height: 18),
 
-            // -----------------------
-            // SEARCH
-            // -----------------------
+            // =================================================
+            // FIXED SEARCH
+            // =================================================
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: SearchBar(
                 controller: _searchController,
                 hintText: l10n.searchNameOrPhone,
-                leading: const Icon(Icons.search_rounded),
-                elevation: const WidgetStatePropertyAll(0),
+                leading: const Icon(AppIcons.search, size: 21),
                 onChanged: (value) {
                   setState(() {
                     _search = value.trim().toLowerCase();
@@ -246,7 +267,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                           _search = '';
                         });
                       },
-                      icon: const Icon(Icons.close_rounded),
+                      icon: const Icon(AppIcons.close, size: 20),
                     ),
                 ],
               ),
@@ -254,40 +275,82 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
             const SizedBox(height: 14),
 
-            // -----------------------
-            // ACTIVE / ARCHIVED
-            // -----------------------
+            // =================================================
+            // FIXED ACTIVE / ARCHIVED
+            // =================================================
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Center(
-                child: SegmentedButton<bool>(
-                  segments: [
-                    ButtonSegment(
-                      value: false,
-                      icon: const Icon(Icons.people_outline_rounded),
-                      label: Text(l10n.active),
+                child: SizedBox(
+                  width: 240,
+                  child: SegmentedButton<bool>(
+                    expandedInsets: EdgeInsets.zero,
+                    selectedIcon: const Icon(AppIcons.check, size: 18),
+                    style: ButtonStyle(
+                      visualDensity: const VisualDensity(
+                        horizontal: -1,
+                        vertical: -2,
+                      ),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: WidgetStateProperty.all(
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      ),
+                      textStyle: WidgetStateProperty.resolveWith<TextStyle?>((
+                        states,
+                      ) {
+                        final selected = states.contains(WidgetState.selected);
+
+                        return theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: isKhmer
+                              ? selected
+                                    ? FontWeight.w600
+                                    : FontWeight.w500
+                              : selected
+                              ? FontWeight.w700
+                              : FontWeight.w600,
+                        );
+                      }),
                     ),
-                    ButtonSegment(
-                      value: true,
-                      icon: const Icon(Icons.archive_outlined),
-                      label: Text(l10n.archived),
-                    ),
-                  ],
-                  selected: {_showArchived},
-                  onSelectionChanged: (value) {
-                    setState(() {
-                      _showArchived = value.first;
-                    });
-                  },
+                    segments: [
+                      ButtonSegment<bool>(
+                        value: false,
+                        icon: const Icon(AppIcons.customers, size: 18),
+                        label: Text(
+                          l10n.active,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.fade,
+                        ),
+                      ),
+                      ButtonSegment<bool>(
+                        value: true,
+                        icon: const Icon(AppIcons.archive, size: 18),
+                        label: Text(
+                          l10n.archived,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.fade,
+                        ),
+                      ),
+                    ],
+                    selected: {_showArchived},
+                    onSelectionChanged: (value) {
+                      setState(() {
+                        _showArchived = value.first;
+                      });
+                    },
+                  ),
                 ),
               ),
             ),
 
             const SizedBox(height: 16),
 
-            // -----------------------
-            // BOTH LISTS STAY ALIVE
-            // -----------------------
+            // =================================================
+            // ONLY CUSTOMER LIST SCROLLS
+            //
+            // Both lists remain alive.
+            // =================================================
             Expanded(
               child: IndexedStack(
                 index: _showArchived ? 1 : 0,
@@ -310,6 +373,10 @@ class _CustomersScreenState extends State<CustomersScreen> {
   }
 }
 
+// ============================================================
+// CUSTOMER CARD
+// ============================================================
+
 class _CustomerCard extends StatelessWidget {
   const _CustomerCard({
     required this.customer,
@@ -321,6 +388,7 @@ class _CustomerCard extends StatelessWidget {
   final Customer customer;
   final bool archived;
   final bool showPhone;
+
   final VoidCallback onTap;
 
   @override
@@ -362,6 +430,10 @@ class _CustomerCard extends StatelessWidget {
             var khrBalance = 0;
             var usdBalance = 0;
 
+            // =================================================
+            // SALES ADD TO DEBT
+            // =================================================
+
             for (final sale in sales) {
               if (sale.status != 'active') {
                 continue;
@@ -373,6 +445,10 @@ class _CustomerCard extends StatelessWidget {
                 usdBalance += sale.totalMinor;
               }
             }
+
+            // =================================================
+            // PAYMENTS SUBTRACT FROM DEBT
+            // =================================================
 
             for (final payment in paymentSnapshot.data!) {
               if (payment.status != 'active') {
@@ -411,6 +487,10 @@ class _CustomerCard extends StatelessWidget {
   }
 }
 
+// ============================================================
+// CUSTOMER CARD CONTENT
+// ============================================================
+
 class _CustomerCardContent extends StatelessWidget {
   const _CustomerCardContent({
     required this.customer,
@@ -424,7 +504,6 @@ class _CustomerCardContent extends StatelessWidget {
   });
 
   final Customer customer;
-
   final bool archived;
   final bool showPhone;
 
@@ -438,18 +517,26 @@ class _CustomerCardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    final colors = theme.colorScheme;
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
     return Material(
       color: colors.surfaceContainerLowest,
       borderRadius: BorderRadius.circular(22),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
+        borderRadius: BorderRadius.circular(22),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
           child: Row(
             children: [
+              // =================================================
+              // AVATAR
+              // =================================================
               CircleAvatar(
                 radius: 25,
                 backgroundColor: colors.primaryContainer,
@@ -457,7 +544,7 @@ class _CustomerCardContent extends StatelessWidget {
                   customer.name.trim().isEmpty
                       ? '?'
                       : customer.name.trim()[0].toUpperCase(),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     color: colors.onPrimaryContainer,
                     fontWeight: FontWeight.w600,
                   ),
@@ -466,6 +553,9 @@ class _CustomerCardContent extends StatelessWidget {
 
               const SizedBox(width: 13),
 
+              // =================================================
+              // NAME / DUPLICATE PHONE
+              // =================================================
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -475,8 +565,8 @@ class _CustomerCardContent extends StatelessWidget {
                       customer.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
                       ),
                     ),
 
@@ -486,7 +576,7 @@ class _CustomerCardContent extends StatelessWidget {
                       Row(
                         children: [
                           Icon(
-                            Icons.phone_outlined,
+                            AppIcons.phone,
                             size: 14,
                             color: colors.onSurfaceVariant,
                           ),
@@ -498,8 +588,9 @@ class _CustomerCardContent extends StatelessWidget {
                               customer.phone,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: colors.onSurfaceVariant),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colors.onSurfaceVariant,
+                              ),
                             ),
                           ),
                         ],
@@ -511,6 +602,9 @@ class _CustomerCardContent extends StatelessWidget {
 
               const SizedBox(width: 8),
 
+              // =================================================
+              // OUTSTANDING BALANCE
+              // =================================================
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 125),
                 child: _BalanceDisplay(
@@ -523,6 +617,9 @@ class _CustomerCardContent extends StatelessWidget {
 
               const SizedBox(width: 7),
 
+              // =================================================
+              // TRAILING
+              // =================================================
               if (archived)
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -530,10 +627,14 @@ class _CustomerCardContent extends StatelessWidget {
                     color: colors.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(11),
                   ),
-                  child: const Icon(Icons.archive_outlined, size: 19),
+                  child: Icon(
+                    AppIcons.archive,
+                    size: 18,
+                    color: colors.onSurfaceVariant,
+                  ),
                 )
               else
-                const Icon(Icons.chevron_right_rounded, size: 23),
+                const Icon(AppIcons.chevronRight, size: 20),
             ],
           ),
         ),
@@ -541,6 +642,10 @@ class _CustomerCardContent extends StatelessWidget {
     );
   }
 }
+
+// ============================================================
+// BALANCE
+// ============================================================
 
 class _BalanceDisplay extends StatelessWidget {
   const _BalanceDisplay({
@@ -558,15 +663,17 @@ class _BalanceDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    final colors = theme.colorScheme;
 
     if (error) {
       return Text(
         '—',
         textAlign: TextAlign.right,
-        style: Theme.of(
-          context,
-        ).textTheme.titleMedium?.copyWith(color: colors.onSurfaceVariant),
+        style: theme.textTheme.titleMedium?.copyWith(
+          color: colors.onSurfaceVariant,
+        ),
       );
     }
 
@@ -594,34 +701,42 @@ class _BalanceDisplay extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (hasKhr)
-          Text(
-            MoneyUtils.format(khrBalance, MoneyCurrency.khr),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.right,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: colors.error,
-              fontWeight: FontWeight.w600,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              MoneyUtils.format(khrBalance, MoneyCurrency.khr),
+              maxLines: 1,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: colors.error,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
 
         if (hasKhr && hasUsd) const SizedBox(height: 2),
 
         if (hasUsd)
-          Text(
-            MoneyUtils.format(usdBalance, MoneyCurrency.usd),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.right,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: colors.error,
-              fontWeight: FontWeight.w600,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              MoneyUtils.format(usdBalance, MoneyCurrency.usd),
+              maxLines: 1,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: colors.error,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
       ],
     );
   }
 }
+
+// ============================================================
+// EMPTY / ERROR MESSAGE
+// ============================================================
 
 class _CustomerMessage extends StatelessWidget {
   const _CustomerMessage({
@@ -636,7 +751,11 @@ class _CustomerMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+
+    final colors = theme.colorScheme;
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
     return Center(
       child: Padding(
@@ -647,11 +766,12 @@ class _CustomerMessage extends StatelessWidget {
             Container(
               width: 72,
               height: 72,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: colors.primaryContainer,
                 borderRadius: BorderRadius.circular(22),
               ),
-              child: Icon(icon, size: 34, color: colors.onPrimaryContainer),
+              child: Icon(icon, size: 32, color: colors.onPrimaryContainer),
             ),
 
             const SizedBox(height: 16),
@@ -659,9 +779,9 @@ class _CustomerMessage extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+              ),
             ),
 
             const SizedBox(height: 5),
@@ -669,9 +789,9 @@ class _CustomerMessage extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
             ),
           ],
         ),

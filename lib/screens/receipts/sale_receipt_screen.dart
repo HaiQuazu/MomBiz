@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/sale.dart';
 import '../../services/sale_service.dart';
+import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
 
 class SaleReceiptScreen extends StatelessWidget {
@@ -22,22 +23,42 @@ class SaleReceiptScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context)!;
 
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    final pageTitleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
+
     return Scaffold(
+      // ====================================================
+      // FIXED APP BAR
+      // ====================================================
       appBar: AppBar(
         title: Text(
           l10n.receipt,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: pageTitleWeight,
+          ),
         ),
       ),
+
+      // ====================================================
+      // RECEIPT DATA
+      // ====================================================
       body: FutureBuilder<Sale?>(
         future: SaleService.instance.getSale(saleId),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text(l10n.couldNotLoadReceipt));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  l10n.couldNotLoadReceipt,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -47,7 +68,12 @@ class SaleReceiptScreen extends StatelessWidget {
           final sale = snapshot.data;
 
           if (sale == null) {
-            return Center(child: Text(l10n.saleNotFound));
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(l10n.saleNotFound, textAlign: TextAlign.center),
+              ),
+            );
           }
 
           return _ReceiptContent(sale: sale, dateText: _date(sale.saleDate));
@@ -146,43 +172,54 @@ class _ReceiptContentState extends State<_ReceiptContent> {
   Widget build(BuildContext context) {
     final sale = widget.sale;
 
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
 
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    final receiptHeadingWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
+
     return SafeArea(
+      top: false,
       child: ListView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
+          // =================================================
+          // RECEIPT IMAGE AREA
+          // =================================================
           RepaintBoundary(
             key: _receiptKey,
             child: Container(
               decoration: BoxDecoration(
                 color: colors.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(22),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(22),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ------------------
-                    // RECEIPT HEADER
-                    // ------------------
+                    // -----------------------------------------
+                    // HEADER
+                    // -----------------------------------------
                     Center(
                       child: Column(
                         children: [
                           Container(
                             width: 56,
                             height: 56,
+                            alignment: Alignment.center,
                             decoration: BoxDecoration(
                               color: colors.primaryContainer,
                               borderRadius: BorderRadius.circular(18),
                             ),
                             child: Icon(
-                              Icons.storefront_rounded,
+                              AppIcons.storefront,
                               color: colors.onPrimaryContainer,
-                              size: 29,
+                              size: 27,
                             ),
                           ),
 
@@ -190,8 +227,10 @@ class _ReceiptContentState extends State<_ReceiptContent> {
 
                           Text(
                             l10n.appName,
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: receiptHeadingWeight,
+                            ),
                           ),
 
                           const SizedBox(height: 3),
@@ -199,21 +238,20 @@ class _ReceiptContentState extends State<_ReceiptContent> {
                           Text(
                             l10n.saleReceipt,
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: colors.onSurfaceVariant,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 22),
 
-                    // ------------------
-                    // SALE INFORMATION
-                    // ------------------
+                    // -----------------------------------------
+                    // CUSTOMER / DATE
+                    // -----------------------------------------
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(14),
@@ -228,8 +266,6 @@ class _ReceiptContentState extends State<_ReceiptContent> {
                             value: sale.customerName,
                           ),
 
-                          // Older sales may
-                          // still contain buyerName.
                           if (sale.buyerName.trim().isNotEmpty) ...[
                             const SizedBox(height: 8),
                             _InfoRow(label: l10n.buyer, value: sale.buyerName),
@@ -242,14 +278,14 @@ class _ReceiptContentState extends State<_ReceiptContent> {
                       ),
                     ),
 
-                    const SizedBox(height: 22),
+                    const SizedBox(height: 20),
 
-                    // ------------------
+                    // -----------------------------------------
                     // ITEMS
-                    // ------------------
+                    // -----------------------------------------
                     ...sale.items.map(
                       (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.only(bottom: 9),
                         child: _ReceiptItem(
                           item: item,
                           currency: sale.currency,
@@ -259,9 +295,9 @@ class _ReceiptContentState extends State<_ReceiptContent> {
 
                     const Divider(height: 26),
 
-                    // ------------------
-                    // TOTALS
-                    // ------------------
+                    // -----------------------------------------
+                    // SUBTOTAL
+                    // -----------------------------------------
                     _MoneyRow(
                       label: l10n.subtotal,
                       amount: sale.subtotalMinor,
@@ -270,6 +306,9 @@ class _ReceiptContentState extends State<_ReceiptContent> {
 
                     const SizedBox(height: 9),
 
+                    // -----------------------------------------
+                    // DISCOUNT
+                    // -----------------------------------------
                     _MoneyRow(
                       label: l10n.discount,
                       amount: sale.discountMinor,
@@ -279,6 +318,9 @@ class _ReceiptContentState extends State<_ReceiptContent> {
 
                     const Divider(height: 26),
 
+                    // -----------------------------------------
+                    // TOTAL
+                    // -----------------------------------------
                     _MoneyRow(
                       label: l10n.total,
                       amount: sale.totalMinor,
@@ -288,9 +330,9 @@ class _ReceiptContentState extends State<_ReceiptContent> {
 
                     const SizedBox(height: 18),
 
-                    // ------------------
+                    // -----------------------------------------
                     // AMOUNT DUE
-                    // ------------------
+                    // -----------------------------------------
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
@@ -306,24 +348,32 @@ class _ReceiptContentState extends State<_ReceiptContent> {
                         children: [
                           Text(
                             l10n.amountDueForSale,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: colors.onSurfaceVariant,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
 
                           const SizedBox(height: 4),
 
-                          Text(
-                            MoneyUtils.format(sale.totalMinor, sale.currency),
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(fontWeight: FontWeight.w700),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              MoneyUtils.format(sale.totalMinor, sale.currency),
+                              maxLines: 1,
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
 
+                    // -----------------------------------------
+                    // NOTE
+                    // -----------------------------------------
                     if (sale.note.trim().isNotEmpty) ...[
                       const SizedBox(height: 18),
 
@@ -337,21 +387,29 @@ class _ReceiptContentState extends State<_ReceiptContent> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              l10n.note,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
+                            Row(
+                              children: [
+                                Icon(
+                                  AppIcons.note,
+                                  size: 17,
+                                  color: colors.onSurfaceVariant,
+                                ),
+
+                                const SizedBox(width: 7),
+
+                                Text(
+                                  l10n.note,
+                                  style: theme.textTheme.bodySmall?.copyWith(
                                     color: colors.onSurfaceVariant,
                                     fontWeight: FontWeight.w500,
                                   ),
+                                ),
+                              ],
                             ),
 
                             const SizedBox(height: 5),
 
-                            Text(
-                              sale.note,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
+                            Text(sale.note, style: theme.textTheme.bodyMedium),
                           ],
                         ),
                       ),
@@ -364,6 +422,9 @@ class _ReceiptContentState extends State<_ReceiptContent> {
 
           const SizedBox(height: 18),
 
+          // =================================================
+          // SHARE
+          // =================================================
           OutlinedButton.icon(
             onPressed: _sharing ? null : _shareReceipt,
             icon: _sharing
@@ -372,17 +433,20 @@ class _ReceiptContentState extends State<_ReceiptContent> {
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.share_outlined),
+                : const Icon(AppIcons.share, size: 20),
             label: Text(_sharing ? l10n.openingShare : l10n.shareReceipt),
           ),
 
           const SizedBox(height: 10),
 
+          // =================================================
+          // DONE
+          // =================================================
           FilledButton.icon(
             onPressed: () {
               Navigator.pop(context);
             },
-            icon: const Icon(Icons.check_rounded),
+            icon: const Icon(AppIcons.check, size: 20),
             label: Text(l10n.done),
           ),
         ],
@@ -390,6 +454,10 @@ class _ReceiptContentState extends State<_ReceiptContent> {
     );
   }
 }
+
+// ============================================================
+// RECEIPT ITEM
+// ============================================================
 
 class _ReceiptItem extends StatelessWidget {
   const _ReceiptItem({required this.item, required this.currency});
@@ -399,9 +467,18 @@ class _ReceiptItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
     final unit = item.unit.trim();
+
+    final quantityText = unit.isEmpty
+        ? '${item.quantity} × '
+              '${MoneyUtils.format(item.unitPriceMinor, currency)}'
+        : '${item.quantity} $unit × '
+              '${MoneyUtils.format(item.unitPriceMinor, currency)}';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -414,24 +491,24 @@ class _ReceiptItem extends StatelessWidget {
         children: [
           Text(
             item.productName,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+            ),
           ),
 
           const SizedBox(height: 5),
 
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
                 child: Text(
-                  unit.isEmpty
-                      ? '${item.quantity} × '
-                            '${MoneyUtils.format(item.unitPriceMinor, currency)}'
-                      : '${item.quantity} $unit × '
-                            '${MoneyUtils.format(item.unitPriceMinor, currency)}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  quantityText,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
                 ),
@@ -439,11 +516,19 @@ class _ReceiptItem extends StatelessWidget {
 
               const SizedBox(width: 10),
 
-              Text(
-                MoneyUtils.format(item.lineTotalMinor, currency),
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 150),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    MoneyUtils.format(item.lineTotalMinor, currency),
+                    maxLines: 1,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -453,6 +538,10 @@ class _ReceiptItem extends StatelessWidget {
   }
 }
 
+// ============================================================
+// INFO ROW
+// ============================================================
+
 class _InfoRow extends StatelessWidget {
   const _InfoRow({required this.label, required this.value});
 
@@ -461,7 +550,8 @@ class _InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -470,9 +560,9 @@ class _InfoRow extends StatelessWidget {
           width: 95,
           child: Text(
             label,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colors.onSurfaceVariant,
+            ),
           ),
         ),
 
@@ -482,15 +572,19 @@ class _InfoRow extends StatelessWidget {
           child: Text(
             value,
             textAlign: TextAlign.right,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
     );
   }
 }
+
+// ============================================================
+// MONEY ROW
+// ============================================================
 
 class _MoneyRow extends StatelessWidget {
   const _MoneyRow({
@@ -510,13 +604,21 @@ class _MoneyRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
     final labelStyle = strong
-        ? Theme.of(context).textTheme.titleMedium
-        : Theme.of(context).textTheme.bodyMedium;
+        ? theme.textTheme.titleMedium
+        : theme.textTheme.bodyMedium;
 
     final valueStyle = strong
-        ? Theme.of(context).textTheme.titleLarge
-        : Theme.of(context).textTheme.bodyMedium;
+        ? theme.textTheme.titleLarge
+        : theme.textTheme.bodyMedium;
+
+    final value =
+        '${negative && amount > 0 ? '- ' : ''}'
+        '${MoneyUtils.format(amount, currency)}';
 
     return Row(
       children: [
@@ -524,18 +626,29 @@ class _MoneyRow extends StatelessWidget {
           child: Text(
             label,
             style: labelStyle?.copyWith(
-              fontWeight: strong ? FontWeight.w700 : FontWeight.w500,
+              fontWeight: strong
+                  ? isKhmer
+                        ? FontWeight.w600
+                        : FontWeight.w700
+                  : FontWeight.w500,
             ),
           ),
         ),
 
         const SizedBox(width: 10),
 
-        Text(
-          '${negative && amount > 0 ? '- ' : ''}'
-          '${MoneyUtils.format(amount, currency)}',
-          style: valueStyle?.copyWith(
-            fontWeight: strong ? FontWeight.w700 : FontWeight.w600,
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 180),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: valueStyle?.copyWith(
+                fontWeight: strong ? FontWeight.w700 : FontWeight.w600,
+              ),
+            ),
           ),
         ),
       ],

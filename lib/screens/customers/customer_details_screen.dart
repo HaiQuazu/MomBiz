@@ -7,6 +7,7 @@ import '../../models/sale.dart';
 import '../../services/customer_service.dart';
 import '../../services/payment_service.dart';
 import '../../services/sale_service.dart';
+import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
 import '../payments/payment_form_screen.dart';
 import '../receipts/sale_receipt_screen.dart';
@@ -19,10 +20,18 @@ class CustomerDetailsScreen extends StatelessWidget {
   final String customerId;
 
   Future<void> _editCustomer(BuildContext context, Customer customer) async {
-    await Navigator.push(
+    final result = await Navigator.push<String?>(
       context,
       MaterialPageRoute(builder: (_) => CustomerFormScreen(customer: customer)),
     );
+
+    if (!context.mounted) {
+      return;
+    }
+
+    if (result == 'deleted') {
+      Navigator.pop(context, true);
+    }
   }
 
   Future<void> _newSale(BuildContext context, Customer customer) async {
@@ -46,6 +55,7 @@ class CustomerDetailsScreen extends StatelessWidget {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.noOutstandingBalance)));
+
       return;
     }
 
@@ -67,8 +77,16 @@ class CustomerDetailsScreen extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
+        final isKhmer =
+            Localizations.localeOf(dialogContext).languageCode == 'km';
+
         return AlertDialog(
-          title: Text(l10n.archiveCustomerQuestion),
+          title: Text(
+            l10n.archiveCustomerQuestion,
+            style: Theme.of(dialogContext).textTheme.titleLarge?.copyWith(
+              fontWeight: isKhmer ? FontWeight.w600 : FontWeight.w700,
+            ),
+          ),
           content: Text(l10n.archiveCustomerMessage(customer.name)),
           actions: [
             TextButton(
@@ -113,6 +131,33 @@ class CustomerDetailsScreen extends StatelessWidget {
     );
   }
 
+  PreferredSizeWidget _buildAppBar(BuildContext context, {Customer? customer}) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    final headingWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
+
+    return AppBar(
+      title: Text(
+        l10n.customer,
+        style: Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(fontWeight: headingWeight),
+      ),
+      actions: [
+        if (customer != null)
+          IconButton(
+            tooltip: l10n.editCustomer,
+            onPressed: () {
+              _editCustomer(context, customer);
+            },
+            icon: const Icon(AppIcons.edit, size: 21),
+          ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -122,14 +167,15 @@ class CustomerDetailsScreen extends StatelessWidget {
       builder: (context, customerSnapshot) {
         if (customerSnapshot.hasError) {
           return Scaffold(
-            appBar: AppBar(),
+            appBar: _buildAppBar(context),
             body: Center(child: Text(l10n.couldNotLoadCustomer)),
           );
         }
 
-        if (!customerSnapshot.hasData) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+        if (customerSnapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            appBar: _buildAppBar(context),
+            body: const Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -137,7 +183,7 @@ class CustomerDetailsScreen extends StatelessWidget {
 
         if (customer == null) {
           return Scaffold(
-            appBar: AppBar(),
+            appBar: _buildAppBar(context),
             body: Center(child: Text(l10n.customerNotFound)),
           );
         }
@@ -147,14 +193,15 @@ class CustomerDetailsScreen extends StatelessWidget {
           builder: (context, saleSnapshot) {
             if (saleSnapshot.hasError) {
               return Scaffold(
-                appBar: AppBar(),
+                appBar: _buildAppBar(context, customer: customer),
                 body: Center(child: Text(l10n.couldNotLoadSales)),
               );
             }
 
             if (!saleSnapshot.hasData) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
+              return Scaffold(
+                appBar: _buildAppBar(context, customer: customer),
+                body: const Center(child: CircularProgressIndicator()),
               );
             }
 
@@ -167,14 +214,15 @@ class CustomerDetailsScreen extends StatelessWidget {
               builder: (context, paymentSnapshot) {
                 if (paymentSnapshot.hasError) {
                   return Scaffold(
-                    appBar: AppBar(),
+                    appBar: _buildAppBar(context, customer: customer),
                     body: Center(child: Text(l10n.couldNotLoadPayments)),
                   );
                 }
 
                 if (!paymentSnapshot.hasData) {
-                  return const Scaffold(
-                    body: Center(child: CircularProgressIndicator()),
+                  return Scaffold(
+                    appBar: _buildAppBar(context, customer: customer),
+                    body: const Center(child: CircularProgressIndicator()),
                   );
                 }
 
@@ -182,6 +230,10 @@ class CustomerDetailsScreen extends StatelessWidget {
 
                 var khrBalance = 0;
                 var usdBalance = 0;
+
+                // --------------------------------
+                // SALES ADD TO OUTSTANDING DEBT
+                // --------------------------------
 
                 for (final sale in sales) {
                   if (sale.status != 'active') {
@@ -194,6 +246,10 @@ class CustomerDetailsScreen extends StatelessWidget {
                     usdBalance += sale.totalMinor;
                   }
                 }
+
+                // --------------------------------
+                // PAYMENTS SUBTRACT FROM DEBT
+                // --------------------------------
 
                 for (final payment in payments) {
                   if (payment.status != 'active') {
@@ -221,12 +277,21 @@ class CustomerDetailsScreen extends StatelessWidget {
                   payments: payments,
                   khrBalance: khrBalance,
                   usdBalance: usdBalance,
-                  onEdit: () => _editCustomer(context, customer),
-                  onNewSale: () => _newSale(context, customer),
-                  onPayment: () =>
-                      _recordPayment(context, customer, khrBalance, usdBalance),
-                  onArchive: () => _archive(context, customer),
-                  onRestore: () => _restore(context, customer),
+                  onEdit: () {
+                    _editCustomer(context, customer);
+                  },
+                  onNewSale: () {
+                    _newSale(context, customer);
+                  },
+                  onPayment: () {
+                    _recordPayment(context, customer, khrBalance, usdBalance);
+                  },
+                  onArchive: () {
+                    _archive(context, customer);
+                  },
+                  onRestore: () {
+                    _restore(context, customer);
+                  },
                 );
               },
             );
@@ -252,6 +317,7 @@ class _CustomerDetailsContent extends StatelessWidget {
   });
 
   final Customer customer;
+
   final List<Sale> sales;
   final List<CustomerPayment> payments;
 
@@ -266,11 +332,20 @@ class _CustomerDetailsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
 
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    final headingWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
+
     final activities = <_ActivityItem>[];
+
+    // --------------------------------
+    // ACTIVE SALES
+    // --------------------------------
 
     for (final sale in sales) {
       if (sale.status != 'active') {
@@ -279,6 +354,10 @@ class _CustomerDetailsContent extends StatelessWidget {
 
       activities.add(_ActivityItem.sale(sale));
     }
+
+    // --------------------------------
+    // ACTIVE PAYMENTS
+    // --------------------------------
 
     for (final payment in payments) {
       if (payment.status != 'active') {
@@ -293,27 +372,36 @@ class _CustomerDetailsContent extends StatelessWidget {
     final hasDebt = khrBalance > 0 || usdBalance > 0;
 
     return Scaffold(
+      // ====================================================
+      // FIXED APP BAR
+      // ====================================================
       appBar: AppBar(
         title: Text(
           l10n.customer,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: headingWeight,
+          ),
         ),
         actions: [
           IconButton(
             tooltip: l10n.editCustomer,
             onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined),
+            icon: const Icon(AppIcons.edit, size: 21),
           ),
         ],
       ),
 
+      // ====================================================
+      // ONLY BODY SCROLLS
+      // ====================================================
       body: SafeArea(
         top: false,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 6, 20, 36),
           children: [
+            // =================================================
+            // CUSTOMER
+            // =================================================
             Row(
               children: [
                 CircleAvatar(
@@ -323,7 +411,7 @@ class _CustomerDetailsContent extends StatelessWidget {
                     customer.name.trim().isEmpty
                         ? '?'
                         : customer.name.trim()[0].toUpperCase(),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    style: theme.textTheme.titleLarge?.copyWith(
                       color: colors.onPrimaryContainer,
                       fontWeight: FontWeight.w700,
                     ),
@@ -337,8 +425,8 @@ class _CustomerDetailsContent extends StatelessWidget {
                     customer.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: headingWeight,
                     ),
                   ),
                 ),
@@ -347,7 +435,11 @@ class _CustomerDetailsContent extends StatelessWidget {
 
             const SizedBox(height: 20),
 
+            // =================================================
+            // OUTSTANDING BALANCE
+            // =================================================
             Container(
+              width: double.infinity,
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: colors.primary,
@@ -358,50 +450,60 @@ class _CustomerDetailsContent extends StatelessWidget {
                 children: [
                   Text(
                     l10n.outstandingBalance,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colors.onPrimary.withValues(alpha: 0.8),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colors.onPrimary.withValues(alpha: 0.80),
                     ),
                   ),
 
                   const SizedBox(height: 8),
 
                   if (khrBalance > 0)
-                    Text(
-                      MoneyUtils.format(khrBalance, MoneyCurrency.khr),
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(
-                            color: colors.onPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        MoneyUtils.format(khrBalance, MoneyCurrency.khr),
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          color: colors.onPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
 
                   if (khrBalance > 0 && usdBalance > 0)
                     const SizedBox(height: 3),
 
                   if (usdBalance > 0)
-                    Text(
-                      MoneyUtils.format(usdBalance, MoneyCurrency.usd),
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: colors.onPrimary,
-                        fontWeight: FontWeight.w700,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        MoneyUtils.format(usdBalance, MoneyCurrency.usd),
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: colors.onPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
 
                   if (!hasDebt)
-                    Text(
-                      MoneyUtils.format(0, MoneyCurrency.khr),
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(
-                            color: colors.onPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        MoneyUtils.format(0, MoneyCurrency.khr),
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          color: colors.onPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
 
                   const SizedBox(height: 7),
 
                   Text(
                     hasDebt ? l10n.salesMinusPayments : l10n.customerFullyPaid,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: colors.onPrimary.withValues(alpha: 0.75),
                     ),
                   ),
@@ -411,12 +513,14 @@ class _CustomerDetailsContent extends StatelessWidget {
 
             const SizedBox(height: 14),
 
-            // Larger quick actions.
+            // =================================================
+            // QUICK ACTIONS
+            // =================================================
             Row(
               children: [
                 Expanded(
                   child: _ActionButton(
-                    icon: Icons.add_shopping_cart_rounded,
+                    icon: AppIcons.sale,
                     label: l10n.newSale,
                     onTap: onNewSale,
                   ),
@@ -426,7 +530,7 @@ class _CustomerDetailsContent extends StatelessWidget {
 
                 Expanded(
                   child: _ActionButton(
-                    icon: Icons.payments_outlined,
+                    icon: AppIcons.payment,
                     label: l10n.payment,
                     onTap: onPayment,
                     enabled: hasDebt,
@@ -437,20 +541,25 @@ class _CustomerDetailsContent extends StatelessWidget {
 
             const SizedBox(height: 24),
 
+            // =================================================
+            // ACTIVITY
+            // =================================================
             Row(
               children: [
                 Expanded(
                   child: Text(
                     l10n.activity,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: headingWeight,
                     ),
                   ),
                 ),
 
+                const SizedBox(width: 12),
+
                 Text(
                   l10n.recordsCount(activities.length),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
                 ),
@@ -471,23 +580,23 @@ class _CustomerDetailsContent extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.history_rounded,
-                      size: 38,
-                      color: colors.primary,
-                    ),
+                    Icon(AppIcons.history, size: 34, color: colors.primary),
+
                     const SizedBox(height: 10),
+
                     Text(
                       l10n.noActivityYet,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
                       ),
                     ),
+
                     const SizedBox(height: 4),
+
                     Text(
                       l10n.activityWillAppearHere,
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: colors.onSurfaceVariant,
                       ),
                     ),
@@ -504,11 +613,14 @@ class _CustomerDetailsContent extends StatelessWidget {
 
             const SizedBox(height: 18),
 
+            // =================================================
+            // CUSTOMER INFORMATION
+            // =================================================
             Text(
               l10n.customerInformation,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: headingWeight,
+              ),
             ),
 
             const SizedBox(height: 10),
@@ -522,15 +634,17 @@ class _CustomerDetailsContent extends StatelessWidget {
               child: Column(
                 children: [
                   _InfoTile(
-                    icon: Icons.phone_outlined,
+                    icon: AppIcons.phone,
                     title: l10n.phone,
                     value: customer.phone.trim().isEmpty
                         ? l10n.notProvided
                         : customer.phone,
                   ),
+
                   const Divider(height: 1),
+
                   _InfoTile(
-                    icon: Icons.notes_outlined,
+                    icon: AppIcons.note,
                     title: l10n.note,
                     value: customer.note.trim().isEmpty
                         ? l10n.noNote
@@ -542,16 +656,19 @@ class _CustomerDetailsContent extends StatelessWidget {
 
             const SizedBox(height: 24),
 
+            // =================================================
+            // ARCHIVE / RESTORE
+            // =================================================
             if (customer.isArchived)
               FilledButton.icon(
                 onPressed: onRestore,
-                icon: const Icon(Icons.restore_rounded),
+                icon: const Icon(AppIcons.restore, size: 20),
                 label: Text(l10n.restoreCustomer),
               )
             else
               OutlinedButton.icon(
                 onPressed: onArchive,
-                icon: const Icon(Icons.archive_outlined),
+                icon: const Icon(AppIcons.archive, size: 20),
                 label: Text(l10n.archiveCustomer),
               ),
           ],
@@ -561,10 +678,15 @@ class _CustomerDetailsContent extends StatelessWidget {
   }
 }
 
+// ============================================================
+// ACTIVITY MODEL
+// ============================================================
+
 class _ActivityItem {
   const _ActivityItem({required this.date, this.sale, this.payment});
 
   final DateTime date;
+
   final Sale? sale;
   final CustomerPayment? payment;
 
@@ -578,6 +700,10 @@ class _ActivityItem {
 
   bool get isSale => sale != null;
 }
+
+// ============================================================
+// ACTIVITY CARD
+// ============================================================
 
 class _ActivityCard extends StatelessWidget {
   const _ActivityCard({required this.activity});
@@ -620,10 +746,13 @@ class _ActivityCard extends StatelessWidget {
     switch (method.label) {
       case 'Cash':
         return l10n.cash;
+
       case 'ABA QR':
         return l10n.abaQr;
+
       case 'ACLEDA QR':
         return l10n.acledaQr;
+
       default:
         return l10n.other;
     }
@@ -631,9 +760,16 @@ class _ActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    // ========================================================
+    // SALE
+    // ========================================================
 
     if (activity.isSale) {
       final sale = activity.sale!;
@@ -645,6 +781,7 @@ class _ActivityCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
+          borderRadius: BorderRadius.circular(18),
           onTap: () {
             Navigator.push(
               context,
@@ -660,13 +797,14 @@ class _ActivityCard extends StatelessWidget {
                 Container(
                   width: 42,
                   height: 42,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: colors.primaryContainer,
                     borderRadius: BorderRadius.circular(13),
                   ),
                   child: Icon(
-                    Icons.receipt_long_outlined,
-                    size: 21,
+                    AppIcons.receipt,
+                    size: 20,
                     color: colors.onPrimaryContainer,
                   ),
                 ),
@@ -681,15 +819,15 @@ class _ActivityCard extends StatelessWidget {
                         _saleTitle(sale, l10n),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: isKhmer
+                              ? FontWeight.w500
+                              : FontWeight.w600,
                         ),
                       ),
 
                       const SizedBox(height: 4),
 
-                      // Example:
-                      // 1 bottle • 16/09/2026
                       Row(
                         children: [
                           if (quantityText.isNotEmpty)
@@ -698,22 +836,25 @@ class _ActivityCard extends StatelessWidget {
                                 quantityText,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: colors.onSurfaceVariant),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colors.onSurfaceVariant,
+                                ),
                               ),
                             ),
 
                           if (quantityText.isNotEmpty)
                             Text(
                               ' • ',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: colors.onSurfaceVariant),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colors.onSurfaceVariant,
+                              ),
                             ),
 
                           Text(
                             _formatDate(sale.saleDate),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: colors.onSurfaceVariant),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
                           ),
                         ],
                       ),
@@ -723,11 +864,19 @@ class _ActivityCard extends StatelessWidget {
 
                 const SizedBox(width: 10),
 
-                Text(
-                  '+${MoneyUtils.format(sale.totalMinor, sale.currency)}',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: colors.error,
-                    fontWeight: FontWeight.w700,
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 130),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '+${MoneyUtils.format(sale.totalMinor, sale.currency)}',
+                      maxLines: 1,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: colors.error,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -736,6 +885,10 @@ class _ActivityCard extends StatelessWidget {
         ),
       );
     }
+
+    // ========================================================
+    // PAYMENT
+    // ========================================================
 
     final payment = activity.payment!;
 
@@ -750,13 +903,14 @@ class _ActivityCard extends StatelessWidget {
           Container(
             width: 42,
             height: 42,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: colors.secondaryContainer,
               borderRadius: BorderRadius.circular(13),
             ),
             child: Icon(
-              Icons.payments_outlined,
-              size: 21,
+              AppIcons.payment,
+              size: 20,
               color: colors.onSecondaryContainer,
             ),
           ),
@@ -769,27 +923,26 @@ class _ActivityCard extends StatelessWidget {
               children: [
                 Text(
                   l10n.paymentReceived,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+                  ),
                 ),
 
                 const SizedBox(height: 4),
 
-                // Example:
-                // Cash • 17/09/2026
                 Text(
                   '${_paymentMethodLabel(l10n, payment.method)} • '
                   '${_formatDate(payment.paymentDate)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
                 ),
 
                 if (payment.paidCurrency != payment.appliedCurrency) ...[
                   const SizedBox(height: 2),
+
                   Text(
                     l10n.receivedAmount(
                       MoneyUtils.format(
@@ -797,7 +950,9 @@ class _ActivityCard extends StatelessWidget {
                         payment.paidCurrency,
                       ),
                     ),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: colors.onSurfaceVariant,
                     ),
                   ),
@@ -808,11 +963,19 @@ class _ActivityCard extends StatelessWidget {
 
           const SizedBox(width: 10),
 
-          Text(
-            '-${MoneyUtils.format(payment.appliedAmountMinor, payment.appliedCurrency)}',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: colors.primary,
-              fontWeight: FontWeight.w700,
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 130),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                '-${MoneyUtils.format(payment.appliedAmountMinor, payment.appliedCurrency)}',
+                maxLines: 1,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colors.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
         ],
@@ -820,6 +983,10 @@ class _ActivityCard extends StatelessWidget {
     );
   }
 }
+
+// ============================================================
+// QUICK ACTION
+// ============================================================
 
 class _ActionButton extends StatelessWidget {
   const _ActionButton({
@@ -836,7 +1003,10 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
     return Material(
       color: enabled
@@ -845,6 +1015,7 @@ class _ActionButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
+        borderRadius: BorderRadius.circular(20),
         onTap: enabled ? onTap : null,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
@@ -853,7 +1024,7 @@ class _ActionButton extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                size: 25,
+                size: 24,
                 color: enabled ? colors.primary : colors.onSurfaceVariant,
               ),
 
@@ -864,9 +1035,9 @@ class _ActionButton extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                style: theme.textTheme.titleSmall?.copyWith(
                   color: enabled ? null : colors.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
                 ),
               ),
             ],
@@ -876,6 +1047,10 @@ class _ActionButton extends StatelessWidget {
     );
   }
 }
+
+// ============================================================
+// CUSTOMER INFO TILE
+// ============================================================
 
 class _InfoTile extends StatelessWidget {
   const _InfoTile({
@@ -890,14 +1065,15 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 21, color: colors.primary),
+          Icon(icon, size: 20, color: colors.primary),
 
           const SizedBox(width: 12),
 
@@ -907,7 +1083,7 @@ class _InfoTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
                 ),
@@ -916,9 +1092,9 @@ class _InfoTile extends StatelessWidget {
 
                 Text(
                   value,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),

@@ -2,6 +2,25 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/customer.dart';
+import 'chick_queue_service.dart';
+import 'payment_service.dart';
+import 'sale_service.dart';
+
+class CustomerDeleteCheck {
+  const CustomerDeleteCheck({
+    required this.hasSales,
+    required this.hasPayments,
+    required this.hasChickReservations,
+  });
+
+  final bool hasSales;
+  final bool hasPayments;
+  final bool hasChickReservations;
+
+  bool get canDelete => !hasSales && !hasPayments && !hasChickReservations;
+
+  bool get hasHistory => !canDelete;
+}
 
 class CustomerService {
   CustomerService._();
@@ -9,6 +28,7 @@ class CustomerService {
   static final CustomerService instance = CustomerService._();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   CollectionReference<Map<String, dynamic>> get _customers {
@@ -90,5 +110,59 @@ class CustomerService {
         .map(Customer.fromFirestore)
         .where((customer) => !customer.isArchived)
         .toList();
+  }
+
+  // ------------------------------------------------
+  // PERMANENT DELETE CHECK
+  // ------------------------------------------------
+  //
+  // A customer may only be permanently deleted when
+  // they have NO sales, NO payments, and NO chick
+  // reservation/history records.
+  //
+  // This protects receipts and business history.
+  Future<CustomerDeleteCheck> checkDeleteCustomer(String customerId) async {
+    final results = await Future.wait([
+      SaleService.instance.watchSalesForCustomer(customerId).first,
+
+      PaymentService.instance.watchPaymentsForCustomer(customerId).first,
+
+      ChickQueueService.instance.watchReservations().first,
+    ]);
+
+    final sales = results[0] as List;
+
+    final payments = results[1] as List;
+
+    final reservations = results[2] as List;
+
+    final hasChickReservations = reservations.any(
+      (reservation) => reservation.customerId == customerId,
+    );
+
+    return CustomerDeleteCheck(
+      hasSales: sales.isNotEmpty,
+      hasPayments: payments.isNotEmpty,
+      hasChickReservations: hasChickReservations,
+    );
+  }
+
+  // ------------------------------------------------
+  // PERMANENT DELETE
+  // ------------------------------------------------
+  //
+  // We check again here instead of trusting only
+  // the UI. That prevents accidental deletion if
+  // history was created after the first check.
+  Future<void> deleteCustomer(String customerId) async {
+    final check = await checkDeleteCustomer(customerId);
+
+    if (!check.canDelete) {
+      throw StateError(
+        'Customer has business history and cannot be permanently deleted.',
+      );
+    }
+
+    await _customers.doc(customerId).delete();
   }
 }

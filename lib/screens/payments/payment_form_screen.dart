@@ -6,6 +6,7 @@ import '../../models/customer_payment.dart';
 import '../../models/exchange_rate.dart';
 import '../../services/exchange_rate_service.dart';
 import '../../services/payment_service.dart';
+import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
 
 class PaymentFormScreen extends StatefulWidget {
@@ -30,7 +31,6 @@ class PaymentFormScreen extends StatefulWidget {
 
 class _PaymentFormScreenState extends State<PaymentFormScreen> {
   final _amountController = TextEditingController();
-
   final _noteController = TextEditingController();
 
   late MoneyCurrency _appliedCurrency;
@@ -163,6 +163,10 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
   }
 
   Future<void> _pickDate() async {
+    if (_saving) {
+      return;
+    }
+
     final selected = await showDatePicker(
       context: context,
       initialDate: _paymentDate,
@@ -208,27 +212,35 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
   IconData _paymentMethodIcon(PaymentMethodType method) {
     switch (method.label) {
       case 'Cash':
-        return Icons.payments_outlined;
+        return AppIcons.cash;
 
       case 'ABA QR':
-        return Icons.qr_code_2_rounded;
-
       case 'ACLEDA QR':
-        return Icons.qr_code_2_rounded;
+        return AppIcons.qrCode;
 
       default:
-        return Icons.account_balance_wallet_outlined;
+        return AppIcons.payment;
     }
   }
 
   Future<void> _pickPaymentMethod() async {
+    if (_saving) {
+      return;
+    }
+
     final l10n = AppLocalizations.of(context)!;
 
     final selected = await showModalBottomSheet<PaymentMethodType>(
       context: context,
       showDragHandle: true,
       builder: (sheetContext) {
-        final colors = Theme.of(sheetContext).colorScheme;
+        final theme = Theme.of(sheetContext);
+        final colors = theme.colorScheme;
+
+        final isKhmer =
+            Localizations.localeOf(sheetContext).languageCode == 'km';
+
+        final titleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
 
         return SafeArea(
           top: false,
@@ -240,9 +252,9 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
               children: [
                 Text(
                   l10n.paymentMethod,
-                  style: Theme.of(
-                    sheetContext,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: titleWeight,
+                  ),
                 ),
 
                 const SizedBox(height: 14),
@@ -259,6 +271,7 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                       borderRadius: BorderRadius.circular(18),
                       clipBehavior: Clip.antiAlias,
                       child: InkWell(
+                        borderRadius: BorderRadius.circular(18),
                         onTap: () {
                           Navigator.pop(sheetContext, method);
                         },
@@ -272,6 +285,7 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                               Container(
                                 width: 42,
                                 height: 42,
+                                alignment: Alignment.center,
                                 decoration: BoxDecoration(
                                   color: colors.primaryContainer,
                                   borderRadius: BorderRadius.circular(13),
@@ -288,20 +302,24 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                               Expanded(
                                 child: Text(
                                   _paymentMethodLabel(l10n, method),
-                                  style: Theme.of(sheetContext)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w600),
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: isKhmer
+                                        ? FontWeight.w500
+                                        : FontWeight.w600,
+                                  ),
                                 ),
                               ),
 
+                              const SizedBox(width: 8),
+
                               if (isSelected)
                                 Icon(
-                                  Icons.check_circle_rounded,
+                                  AppIcons.selected,
+                                  size: 21,
                                   color: colors.primary,
                                 )
                               else
-                                const Icon(Icons.chevron_right_rounded),
+                                const Icon(AppIcons.chevronRight, size: 20),
                             ],
                           ),
                         ),
@@ -366,19 +384,12 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
         paidAmountMinor: _paidAmount,
         appliedCurrency: _appliedCurrency,
         appliedAmountMinor: _appliedAmount,
-
         exchangeRateKhrPerUsd: _needsConversion ? _nbcRate!.khrPerUsd : null,
-
         exchangeRateSource: _needsConversion ? _nbcRate!.source : null,
-
         exchangeRateDate: _needsConversion ? _nbcRate!.rateDate : null,
-
         exchangeRateFetchedAt: _needsConversion ? _nbcRate!.updatedAt : null,
-
         method: _method,
-
         paymentDate: _paymentDate,
-
         note: _noteController.text,
       );
 
@@ -408,18 +419,24 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    final pageTitleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
 
     final balanceSegments = <ButtonSegment<MoneyCurrency>>[];
 
     if (widget.khrOutstanding > 0) {
       balanceSegments.add(
-        ButtonSegment(
+        ButtonSegment<MoneyCurrency>(
           value: MoneyCurrency.khr,
           label: Text(
             MoneyUtils.format(widget.khrOutstanding, MoneyCurrency.khr),
+            maxLines: 1,
           ),
         ),
       );
@@ -427,19 +444,19 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
 
     if (widget.usdOutstanding > 0) {
       balanceSegments.add(
-        ButtonSegment(
+        ButtonSegment<MoneyCurrency>(
           value: MoneyCurrency.usd,
           label: Text(
             MoneyUtils.format(widget.usdOutstanding, MoneyCurrency.usd),
+            maxLines: 1,
           ),
         ),
       );
     }
 
-    // Safety fallback.
     if (balanceSegments.isEmpty) {
       balanceSegments.add(
-        ButtonSegment(
+        ButtonSegment<MoneyCurrency>(
           value: _appliedCurrency,
           label: Text(MoneyUtils.format(0, _appliedCurrency)),
         ),
@@ -455,22 +472,30 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
     );
 
     return Scaffold(
+      // ====================================================
+      // FIXED APP BAR
+      // ====================================================
       appBar: AppBar(
         title: Text(
           l10n.recordPayment,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: pageTitleWeight,
+          ),
         ),
       ),
 
+      // ====================================================
+      // SCROLLABLE BODY
+      // ====================================================
       body: SafeArea(
+        top: false,
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 140),
           children: [
-            // -----------------------
+            // =================================================
             // CUSTOMER
-            // -----------------------
+            // =================================================
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
@@ -486,7 +511,7 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                       widget.customer.name.trim().isEmpty
                           ? '?'
                           : widget.customer.name.trim()[0].toUpperCase(),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      style: theme.textTheme.titleMedium?.copyWith(
                         color: colors.onPrimaryContainer,
                         fontWeight: FontWeight.w600,
                       ),
@@ -503,8 +528,11 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                           widget.customer.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w600),
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: isKhmer
+                                ? FontWeight.w500
+                                : FontWeight.w600,
+                          ),
                         ),
 
                         const SizedBox(height: 2),
@@ -513,8 +541,9 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                           l10n.recordMoneyReceived,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: colors.onSurfaceVariant),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
@@ -525,9 +554,9 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
 
             const SizedBox(height: 16),
 
-            // -----------------------
-            // COMPACT CURRENCY CARD
-            // -----------------------
+            // =================================================
+            // CURRENCY / BALANCE CHOICES
+            // =================================================
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
@@ -545,19 +574,21 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                         style: compactSegmentStyle,
                         segments: balanceSegments,
                         selected: {_appliedCurrency},
-                        onSelectionChanged: (selection) {
-                          setState(() {
-                            _appliedCurrency = selection.first;
+                        onSelectionChanged: _saving
+                            ? null
+                            : (selection) {
+                                setState(() {
+                                  _appliedCurrency = selection.first;
 
-                            _paidCurrency = _appliedCurrency;
+                                  _paidCurrency = _appliedCurrency;
 
-                            _amountController.clear();
+                                  _amountController.clear();
 
-                            _nbcRate = null;
+                                  _nbcRate = null;
 
-                            _rateError = null;
-                          });
-                        },
+                                  _rateError = null;
+                                });
+                              },
                       ),
                     ),
                   ),
@@ -575,31 +606,33 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                       child: SegmentedButton<MoneyCurrency>(
                         style: compactSegmentStyle,
                         segments: const [
-                          ButtonSegment(
+                          ButtonSegment<MoneyCurrency>(
                             value: MoneyCurrency.khr,
                             label: Text('KHR ៛'),
                           ),
-                          ButtonSegment(
+                          ButtonSegment<MoneyCurrency>(
                             value: MoneyCurrency.usd,
                             label: Text('USD \$'),
                           ),
                         ],
                         selected: {_paidCurrency},
-                        onSelectionChanged: (selection) async {
-                          setState(() {
-                            _paidCurrency = selection.first;
+                        onSelectionChanged: _saving
+                            ? null
+                            : (selection) async {
+                                setState(() {
+                                  _paidCurrency = selection.first;
 
-                            _amountController.clear();
+                                  _amountController.clear();
 
-                            _nbcRate = null;
+                                  _nbcRate = null;
 
-                            _rateError = null;
-                          });
+                                  _rateError = null;
+                                });
 
-                          if (_needsConversion) {
-                            await _loadNbcRate();
-                          }
-                        },
+                                if (_needsConversion) {
+                                  await _loadNbcRate();
+                                }
+                              },
                       ),
                     ),
                   ),
@@ -609,11 +642,12 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
 
             const SizedBox(height: 14),
 
-            // -----------------------
+            // =================================================
             // AMOUNT
-            // -----------------------
+            // =================================================
             TextField(
               controller: _amountController,
+              enabled: !_saving,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -625,12 +659,15 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                 hintText: _paidCurrency == MoneyCurrency.khr
                     ? l10n.example100000
                     : l10n.example2500,
-                prefixIcon: const Icon(Icons.payments_outlined),
+                prefixIcon: const Icon(AppIcons.payment, size: 21),
                 prefixText: _paidCurrency == MoneyCurrency.usd ? '\$ ' : null,
                 suffixText: _paidCurrency == MoneyCurrency.khr ? '៛' : null,
               ),
             ),
 
+            // =================================================
+            // NBC RATE
+            // =================================================
             if (_needsConversion) ...[
               const SizedBox(height: 14),
 
@@ -639,43 +676,43 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                 rate: _nbcRate,
                 error: _rateError,
                 formatDate: _formatDate,
-                onRefresh: _loadNbcRate,
+                onRefresh: _saving ? null : _loadNbcRate,
               ),
             ],
 
             const SizedBox(height: 14),
 
-            // -----------------------
+            // =================================================
             // PAYMENT METHOD
-            // -----------------------
+            // =================================================
             InkWell(
               borderRadius: BorderRadius.circular(18),
-              onTap: _pickPaymentMethod,
+              onTap: _saving ? null : _pickPaymentMethod,
               child: InputDecorator(
                 decoration: InputDecoration(
                   labelText: l10n.paymentMethod,
-                  prefixIcon: Icon(_paymentMethodIcon(_method)),
-                  suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+                  prefixIcon: Icon(_paymentMethodIcon(_method), size: 21),
+                  suffixIcon: const Icon(AppIcons.chevronDown, size: 20),
                 ),
                 child: Text(
                   _paymentMethodLabel(l10n, _method),
-                  style: Theme.of(context).textTheme.bodyLarge,
+                  style: theme.textTheme.bodyLarge,
                 ),
               ),
             ),
 
             const SizedBox(height: 14),
 
-            // -----------------------
+            // =================================================
             // DATE
-            // -----------------------
+            // =================================================
             InkWell(
               borderRadius: BorderRadius.circular(18),
-              onTap: _pickDate,
+              onTap: _saving ? null : _pickDate,
               child: InputDecorator(
                 decoration: InputDecoration(
                   labelText: l10n.paymentDate,
-                  prefixIcon: const Icon(Icons.calendar_today_outlined),
+                  prefixIcon: const Icon(AppIcons.calendar, size: 21),
                 ),
                 child: Text(_formatDate(_paymentDate)),
               ),
@@ -683,26 +720,27 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
 
             const SizedBox(height: 14),
 
-            // -----------------------
+            // =================================================
             // NOTE
-            // -----------------------
+            // =================================================
             TextField(
               controller: _noteController,
+              enabled: !_saving,
               minLines: 3,
               maxLines: 5,
               decoration: InputDecoration(
                 labelText: l10n.note,
                 hintText: l10n.optional,
                 alignLabelWithHint: true,
-                prefixIcon: const Icon(Icons.notes_rounded),
+                prefixIcon: const Icon(AppIcons.note, size: 21),
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // -----------------------
+            // =================================================
             // SUMMARY
-            // -----------------------
+            // =================================================
             Container(
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
@@ -752,26 +790,39 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
         ),
       ),
 
+      // ====================================================
+      // FIXED SAVE AREA
+      // ====================================================
       bottomSheet: SafeArea(
-        child: Container(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-          child: FilledButton.icon(
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.check_rounded),
-            label: Text(_saving ? l10n.saving : l10n.savePayment),
+        top: false,
+        child: Material(
+          color: theme.scaffoldBackgroundColor,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(AppIcons.check, size: 20),
+                label: Text(_saving ? l10n.saving : l10n.savePayment),
+              ),
+            ),
           ),
         ),
       ),
     );
   }
 }
+
+// ============================================================
+// COMPACT CHOICE ROW
+// ============================================================
 
 class _CompactChoiceRow extends StatelessWidget {
   const _CompactChoiceRow({required this.label, required this.child});
@@ -781,14 +832,16 @@ class _CompactChoiceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
     return Row(
       children: [
         Expanded(
           child: Text(
             label,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+            ),
           ),
         ),
 
@@ -801,6 +854,10 @@ class _CompactChoiceRow extends StatelessWidget {
     );
   }
 }
+
+// ============================================================
+// NBC RATE CARD
+// ============================================================
 
 class _NbcRateCard extends StatelessWidget {
   const _NbcRateCard({
@@ -817,13 +874,16 @@ class _NbcRateCard extends StatelessWidget {
 
   final String Function(DateTime) formatDate;
 
-  final VoidCallback onRefresh;
+  final VoidCallback? onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
     if (loading) {
       return Container(
@@ -859,7 +919,7 @@ class _NbcRateCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.error_outline_rounded, color: colors.error),
+                Icon(AppIcons.error, size: 21, color: colors.error),
 
                 const SizedBox(width: 10),
 
@@ -869,10 +929,13 @@ class _NbcRateCard extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            OutlinedButton.icon(
-              onPressed: onRefresh,
-              icon: const Icon(Icons.refresh_rounded),
-              label: Text(l10n.tryAgain),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onRefresh,
+                icon: const Icon(AppIcons.exchangeRate, size: 19),
+                label: Text(l10n.tryAgain),
+              ),
             ),
           ],
         ),
@@ -894,13 +957,14 @@ class _NbcRateCard extends StatelessWidget {
           Container(
             width: 44,
             height: 44,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: colors.primaryContainer,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
-              Icons.currency_exchange_rounded,
-              size: 22,
+              AppIcons.exchangeRate,
+              size: 21,
               color: colors.onPrimaryContainer,
             ),
           ),
@@ -913,16 +977,18 @@ class _NbcRateCard extends StatelessWidget {
               children: [
                 Text(
                   l10n.nbcOfficialRate,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+                  ),
                 ),
 
                 const SizedBox(height: 3),
 
                 Text(
                   l10n.oneUsdEqualsKhr(rate!.khrPerUsd),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -931,7 +997,7 @@ class _NbcRateCard extends StatelessWidget {
 
                 Text(
                   l10n.effectiveDateValue(formatDate(rate!.rateDate)),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
                 ),
@@ -939,16 +1005,22 @@ class _NbcRateCard extends StatelessWidget {
             ),
           ),
 
+          const SizedBox(width: 4),
+
           IconButton(
             tooltip: l10n.refreshRate,
             onPressed: onRefresh,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(AppIcons.exchangeRate, size: 20),
           ),
         ],
       ),
     );
   }
 }
+
+// ============================================================
+// SUMMARY ROW
+// ============================================================
 
 class _SummaryRow extends StatelessWidget {
   const _SummaryRow({
@@ -963,32 +1035,48 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    final labelStyle = strong
+        ? theme.textTheme.titleMedium
+        : theme.textTheme.bodyMedium;
+
+    final valueStyle = strong
+        ? theme.textTheme.titleLarge
+        : theme.textTheme.bodyMedium;
+
     return Row(
       children: [
         Expanded(
           child: Text(
             label,
-            style:
-                (strong
-                        ? Theme.of(context).textTheme.titleMedium
-                        : Theme.of(context).textTheme.bodyMedium)
-                    ?.copyWith(
-                      fontWeight: strong ? FontWeight.w700 : FontWeight.w500,
-                    ),
+            style: labelStyle?.copyWith(
+              fontWeight: strong
+                  ? isKhmer
+                        ? FontWeight.w600
+                        : FontWeight.w700
+                  : FontWeight.w500,
+            ),
           ),
         ),
 
         const SizedBox(width: 12),
 
-        Text(
-          value,
-          style:
-              (strong
-                      ? Theme.of(context).textTheme.titleLarge
-                      : Theme.of(context).textTheme.bodyMedium)
-                  ?.copyWith(
-                    fontWeight: strong ? FontWeight.w700 : FontWeight.w600,
-                  ),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 180),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: valueStyle?.copyWith(
+                fontWeight: strong ? FontWeight.w700 : FontWeight.w600,
+              ),
+            ),
+          ),
         ),
       ],
     );

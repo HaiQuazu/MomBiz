@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/product.dart';
 import '../../services/product_service.dart';
+import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
 
 class ProductFormScreen extends StatefulWidget {
@@ -16,11 +17,8 @@ class ProductFormScreen extends StatefulWidget {
 
 class _ProductFormScreenState extends State<ProductFormScreen> {
   final _nameController = TextEditingController();
-
   final _categoryController = TextEditingController();
-
   final _unitController = TextEditingController();
-
   final _priceController = TextEditingController();
 
   MoneyCurrency _priceCurrency = MoneyCurrency.khr;
@@ -37,11 +35,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
     if (product != null) {
       _nameController.text = product.name;
-
       _categoryController.text = product.category;
-
       _unitController.text = product.unit;
-
       _priceCurrency = product.defaultPriceCurrency;
 
       if (product.defaultPriceMinor > 0) {
@@ -60,7 +55,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
       case MoneyCurrency.usd:
         final dollars = amountMinor ~/ 100;
-
         final cents = amountMinor % 100;
 
         if (cents == 0) {
@@ -76,9 +70,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     final name = _nameController.text.trim();
-
     final category = _categoryController.text.trim();
-
     final unit = _unitController.text.trim();
 
     if (name.isEmpty) {
@@ -175,76 +167,116 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
 
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    final pageTitleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
+
+    final sectionTitleWeight = isKhmer ? FontWeight.w500 : FontWeight.w600;
+
+    final compactSegmentStyle = ButtonStyle(
+      visualDensity: const VisualDensity(horizontal: -1, vertical: -2),
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      padding: WidgetStateProperty.all(
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+      ),
+    );
+
     return Scaffold(
+      // ====================================================
+      // FIXED APP BAR
+      // ====================================================
       appBar: AppBar(
         title: Text(
           _isEditing ? l10n.editProduct : l10n.addProduct,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: pageTitleWeight,
+          ),
         ),
       ),
 
+      // ====================================================
+      // SCROLLABLE FORM BODY
+      // ====================================================
       body: SafeArea(
+        top: false,
         child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 130),
           children: [
+            // ------------------------------------------------
+            // PRODUCT NAME
+            // ------------------------------------------------
             TextField(
               controller: _nameController,
+              enabled: !_saving,
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 labelText: l10n.productName,
                 hintText: l10n.exampleChickenFood,
-                prefixIcon: const Icon(Icons.inventory_2_outlined),
+                prefixIcon: const Icon(AppIcons.product, size: 21),
               ),
             ),
 
             const SizedBox(height: 14),
 
+            // ------------------------------------------------
+            // CATEGORY
+            // ------------------------------------------------
             TextField(
               controller: _categoryController,
+              enabled: !_saving,
               textCapitalization: TextCapitalization.words,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 labelText: l10n.category,
                 hintText: l10n.exampleFeed,
-                prefixIcon: const Icon(Icons.category_outlined),
+                prefixIcon: const Icon(AppIcons.productCategory, size: 21),
               ),
             ),
 
             const SizedBox(height: 14),
 
+            // ------------------------------------------------
+            // UNIT
+            // ------------------------------------------------
             TextField(
               controller: _unitController,
+              enabled: !_saving,
               textInputAction: TextInputAction.next,
               decoration: InputDecoration(
                 labelText: l10n.unit,
                 hintText: l10n.exampleUnits,
-                prefixIcon: const Icon(Icons.straighten_outlined),
+                prefixIcon: const Icon(AppIcons.unit, size: 21),
               ),
             ),
 
             const SizedBox(height: 24),
 
+            // =================================================
+            // DEFAULT PRICE
+            // =================================================
             Row(
               children: [
                 Expanded(
                   child: Text(
                     l10n.defaultPrice,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: sectionTitleWeight,
                     ),
                   ),
                 ),
 
+                const SizedBox(width: 12),
+
                 Text(
                   l10n.optional,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
                 ),
@@ -253,48 +285,67 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
             const SizedBox(height: 12),
 
+            // ------------------------------------------------
+            // CURRENCY
+            // ------------------------------------------------
             Center(
-              child: SegmentedButton<MoneyCurrency>(
-                segments: const [
-                  ButtonSegment(value: MoneyCurrency.khr, label: Text('KHR ៛')),
-                  ButtonSegment(
-                    value: MoneyCurrency.usd,
-                    label: Text('USD \$'),
-                  ),
-                ],
-                selected: {_priceCurrency},
-                onSelectionChanged: (selection) {
-                  final newCurrency = selection.first;
+              child: SizedBox(
+                width: 230,
+                child: SegmentedButton<MoneyCurrency>(
+                  expandedInsets: EdgeInsets.zero,
+                  style: compactSegmentStyle,
+                  selectedIcon: const Icon(AppIcons.check, size: 18),
+                  segments: const [
+                    ButtonSegment<MoneyCurrency>(
+                      value: MoneyCurrency.khr,
+                      label: Text('KHR ៛', maxLines: 1, softWrap: false),
+                    ),
+                    ButtonSegment<MoneyCurrency>(
+                      value: MoneyCurrency.usd,
+                      label: Text('USD \$', maxLines: 1, softWrap: false),
+                    ),
+                  ],
+                  selected: {_priceCurrency},
+                  onSelectionChanged: _saving
+                      ? null
+                      : (selection) {
+                          final newCurrency = selection.first;
 
-                  if (newCurrency == _priceCurrency) {
-                    return;
-                  }
+                          if (newCurrency == _priceCurrency) {
+                            return;
+                          }
 
-                  setState(() {
-                    _priceCurrency = newCurrency;
+                          setState(() {
+                            _priceCurrency = newCurrency;
 
-                    // Prevent a KHR value
-                    // from becoming USD,
-                    // or vice versa.
-                    _priceController.clear();
-                  });
-                },
+                            // Prevent a KHR amount
+                            // from becoming USD,
+                            // or USD becoming KHR.
+                            _priceController.clear();
+                          });
+                        },
+                ),
               ),
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
 
+            // ------------------------------------------------
+            // DEFAULT PRICE INPUT
+            // ------------------------------------------------
             TextField(
               controller: _priceController,
+              enabled: !_saving,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              textInputAction: TextInputAction.done,
               decoration: InputDecoration(
                 labelText: l10n.defaultPrice,
                 hintText: _priceCurrency == MoneyCurrency.khr
                     ? l10n.example65000
                     : l10n.example1600,
-                prefixIcon: const Icon(Icons.sell_outlined),
+                prefixIcon: const Icon(AppIcons.price, size: 21),
                 prefixText: _priceCurrency == MoneyCurrency.usd ? '\$ ' : null,
                 suffixText: _priceCurrency == MoneyCurrency.khr ? '៛' : null,
               ),
@@ -304,33 +355,42 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
             Text(
               l10n.defaultPriceOptional,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
             ),
           ],
         ),
       ),
 
+      // ====================================================
+      // FIXED SAVE AREA
+      // ====================================================
       bottomSheet: SafeArea(
-        child: Container(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-          child: FilledButton.icon(
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.check_rounded),
-            label: Text(
-              _saving
-                  ? l10n.saving
-                  : _isEditing
-                  ? l10n.saveChanges
-                  : l10n.addProduct,
+        top: false,
+        child: Material(
+          color: theme.scaffoldBackgroundColor,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(AppIcons.check, size: 20),
+                label: Text(
+                  _saving
+                      ? l10n.saving
+                      : _isEditing
+                      ? l10n.saveChanges
+                      : l10n.addProduct,
+                ),
+              ),
             ),
           ),
         ),

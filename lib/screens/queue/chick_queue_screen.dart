@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/chick_reservation.dart';
 import '../../services/chick_queue_service.dart';
+import '../../theme/app_icons.dart';
 import '../sales/sale_form_screen.dart';
 import 'chick_reservation_form_screen.dart';
 
@@ -77,8 +78,16 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
     final choice = await showDialog<String>(
       context: context,
       builder: (dialogContext) {
+        final isKhmer =
+            Localizations.localeOf(dialogContext).languageCode == 'km';
+
         return AlertDialog(
-          title: Text(l10n.cancelReservationQuestion),
+          title: Text(
+            l10n.cancelReservationQuestion,
+            style: Theme.of(dialogContext).textTheme.titleLarge?.copyWith(
+              fontWeight: isKhmer ? FontWeight.w600 : FontWeight.w700,
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +96,9 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
                 '${reservation.customerName} • '
                 '${l10n.chickCount(reservation.quantity)}',
               ),
+
               const SizedBox(height: 10),
+
               Text(
                 l10n.batchDateValue(_date(reservation.scheduledDate)),
                 style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
@@ -97,25 +108,32 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
 
               if (nextReservation != null) ...[
                 const SizedBox(height: 18),
+
                 Text(
                   l10n.nextCustomer,
-                  style: Theme.of(
-                    dialogContext,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                  style: Theme.of(dialogContext).textTheme.titleSmall?.copyWith(
+                    fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+                  ),
                 ),
+
                 const SizedBox(height: 5),
+
                 Text(
                   '${nextReservation.customerName} • '
                   '${l10n.chickCount(nextReservation.quantity)}',
                 ),
+
                 const SizedBox(height: 4),
+
                 Text(
                   l10n.currentBatchValue(_date(nextReservation.scheduledDate)),
                   style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
                     color: Theme.of(dialogContext).colorScheme.onSurfaceVariant,
                   ),
                 ),
+
                 const SizedBox(height: 10),
+
                 Text(
                   l10n.moveCustomerForwardQuestion(
                     nextReservation.customerName,
@@ -132,12 +150,14 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
               },
               child: Text(l10n.keepReservation),
             ),
+
             TextButton(
               onPressed: () {
                 Navigator.pop(dialogContext, 'cancelOnly');
               },
               child: Text(l10n.cancelOnly),
             ),
+
             if (nextReservation != null)
               FilledButton(
                 onPressed: () {
@@ -193,8 +213,16 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
+        final isKhmer =
+            Localizations.localeOf(dialogContext).languageCode == 'km';
+
         return AlertDialog(
-          title: Text(l10n.customerPickedUpChicksQuestion),
+          title: Text(
+            l10n.customerPickedUpChicksQuestion,
+            style: Theme.of(dialogContext).textTheme.titleLarge?.copyWith(
+              fontWeight: isKhmer ? FontWeight.w600 : FontWeight.w700,
+            ),
+          ),
           content: Text(
             '${reservation.customerName}\n'
             '${l10n.chickCount(reservation.quantity)}\n\n'
@@ -265,24 +293,37 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
 
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    final headingWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
+
     return SafeArea(
       child: Scaffold(
-        floatingActionButton: !_showHistory
-            ? FloatingActionButton.extended(
+        // ====================================================
+        // ADD RESERVATION
+        // ====================================================
+        floatingActionButton: _showHistory
+            ? null
+            : FloatingActionButton.extended(
                 heroTag: 'chick_queue_add_reservation',
-                onPressed: () => _addReservation(),
-                icon: const Icon(Icons.add_rounded),
+                onPressed: () {
+                  _addReservation();
+                },
+                icon: const Icon(AppIcons.add, size: 21),
                 label: Text(l10n.addReservation),
-              )
-            : null,
+              ),
 
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // =================================================
+            // FIXED HEADER
+            // =================================================
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
@@ -290,20 +331,23 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
                   Expanded(
                     child: Text(
                       l10n.chickQueue,
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: headingWeight,
+                      ),
                     ),
                   ),
+
                   Container(
                     width: 46,
                     height: 46,
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: colors.primaryContainer,
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: Icon(
-                      Icons.egg_alt_outlined,
-                      size: 25,
+                      AppIcons.queue,
+                      size: 23,
                       color: colors.onPrimaryContainer,
                     ),
                   ),
@@ -311,43 +355,85 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
               ),
             ),
 
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
+            // =================================================
+            // FIXED WAITING / HISTORY
+            // =================================================
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Center(
-                child: SegmentedButton<bool>(
-                  segments: [
-                    ButtonSegment(
-                      value: false,
-                      label: Text(l10n.waiting),
-                      icon: const Icon(Icons.schedule_rounded),
+                child: SizedBox(
+                  width: 240,
+                  child: SegmentedButton<bool>(
+                    expandedInsets: EdgeInsets.zero,
+                    selectedIcon: const Icon(AppIcons.check, size: 18),
+                    style: ButtonStyle(
+                      visualDensity: const VisualDensity(
+                        horizontal: -1,
+                        vertical: -2,
+                      ),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      padding: WidgetStateProperty.all(
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      ),
+                      textStyle: WidgetStateProperty.resolveWith<TextStyle?>((
+                        states,
+                      ) {
+                        final selected = states.contains(WidgetState.selected);
+
+                        return theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: selected
+                              ? FontWeight.w700
+                              : FontWeight.w600,
+                        );
+                      }),
                     ),
-                    ButtonSegment(
-                      value: true,
-                      label: Text(l10n.history),
-                      icon: const Icon(Icons.history_rounded),
-                    ),
-                  ],
-                  selected: {_showHistory},
-                  onSelectionChanged: (selection) {
-                    setState(() {
-                      _showHistory = selection.first;
-                    });
-                  },
+                    segments: [
+                      ButtonSegment<bool>(
+                        value: false,
+                        icon: const Icon(AppIcons.waiting, size: 18),
+                        label: Text(
+                          l10n.waiting,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.fade,
+                        ),
+                      ),
+                      ButtonSegment<bool>(
+                        value: true,
+                        icon: const Icon(AppIcons.history, size: 18),
+                        label: Text(
+                          l10n.history,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.fade,
+                        ),
+                      ),
+                    ],
+                    selected: {_showHistory},
+                    onSelectionChanged: (selection) {
+                      setState(() {
+                        _showHistory = selection.first;
+                      });
+                    },
+                  ),
                 ),
               ),
             ),
 
             const SizedBox(height: 14),
 
+            // =================================================
+            // ONLY QUEUE LIST SCROLLS
+            // =================================================
             Expanded(
               child: StreamBuilder<List<ChickReservation>>(
                 stream: ChickQueueService.instance.watchReservations(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
                     return _QueueMessage(
-                      icon: Icons.error_outline_rounded,
+                      icon: AppIcons.error,
                       message: l10n.couldNotLoadChickQueue,
                     );
                   }
@@ -379,9 +465,7 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
 
                   if (displayedReservations.isEmpty) {
                     return _QueueMessage(
-                      icon: _showHistory
-                          ? Icons.history_rounded
-                          : Icons.egg_alt_outlined,
+                      icon: _showHistory ? AppIcons.history : AppIcons.queue,
                       message: _showHistory
                           ? l10n.noHistoryYet
                           : l10n.noCustomersWaitingForChicks,
@@ -428,16 +512,11 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
                                 batchCustomerCount,
                               ),
                               chickText: l10n.chickCount(batchChickCount),
-
-                              // NEW:
-                              // add another customer
-                              // to this exact batch.
                               onAdd: () {
                                 _addReservation(
                                   scheduledDate: reservation.scheduledDate,
                                 );
                               },
-
                               addTooltip: l10n.addReservation,
                             ),
 
@@ -477,6 +556,10 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
   }
 }
 
+// ============================================================
+// BATCH HEADER
+// ============================================================
+
 class _BatchHeader extends StatelessWidget {
   const _BatchHeader({
     required this.date,
@@ -495,7 +578,10 @@ class _BatchHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
     return Container(
       width: double.infinity,
@@ -509,15 +595,12 @@ class _BatchHeader extends StatelessWidget {
           Container(
             width: 38,
             height: 38,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: colors.primaryContainer,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              Icons.calendar_month_rounded,
-              size: 20,
-              color: colors.primary,
-            ),
+            child: Icon(AppIcons.calendar, size: 20, color: colors.primary),
           ),
 
           const SizedBox(width: 11),
@@ -528,16 +611,18 @@ class _BatchHeader extends StatelessWidget {
               children: [
                 Text(
                   date,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+                  ),
                 ),
+
                 const SizedBox(height: 2),
+
                 Text(
                   '$customerText • $chickText',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
                 ),
@@ -546,17 +631,20 @@ class _BatchHeader extends StatelessWidget {
           ),
 
           const SizedBox(width: 8),
+
           Tooltip(
             message: addTooltip,
             child: IconButton(
               onPressed: onAdd,
-              icon: const Icon(Icons.add_rounded),
+              icon: const Icon(AppIcons.add),
               iconSize: 18,
               padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
               style: IconButton.styleFrom(
                 foregroundColor: colors.primary,
-                backgroundColor: colors.surface.withValues(alpha: 0.75),
-                fixedSize: const Size(34, 34),
+                backgroundColor: colors.surface.withValues(alpha: 0.65),
+                minimumSize: const Size(34, 34),
+                maximumSize: const Size(34, 34),
                 shape: const CircleBorder(),
               ),
             ),
@@ -566,6 +654,10 @@ class _BatchHeader extends StatelessWidget {
     );
   }
 }
+
+// ============================================================
+// RESERVATION CARD
+// ============================================================
 
 class _ReservationCard extends StatelessWidget {
   const _ReservationCard({
@@ -595,29 +687,41 @@ class _ReservationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
 
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    const cardRadius = 20.0;
+
     return Card(
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(cardRadius),
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
         child: Row(
           children: [
+            // ------------------------------------------------
+            // POSITION / STATUS ICON
+            // ------------------------------------------------
             CircleAvatar(
               radius: 24,
               backgroundColor: colors.primaryContainer,
               child: showHistory
                   ? Icon(
                       reservation.status == ChickReservationStatus.pickedUp
-                          ? Icons.check_rounded
-                          : Icons.close_rounded,
-                      size: 22,
+                          ? AppIcons.check
+                          : AppIcons.close,
+                      size: 21,
                       color: colors.onPrimaryContainer,
                     )
                   : Text(
                       '$position',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      style: theme.textTheme.titleSmall?.copyWith(
                         color: colors.onPrimaryContainer,
                         fontWeight: FontWeight.w600,
                       ),
@@ -626,6 +730,9 @@ class _ReservationCard extends StatelessWidget {
 
             const SizedBox(width: 13),
 
+            // ------------------------------------------------
+            // RESERVATION DETAILS
+            // ------------------------------------------------
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -634,8 +741,8 @@ class _ReservationCard extends StatelessWidget {
                     reservation.customerName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
                     ),
                   ),
 
@@ -643,7 +750,9 @@ class _ReservationCard extends StatelessWidget {
 
                   Text(
                     chickCount,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -652,18 +761,21 @@ class _ReservationCard extends StatelessWidget {
 
                   Text(
                     batchDate,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
                       color: colors.onSurfaceVariant,
                     ),
                   ),
 
                   if (reservation.note.trim().isNotEmpty) ...[
                     const SizedBox(height: 2),
+
                     Text(
                       reservation.note,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: colors.onSurfaceVariant,
                       ),
                     ),
@@ -674,9 +786,12 @@ class _ReservationCard extends StatelessWidget {
 
             const SizedBox(width: 6),
 
+            // ------------------------------------------------
+            // WAITING ACTION MENU
+            // ------------------------------------------------
             if (!showHistory)
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert_rounded),
+                icon: const Icon(AppIcons.moreVertical, size: 21),
                 tooltip: '',
                 elevation: 8,
                 offset: const Offset(0, 8),
@@ -699,41 +814,48 @@ class _ReservationCard extends StatelessWidget {
                   }
                 },
                 itemBuilder: (context) => [
-                  PopupMenuItem(
+                  PopupMenuItem<String>(
                     value: 'edit',
                     child: Row(
                       children: [
-                        const Icon(Icons.edit_outlined, size: 20),
+                        const Icon(AppIcons.edit, size: 19),
                         const SizedBox(width: 12),
                         Expanded(child: Text(l10n.editReservation)),
                       ],
                     ),
                   ),
-                  PopupMenuItem(
+
+                  PopupMenuItem<String>(
                     value: 'pickup',
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.shopping_cart_checkout_rounded,
-                          size: 20,
-                        ),
+                        const Icon(AppIcons.sale, size: 19),
                         const SizedBox(width: 12),
                         Expanded(child: Text(l10n.pickedUpCreateSale)),
                       ],
                     ),
                   ),
-                  PopupMenuItem(
+
+                  PopupMenuItem<String>(
                     value: 'cancel',
                     child: Row(
                       children: [
-                        const Icon(Icons.cancel_outlined, size: 20),
+                        Icon(AppIcons.cancel, size: 19, color: colors.error),
                         const SizedBox(width: 12),
-                        Expanded(child: Text(l10n.cancelReservation)),
+                        Expanded(
+                          child: Text(
+                            l10n.cancelReservation,
+                            style: TextStyle(color: colors.error),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ],
               )
+            // ------------------------------------------------
+            // HISTORY STATUS
+            // ------------------------------------------------
             else
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 90),
@@ -742,11 +864,11 @@ class _ReservationCard extends StatelessWidget {
                   textAlign: TextAlign.right,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: reservation.status == ChickReservationStatus.pickedUp
                         ? colors.primary
                         : colors.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
                   ),
                 ),
               ),
@@ -757,6 +879,10 @@ class _ReservationCard extends StatelessWidget {
   }
 }
 
+// ============================================================
+// EMPTY / ERROR
+// ============================================================
+
 class _QueueMessage extends StatelessWidget {
   const _QueueMessage({required this.icon, required this.message});
 
@@ -765,7 +891,8 @@ class _QueueMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return Center(
       child: Padding(
@@ -776,19 +903,22 @@ class _QueueMessage extends StatelessWidget {
             Container(
               width: 72,
               height: 72,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: colors.primaryContainer,
                 borderRadius: BorderRadius.circular(22),
               ),
-              child: Icon(icon, size: 34, color: colors.onPrimaryContainer),
+              child: Icon(icon, size: 32, color: colors.onPrimaryContainer),
             ),
+
             const SizedBox(height: 14),
+
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
             ),
           ],
         ),

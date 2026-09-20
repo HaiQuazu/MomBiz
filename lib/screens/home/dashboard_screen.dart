@@ -5,6 +5,7 @@ import '../../models/customer_payment.dart';
 import '../../models/sale.dart';
 import '../../services/payment_service.dart';
 import '../../services/sale_service.dart';
+import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
 import '../receipts/sale_receipt_screen.dart';
 
@@ -65,6 +66,10 @@ class DashboardScreen extends StatelessWidget {
             var todayPaymentsKhr = 0;
             var todayPaymentsUsd = 0;
 
+            // =================================================
+            // SALES
+            // =================================================
+
             for (final sale in sales) {
               if (sale.status != 'active') {
                 continue;
@@ -84,6 +89,10 @@ class DashboardScreen extends StatelessWidget {
                 }
               }
             }
+
+            // =================================================
+            // PAYMENTS
+            // =================================================
 
             for (final payment in payments) {
               if (payment.status != 'active') {
@@ -112,6 +121,10 @@ class DashboardScreen extends StatelessWidget {
             if (usdOutstanding < 0) {
               usdOutstanding = 0;
             }
+
+            // =================================================
+            // RECENT ACTIVITY
+            // =================================================
 
             final activities = <_DashboardActivity>[];
 
@@ -149,6 +162,10 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
+// ============================================================
+// DASHBOARD CONTENT
+// ============================================================
+
 class _DashboardContent extends StatelessWidget {
   const _DashboardContent({
     required this.khrOutstanding,
@@ -178,17 +195,29 @@ class _DashboardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    final headingWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
+
+    final sectionWeight = isKhmer ? FontWeight.w500 : FontWeight.w600;
+
+    final noDebt = khrOutstanding == 0 && usdOutstanding == 0;
 
     return SafeArea(
       child: Column(
         children: [
-          Container(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+          // =================================================
+          // FIXED HEADER
+          // =================================================
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
@@ -196,15 +225,16 @@ class _DashboardContent extends StatelessWidget {
                     children: [
                       Text(
                         l10n.appName,
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: headingWeight,
+                        ),
                       ),
 
                       const SizedBox(height: 2),
 
                       Text(
                         l10n.businessOverview,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
                       ),
@@ -215,71 +245,112 @@ class _DashboardContent extends StatelessWidget {
                 Container(
                   width: 46,
                   height: 46,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: colors.primaryContainer,
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Icon(
-                    Icons.storefront_rounded,
+                    AppIcons.storefront,
+                    size: 23,
                     color: colors.onPrimaryContainer,
-                    size: 25,
                   ),
                 ),
               ],
             ),
           ),
 
+          const SizedBox(height: 14),
+
+          // =================================================
+          // ONLY DASHBOARD BODY SCROLLS
+          // =================================================
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
               children: [
+                // =================================================
+                // OUTSTANDING CUSTOMER DEBT
+                // =================================================
                 Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     color: colors.primary,
-                    borderRadius: BorderRadius.circular(26),
+                    borderRadius: BorderRadius.circular(24),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        l10n.outstandingCustomerDebt,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: colors.onPrimary.withValues(alpha: 0.82),
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              l10n.outstandingCustomerDebt,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: colors.onPrimary.withValues(alpha: 0.82),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          Container(
+                            width: 38,
+                            height: 38,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: colors.onPrimary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Icon(
+                              AppIcons.payment,
+                              size: 19,
+                              color: colors.onPrimary,
+                            ),
+                          ),
+                        ],
                       ),
 
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
 
-                      Text(
-                        MoneyUtils.format(khrOutstanding, MoneyCurrency.khr),
-                        style: Theme.of(context).textTheme.headlineLarge
-                            ?.copyWith(
-                              color: colors.onPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          MoneyUtils.format(khrOutstanding, MoneyCurrency.khr),
+                          style: theme.textTheme.headlineLarge?.copyWith(
+                            color: colors.onPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
 
                       if (usdOutstanding > 0) ...[
                         const SizedBox(height: 3),
 
-                        Text(
-                          MoneyUtils.format(usdOutstanding, MoneyCurrency.usd),
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(
-                                color: colors.onPrimary,
-                                fontWeight: FontWeight.w600,
-                              ),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            MoneyUtils.format(
+                              usdOutstanding,
+                              MoneyCurrency.usd,
+                            ),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: colors.onPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ],
 
                       const SizedBox(height: 7),
 
                       Text(
-                        khrOutstanding == 0 && usdOutstanding == 0
+                        noDebt
                             ? l10n.noOutstandingDebt
                             : l10n.acrossAllCustomers,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: colors.onPrimary.withValues(alpha: 0.72),
                         ),
                       ),
@@ -289,11 +360,14 @@ class _DashboardContent extends StatelessWidget {
 
                 const SizedBox(height: 14),
 
+                // =================================================
+                // TODAY
+                // =================================================
                 Row(
                   children: [
                     Expanded(
                       child: _TodayCard(
-                        icon: Icons.trending_up_rounded,
+                        icon: AppIcons.sale,
                         title: l10n.salesToday,
                         khr: todaySalesKhr,
                         usd: todaySalesUsd,
@@ -304,7 +378,7 @@ class _DashboardContent extends StatelessWidget {
 
                     Expanded(
                       child: _TodayCard(
-                        icon: Icons.payments_outlined,
+                        icon: AppIcons.payment,
                         title: l10n.receivedToday,
                         khr: todayPaymentsKhr,
                         usd: todayPaymentsUsd,
@@ -313,22 +387,25 @@ class _DashboardContent extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 22),
+                const SizedBox(height: 20),
 
+                // =================================================
+                // QUICK ACTIONS
+                // =================================================
                 Text(
                   l10n.quickActions,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: sectionWeight,
+                  ),
                 ),
 
-                const SizedBox(height: 9),
+                const SizedBox(height: 8),
 
                 Row(
                   children: [
                     Expanded(
                       child: _QuickAction(
-                        icon: Icons.add_shopping_cart_rounded,
+                        icon: AppIcons.sale,
                         title: l10n.newSale,
                         onTap: onNewSaleTap,
                       ),
@@ -338,7 +415,7 @@ class _DashboardContent extends StatelessWidget {
 
                     Expanded(
                       child: _QuickAction(
-                        icon: Icons.people_alt_outlined,
+                        icon: AppIcons.customers,
                         title: l10n.customers,
                         onTap: onCustomersTap,
                       ),
@@ -346,15 +423,19 @@ class _DashboardContent extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 22),
+                const SizedBox(height: 20),
 
+                // =================================================
+                // RECENT ACTIVITY
+                // =================================================
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: Text(
                         l10n.recentActivity,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: sectionWeight,
                         ),
                       ),
                     ),
@@ -362,7 +443,7 @@ class _DashboardContent extends StatelessWidget {
                     if (activities.isNotEmpty)
                       Text(
                         l10n.latestCount(activities.length),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
                       ),
@@ -372,41 +453,46 @@ class _DashboardContent extends StatelessWidget {
                 const SizedBox(height: 9),
 
                 if (activities.isEmpty)
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(22),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.receipt_long_outlined,
-                            size: 38,
-                            color: colors.primary,
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 24,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(AppIcons.receipt, size: 34, color: colors.primary),
+
+                        const SizedBox(height: 10),
+
+                        Text(
+                          l10n.noActivityYet,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: isKhmer
+                                ? FontWeight.w500
+                                : FontWeight.w600,
                           ),
+                        ),
 
-                          const SizedBox(height: 10),
+                        const SizedBox(height: 4),
 
-                          Text(
-                            l10n.noActivityYet,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w600),
+                        Text(
+                          l10n.activityWillAppearHere,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: colors.onSurfaceVariant,
                           ),
-
-                          const SizedBox(height: 3),
-
-                          Text(
-                            l10n.activityWillAppearHere,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: colors.onSurfaceVariant),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   )
                 else
                   ...activities.map(
                     (activity) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.only(bottom: 9),
                       child: _ActivityCard(activity: activity),
                     ),
                   ),
@@ -418,6 +504,10 @@ class _DashboardContent extends StatelessWidget {
     );
   }
 }
+
+// ============================================================
+// TODAY CARD
+// ============================================================
 
 class _TodayCard extends StatelessWidget {
   const _TodayCard({
@@ -435,65 +525,78 @@ class _TodayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: colors.primaryContainer,
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: Icon(icon, size: 20, color: colors.onPrimaryContainer),
+    return Container(
+      constraints: const BoxConstraints(minHeight: 118),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: colors.primaryContainer,
+              borderRadius: BorderRadius.circular(11),
             ),
+            child: Icon(icon, size: 18, color: colors.onPrimaryContainer),
+          ),
 
-            const SizedBox(height: 10),
+          const SizedBox(height: 8),
 
-            Text(
-              title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colors.onSurfaceVariant,
             ),
+          ),
 
-            const SizedBox(height: 4),
+          const SizedBox(height: 4),
 
-            Text(
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
               MoneyUtils.format(khr, MoneyCurrency.khr),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
+          ),
 
-            if (usd > 0) ...[
-              const SizedBox(height: 2),
+          if (usd > 0) ...[
+            const SizedBox(height: 2),
 
-              Text(
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
                 MoneyUtils.format(usd, MoneyCurrency.usd),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                style: theme.textTheme.bodySmall?.copyWith(
                   color: colors.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
 }
+
+// ============================================================
+// QUICK ACTION
+// ============================================================
 
 class _QuickAction extends StatelessWidget {
   const _QuickAction({
@@ -508,30 +611,35 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
     return Material(
       color: colors.surfaceContainerLowest,
       borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
+        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: colors.primary, size: 26),
+              Icon(icon, size: 24, color: colors.primary),
 
               const SizedBox(height: 7),
 
               Text(
                 title,
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -541,10 +649,15 @@ class _QuickAction extends StatelessWidget {
   }
 }
 
+// ============================================================
+// DASHBOARD ACTIVITY MODEL
+// ============================================================
+
 class _DashboardActivity {
   const _DashboardActivity({required this.date, this.sale, this.payment});
 
   final DateTime date;
+
   final Sale? sale;
   final CustomerPayment? payment;
 
@@ -558,6 +671,10 @@ class _DashboardActivity {
 
   bool get isSale => sale != null;
 }
+
+// ============================================================
+// ACTIVITY CARD
+// ============================================================
 
 class _ActivityCard extends StatelessWidget {
   const _ActivityCard({required this.activity});
@@ -609,17 +726,26 @@ class _ActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    // ========================================================
+    // SALE
+    // ========================================================
 
     if (activity.isSale) {
       final sale = activity.sale!;
 
-      return Card(
+      return Material(
+        color: colors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(18),
         clipBehavior: Clip.antiAlias,
-        child: ListTile(
-          minTileHeight: 70,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
           onTap: () {
             Navigator.push(
               context,
@@ -628,88 +754,172 @@ class _ActivityCard extends StatelessWidget {
               ),
             );
           },
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 15,
-            vertical: 4,
-          ),
-          leading: CircleAvatar(
-            radius: 21,
-            backgroundColor: colors.primaryContainer,
-            child: Icon(
-              Icons.receipt_long_outlined,
-              size: 20,
-              color: colors.onPrimaryContainer,
-            ),
-          ),
-          title: Text(
-            sale.customerName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          subtitle: Text(
-            '${_saleItems(sale, l10n)} • ${_date(sale.saleDate)}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
-          ),
-          trailing: Text(
-            '+${MoneyUtils.format(sale.totalMinor, sale.currency)}',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: colors.error,
-              fontWeight: FontWeight.w600,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 66),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: colors.primaryContainer,
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Icon(
+                      AppIcons.receipt,
+                      size: 19,
+                      color: colors.onPrimaryContainer,
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          sale.customerName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: isKhmer
+                                ? FontWeight.w500
+                                : FontWeight.w600,
+                          ),
+                        ),
+
+                        const SizedBox(height: 2),
+
+                        Text(
+                          '${_saleItems(sale, l10n)} • '
+                          '${_date(sale.saleDate)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 118),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        '+${MoneyUtils.format(sale.totalMinor, sale.currency)}',
+                        maxLines: 1,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: colors.error,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       );
     }
 
+    // ========================================================
+    // PAYMENT
+    // ========================================================
+
     final payment = activity.payment!;
 
-    return Card(
-      child: ListTile(
-        minTileHeight: 70,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
-        leading: CircleAvatar(
-          radius: 21,
-          backgroundColor: colors.secondaryContainer,
-          child: Icon(
-            Icons.payments_outlined,
-            size: 20,
-            color: colors.onSecondaryContainer,
+    return Container(
+      constraints: const BoxConstraints(minHeight: 66),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: colors.secondaryContainer,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(
+              AppIcons.payment,
+              size: 19,
+              color: colors.onSecondaryContainer,
+            ),
           ),
-        ),
-        title: Text(
-          payment.customerName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          '${_paymentMethodLabel(l10n, payment)} • ${_date(payment.paymentDate)}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
-        ),
-        trailing: Text(
-          '-${MoneyUtils.format(payment.appliedAmountMinor, payment.appliedCurrency)}',
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: colors.primary,
-            fontWeight: FontWeight.w600,
+
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  payment.customerName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 2),
+
+                Text(
+                  '${_paymentMethodLabel(l10n, payment)} • '
+                  '${_date(payment.paymentDate)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+
+          const SizedBox(width: 12),
+
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 118),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                '-${MoneyUtils.format(payment.appliedAmountMinor, payment.appliedCurrency)}',
+                maxLines: 1,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: colors.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
+// ============================================================
+// ERROR STATE
+// ============================================================
 
 class _DashboardError extends StatelessWidget {
   const _DashboardError({required this.message});
@@ -718,7 +928,10 @@ class _DashboardError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
     return SafeArea(
       child: Center(
@@ -727,16 +940,16 @@ class _DashboardError extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.error_outline_rounded, size: 46, color: colors.error),
+              Icon(AppIcons.error, size: 38, color: colors.error),
 
               const SizedBox(height: 10),
 
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+                ),
               ),
             ],
           ),
