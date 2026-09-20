@@ -8,6 +8,8 @@ import '../../services/sale_service.dart';
 import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
 import '../receipts/sale_receipt_screen.dart';
+import '../reports/today_payments_screen.dart';
+import '../reports/today_sales_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({
@@ -105,6 +107,8 @@ class DashboardScreen extends StatelessWidget {
                 usdOutstanding -= payment.appliedAmountMinor;
               }
 
+              // Dashboard "Received Today" shows what Mom
+              // actually received, not the converted debt amount.
               if (_isToday(payment.paymentDate)) {
                 if (payment.paidCurrency == MoneyCurrency.khr) {
                   todayPaymentsKhr += payment.paidAmountMinor;
@@ -161,10 +165,6 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// DASHBOARD CONTENT
-// ============================================================
 
 class _DashboardContent extends StatelessWidget {
   const _DashboardContent({
@@ -263,7 +263,7 @@ class _DashboardContent extends StatelessWidget {
           const SizedBox(height: 14),
 
           // =================================================
-          // ONLY DASHBOARD BODY SCROLLS
+          // SCROLLABLE DASHBOARD BODY
           // =================================================
           Expanded(
             child: ListView(
@@ -362,6 +362,8 @@ class _DashboardContent extends StatelessWidget {
 
                 // =================================================
                 // TODAY
+                //
+                // Both cards now open their full report pages.
                 // =================================================
                 Row(
                   children: [
@@ -371,6 +373,14 @@ class _DashboardContent extends StatelessWidget {
                         title: l10n.salesToday,
                         khr: todaySalesKhr,
                         usd: todaySalesUsd,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const TodaySalesScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ),
 
@@ -382,6 +392,14 @@ class _DashboardContent extends StatelessWidget {
                         title: l10n.receivedToday,
                         khr: todayPaymentsKhr,
                         usd: todayPaymentsUsd,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const TodayPaymentsScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -515,6 +533,7 @@ class _TodayCard extends StatelessWidget {
     required this.title,
     required this.khr,
     required this.usd,
+    required this.onTap,
   });
 
   final IconData icon;
@@ -523,72 +542,99 @@ class _TodayCard extends StatelessWidget {
   final int khr;
   final int usd;
 
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    return Container(
-      constraints: const BoxConstraints(minHeight: 118),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colors.surfaceContainerLowest,
+    return Material(
+      color: colors.surfaceContainerLowest,
+      borderRadius: BorderRadius.circular(20),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
         borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: colors.primaryContainer,
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Icon(icon, size: 18, color: colors.onPrimaryContainer),
-          ),
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 118),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: colors.primaryContainer,
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      child: Icon(
+                        icon,
+                        size: 18,
+                        color: colors.onPrimaryContainer,
+                      ),
+                    ),
 
-          const SizedBox(height: 8),
+                    const Spacer(),
 
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colors.onSurfaceVariant,
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              MoneyUtils.format(khr, MoneyCurrency.khr),
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-
-          if (usd > 0) ...[
-            const SizedBox(height: 2),
-
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                MoneyUtils.format(usd, MoneyCurrency.usd),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colors.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
+                    Icon(
+                      AppIcons.chevronRight,
+                      size: 17,
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ],
                 ),
-              ),
+
+                const SizedBox(height: 8),
+
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    MoneyUtils.format(khr, MoneyCurrency.khr),
+                    maxLines: 1,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+
+                if (usd > 0) ...[
+                  const SizedBox(height: 2),
+
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      MoneyUtils.format(usd, MoneyCurrency.usd),
+                      maxLines: 1,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
-        ],
+          ),
+        ),
       ),
     );
   }
