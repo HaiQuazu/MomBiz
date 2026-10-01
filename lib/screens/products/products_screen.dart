@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../models/product.dart';
+import '../../services/product_image_service.dart';
 import '../../services/product_service.dart';
 import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
@@ -18,6 +21,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   final _searchController = TextEditingController();
 
   late final Stream<List<Product>> _activeProductsStream;
+
   late final Stream<List<Product>> _archivedProductsStream;
 
   String _search = '';
@@ -27,8 +31,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
   void initState() {
     super.initState();
 
-    // Keep both streams alive so switching tabs
-    // does not recreate Firestore streams.
+    // Keep both streams alive so switching between
+    // Active and Archived does not recreate Firestore
+    // streams or briefly flash an empty state.
     _activeProductsStream = ProductService.instance.watchProducts(
       archived: false,
     );
@@ -41,6 +46,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+
     super.dispose();
   }
 
@@ -62,8 +68,8 @@ class _ProductsScreenState extends State<ProductsScreen> {
     required Stream<List<Product>> stream,
     required bool archived,
   }) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
+
     final l10n = AppLocalizations.of(context)!;
 
     final isKhmer = Localizations.localeOf(context).languageCode == 'km';
@@ -97,24 +103,19 @@ class _ProductsScreenState extends State<ProductsScreen> {
           key: PageStorageKey(
             archived ? 'archived_products_list' : 'active_products_list',
           ),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
           itemCount: products.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 8),
+          // ignore: unnecessary_underscores
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final product = products[index];
 
             return Material(
-              color: archived
-                  ? colors.surfaceContainerLow
-                  : colors.surfaceContainerLowest,
+              color: colors.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(20),
               clipBehavior: Clip.antiAlias,
               child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () {
-                  _editProduct(product);
-                },
+                onTap: () => _editProduct(product),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -122,33 +123,14 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   ),
                   child: Row(
                     children: [
-                      // --------------------------
-                      // CATEGORY ICON
-                      // --------------------------
-                      Container(
-                        width: 44,
-                        height: 44,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: archived
-                              ? colors.surfaceContainerHighest
-                              : colors.primaryContainer,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Icon(
-                          _iconForCategory(product.category),
-                          size: 21,
-                          color: archived
-                              ? colors.onSurfaceVariant
-                              : colors.onPrimaryContainer,
-                        ),
+                      _LocalProductThumbnail(
+                        productId: product.id,
+                        fallbackIcon: _iconForCategory(product.category),
+                        size: 44,
                       ),
 
                       const SizedBox(width: 12),
 
-                      // --------------------------
-                      // PRODUCT DETAILS
-                      // --------------------------
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,19 +139,18 @@ class _ProductsScreenState extends State<ProductsScreen> {
                               product.name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: archived
-                                    ? colors.onSurfaceVariant
-                                    : null,
-                                fontWeight: isKhmer
-                                    ? FontWeight.w500
-                                    : FontWeight.w600,
-                              ),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    fontWeight: isKhmer
+                                        ? FontWeight.w500
+                                        : FontWeight.w600,
+                                  ),
                             ),
 
                             if (product.category.trim().isNotEmpty ||
                                 product.unit.trim().isNotEmpty) ...[
                               const SizedBox(height: 2),
+
                               Text(
                                 [
                                   if (product.category.trim().isNotEmpty)
@@ -179,27 +160,26 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                 ].join(' • '),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colors.onSurfaceVariant,
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(color: colors.onSurfaceVariant),
                               ),
                             ],
 
                             if (product.defaultPriceMinor > 0) ...[
                               const SizedBox(height: 3),
+
                               Text(
                                 '${l10n.defaultPrice}: '
                                 '${MoneyUtils.format(product.defaultPriceMinor, product.defaultPriceCurrency)}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: archived
-                                      ? colors.onSurfaceVariant
-                                      : colors.primary,
-                                  fontWeight: isKhmer
-                                      ? FontWeight.w500
-                                      : FontWeight.w600,
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: colors.primary,
+                                      fontWeight: isKhmer
+                                          ? FontWeight.w500
+                                          : FontWeight.w600,
+                                    ),
                               ),
                             ],
                           ],
@@ -208,23 +188,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
                       const SizedBox(width: 8),
 
-                      if (archived)
-                        Container(
-                          width: 34,
-                          height: 34,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: colors.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: Icon(
-                            AppIcons.archive,
-                            size: 17,
-                            color: colors.onSurfaceVariant,
-                          ),
-                        )
-                      else
-                        const Icon(AppIcons.chevronRight, size: 20),
+                      const Icon(AppIcons.chevronRight, size: 20),
                     ],
                   ),
                 ),
@@ -238,8 +202,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     final l10n = AppLocalizations.of(context)!;
 
     final isKhmer = Localizations.localeOf(context).languageCode == 'km';
@@ -247,15 +209,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final headingWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
 
     return Scaffold(
-      // ====================================================
-      // FIXED APP BAR
-      // ====================================================
       appBar: AppBar(
         title: Text(
           l10n.products,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: headingWeight,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: headingWeight),
         ),
       ),
 
@@ -268,140 +227,115 @@ class _ProductsScreenState extends State<ProductsScreen> {
               label: Text(l10n.addProduct),
             ),
 
-      // ====================================================
-      // HEADER CONTROLS FIXED
-      // ONLY PRODUCT LIST SCROLLS
-      // ====================================================
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            // --------------------------------------------
-            // SEARCH
-            // --------------------------------------------
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
-              child: SearchBar(
-                controller: _searchController,
-                hintText: l10n.searchProducts,
-                leading: const Icon(AppIcons.search, size: 21),
-                elevation: const WidgetStatePropertyAll(0),
-                backgroundColor: WidgetStatePropertyAll(
-                  colors.surfaceContainerLow,
-                ),
-                shape: WidgetStatePropertyAll(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+      body: Column(
+        children: [
+          // -------------------------
+          // SEARCH
+          // -------------------------
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+            child: SearchBar(
+              controller: _searchController,
+              hintText: l10n.searchProducts,
+              leading: const Icon(AppIcons.search, size: 21),
+              elevation: const WidgetStatePropertyAll(0),
+              onChanged: (value) {
+                setState(() {
+                  _search = value.trim().toLowerCase();
+                });
+              },
+              trailing: [
+                if (_search.isNotEmpty)
+                  IconButton(
+                    onPressed: () {
+                      _searchController.clear();
+
+                      setState(() {
+                        _search = '';
+                      });
+                    },
+                    icon: const Icon(AppIcons.close, size: 20),
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // -------------------------
+          // ACTIVE / ARCHIVED
+          //
+          // KEEP OLD COMPACT STYLE.
+          // -------------------------
+          Center(
+            child: SizedBox(
+              width: 240,
+              child: SegmentedButton<bool>(
+                expandedInsets: EdgeInsets.zero,
+                selectedIcon: const Icon(AppIcons.check, size: 18),
+                style: ButtonStyle(
+                  visualDensity: const VisualDensity(
+                    horizontal: -1,
+                    vertical: -2,
+                  ),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding: WidgetStateProperty.all(
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   ),
                 ),
-                constraints: const BoxConstraints(minHeight: 52, maxHeight: 52),
-                onChanged: (value) {
+                segments: [
+                  ButtonSegment<bool>(
+                    value: false,
+                    icon: const Icon(AppIcons.products, size: 18),
+                    label: Text(
+                      l10n.active,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.fade,
+                    ),
+                  ),
+                  ButtonSegment<bool>(
+                    value: true,
+                    icon: const Icon(AppIcons.archive, size: 18),
+                    label: Text(
+                      l10n.archived,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.fade,
+                    ),
+                  ),
+                ],
+                selected: {_showArchived},
+                onSelectionChanged: (selection) {
                   setState(() {
-                    _search = value.trim().toLowerCase();
+                    _showArchived = selection.first;
                   });
                 },
-                trailing: [
-                  if (_search.isNotEmpty)
-                    IconButton(
-                      onPressed: () {
-                        _searchController.clear();
-
-                        setState(() {
-                          _search = '';
-                        });
-                      },
-                      icon: const Icon(AppIcons.close, size: 20),
-                    ),
-                ],
               ),
             ),
+          ),
 
-            const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
-            // --------------------------------------------
-            // ACTIVE / ARCHIVED
-            // --------------------------------------------
-            Center(
-              child: SizedBox(
-                width: 240,
-                child: SegmentedButton<bool>(
-                  expandedInsets: EdgeInsets.zero,
-                  selectedIcon: const Icon(AppIcons.check, size: 18),
-                  style: ButtonStyle(
-                    visualDensity: const VisualDensity(
-                      horizontal: -1,
-                      vertical: -2,
-                    ),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    padding: WidgetStateProperty.all(
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    ),
-                    textStyle: WidgetStateProperty.resolveWith<TextStyle?>((
-                      states,
-                    ) {
-                      final selected = states.contains(WidgetState.selected);
-
-                      return theme.textTheme.labelLarge?.copyWith(
-                        fontWeight: selected
-                            ? FontWeight.w700
-                            : FontWeight.w600,
-                      );
-                    }),
-                  ),
-                  segments: [
-                    ButtonSegment<bool>(
-                      value: false,
-                      icon: const Icon(AppIcons.products, size: 18),
-                      label: Text(
-                        l10n.active,
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.fade,
-                      ),
-                    ),
-                    ButtonSegment<bool>(
-                      value: true,
-                      icon: const Icon(AppIcons.archive, size: 18),
-                      label: Text(
-                        l10n.archived,
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.fade,
-                      ),
-                    ),
-                  ],
-                  selected: {_showArchived},
-                  onSelectionChanged: (selection) {
-                    setState(() {
-                      _showArchived = selection.first;
-                    });
-                  },
+          // -------------------------
+          // LISTS
+          // -------------------------
+          Expanded(
+            child: IndexedStack(
+              index: _showArchived ? 1 : 0,
+              children: [
+                _buildProductList(
+                  stream: _activeProductsStream,
+                  archived: false,
                 ),
-              ),
+                _buildProductList(
+                  stream: _archivedProductsStream,
+                  archived: true,
+                ),
+              ],
             ),
-
-            const SizedBox(height: 14),
-
-            // --------------------------------------------
-            // SCROLLABLE LIST ONLY
-            // --------------------------------------------
-            Expanded(
-              child: IndexedStack(
-                index: _showArchived ? 1 : 0,
-                children: [
-                  _buildProductList(
-                    stream: _activeProductsStream,
-                    archived: false,
-                  ),
-                  _buildProductList(
-                    stream: _archivedProductsStream,
-                    archived: true,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -436,9 +370,75 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 }
 
-// ============================================================
-// EMPTY STATE
-// ============================================================
+
+class _LocalProductThumbnail extends StatelessWidget {
+  const _LocalProductThumbnail({
+    required this.productId,
+    required this.fallbackIcon,
+    required this.size,
+  });
+
+  final String productId;
+  final IconData fallbackIcon;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String?>(
+      future: ProductImageService.instance
+          .getImagePath(productId),
+      builder: (context, snapshot) {
+        final path =
+            snapshot.data;
+
+        return ClipRRect(
+          borderRadius:
+              BorderRadius.circular(14),
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: path != null &&
+                    path.trim().isNotEmpty
+                ? Image.file(
+                    File(path),
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                    errorBuilder:
+                        (context, error, stackTrace) {
+                      return _fallback(
+                        context,
+                      );
+                    },
+                  )
+                : _fallback(
+                    context,
+                  ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _fallback(
+    BuildContext context,
+  ) {
+    final colors =
+        Theme.of(context).colorScheme;
+
+    return Container(
+      color:
+          colors.primaryContainer,
+      alignment:
+          Alignment.center,
+      child: Icon(
+        fallbackIcon,
+        size: 21,
+        color:
+            colors.onPrimaryContainer,
+      ),
+    );
+  }
+}
 
 class _EmptyProducts extends StatelessWidget {
   const _EmptyProducts({required this.archived});
@@ -447,8 +447,7 @@ class _EmptyProducts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
 
@@ -463,7 +462,6 @@ class _EmptyProducts extends StatelessWidget {
             Container(
               width: 64,
               height: 64,
-              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: colors.primaryContainer,
                 borderRadius: BorderRadius.circular(20),
@@ -480,7 +478,7 @@ class _EmptyProducts extends StatelessWidget {
             Text(
               archived ? l10n.noArchivedProducts : l10n.noProductsYet,
               textAlign: TextAlign.center,
-              style: theme.textTheme.titleLarge?.copyWith(
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
               ),
             ),
@@ -492,9 +490,9 @@ class _EmptyProducts extends StatelessWidget {
                   ? l10n.archivedProductsAppearHere
                   : l10n.addProductsMomSells,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colors.onSurfaceVariant,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: colors.onSurfaceVariant),
             ),
           ],
         ),

@@ -9,12 +9,15 @@ class AppSettingsService extends ChangeNotifier {
 
   static const _languageKey = 'app_language';
   static const _themeKey = 'app_theme';
+  static const _chickProductIdKey = 'chick_product_id';
 
   Locale _locale = const Locale('en');
   ThemeMode _themeMode = ThemeMode.system;
+  String? _chickProductId;
 
   Locale get locale => _locale;
   ThemeMode get themeMode => _themeMode;
+  String? get chickProductId => _chickProductId;
 
   Future<void> load() async {
     final preferences =
@@ -43,6 +46,16 @@ class AppSettingsService extends ChangeNotifier {
 
       default:
         _themeMode = ThemeMode.system;
+    }
+
+    final savedChickProductId =
+        preferences.getString(_chickProductIdKey);
+
+    if (savedChickProductId == null ||
+        savedChickProductId.trim().isEmpty) {
+      _chickProductId = null;
+    } else {
+      _chickProductId = savedChickProductId.trim();
     }
 
     notifyListeners();
@@ -89,5 +102,34 @@ class AppSettingsService extends ChangeNotifier {
     );
 
     notifyListeners();
+  }
+
+  Future<void> setChickProductId(
+    String? productId,
+  ) async {
+    final preferences =
+        await SharedPreferences.getInstance();
+
+    final value = productId?.trim();
+
+    if (value == null || value.isEmpty) {
+      _chickProductId = null;
+
+      await preferences.remove(
+        _chickProductIdKey,
+      );
+    } else {
+      _chickProductId = value;
+
+      await preferences.setString(
+        _chickProductIdKey,
+        value,
+      );
+    }
+
+    // No notifyListeners() here.
+    // Choosing the chick product is an internal preference and does not
+    // need to rebuild the whole app. Rebuilding here could interrupt the
+    // first Queue -> Create Sale navigation.
   }
 }

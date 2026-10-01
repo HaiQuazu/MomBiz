@@ -32,7 +32,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
   void initState() {
     super.initState();
 
-    // Keep both streams alive while switching tabs.
     _activeCustomersStream = CustomerService.instance.watchCustomers(
       archived: false,
     );
@@ -91,14 +90,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
         final allCustomers = snapshot.data!;
 
-        // =====================================================
-        // DUPLICATE NAME COUNT
-        //
-        // Phone stays searchable for every customer,
-        // but is only displayed when duplicate names
-        // need to be distinguished.
-        // =====================================================
-
         final nameCounts = <String, int>{};
 
         for (final customer in allCustomers) {
@@ -110,10 +101,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
           nameCounts[key] = (nameCounts[key] ?? 0) + 1;
         }
-
-        // =====================================================
-        // SEARCH
-        // =====================================================
 
         final customers = allCustomers.where((customer) {
           if (_search.isEmpty) {
@@ -140,18 +127,15 @@ class _CustomersScreenState extends State<CustomersScreen> {
           );
         }
 
-        // =====================================================
-        // CUSTOMER LIST
-        // =====================================================
-
         return ListView.separated(
           key: PageStorageKey(
             archived ? 'archived_customers_list' : 'active_customers_list',
           ),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
           itemCount: customers.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 10),
+          separatorBuilder: (context, index) {
+            return const SizedBox(height: 10);
+          },
           itemBuilder: (context, index) {
             final customer = customers[index];
 
@@ -163,9 +147,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
               customer: customer,
               archived: archived,
               showPhone: duplicateName && customer.phone.trim().isNotEmpty,
-              onTap: () {
-                _openCustomer(customer);
-              },
+              onTap: () => _openCustomer(customer),
             );
           },
         );
@@ -176,20 +158,11 @@ class _CustomersScreenState extends State<CustomersScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     final colors = theme.colorScheme;
-
     final l10n = AppLocalizations.of(context)!;
-
-    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
-
-    final headingWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
 
     return SafeArea(
       child: Scaffold(
-        // ====================================================
-        // ADD CUSTOMER
-        // ====================================================
         floatingActionButton: _showArchived
             ? null
             : FloatingActionButton.extended(
@@ -198,17 +171,14 @@ class _CustomersScreenState extends State<CustomersScreen> {
                 icon: const Icon(AppIcons.customerAdd, size: 21),
                 label: Text(
                   l10n.addCustomer,
-                  style: TextStyle(
-                    fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
-
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // =================================================
-            // FIXED HEADER
+            // HEADER
             // =================================================
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -218,15 +188,13 @@ class _CustomersScreenState extends State<CustomersScreen> {
                     child: Text(
                       l10n.customers,
                       style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: headingWeight,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
-
                   Container(
                     width: 46,
                     height: 46,
-                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: colors.primaryContainer,
                       borderRadius: BorderRadius.circular(15),
@@ -244,7 +212,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
             const SizedBox(height: 18),
 
             // =================================================
-            // FIXED SEARCH
+            // SEARCH
             // =================================================
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -252,6 +220,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                 controller: _searchController,
                 hintText: l10n.searchNameOrPhone,
                 leading: const Icon(AppIcons.search, size: 21),
+                elevation: const WidgetStatePropertyAll<double>(0),
                 onChanged: (value) {
                   setState(() {
                     _search = value.trim().toLowerCase();
@@ -276,7 +245,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
             const SizedBox(height: 14),
 
             // =================================================
-            // FIXED ACTIVE / ARCHIVED
+            // ACTIVE / ARCHIVED
             // =================================================
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -301,11 +270,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                         final selected = states.contains(WidgetState.selected);
 
                         return theme.textTheme.labelLarge?.copyWith(
-                          fontWeight: isKhmer
-                              ? selected
-                                    ? FontWeight.w600
-                                    : FontWeight.w500
-                              : selected
+                          fontWeight: selected
                               ? FontWeight.w700
                               : FontWeight.w600,
                         );
@@ -347,9 +312,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
             const SizedBox(height: 16),
 
             // =================================================
-            // ONLY CUSTOMER LIST SCROLLS
-            //
-            // Both lists remain alive.
+            // CUSTOMER LISTS
             // =================================================
             Expanded(
               child: IndexedStack(
@@ -388,7 +351,6 @@ class _CustomerCard extends StatelessWidget {
   final Customer customer;
   final bool archived;
   final bool showPhone;
-
   final VoidCallback onTap;
 
   @override
@@ -430,10 +392,6 @@ class _CustomerCard extends StatelessWidget {
             var khrBalance = 0;
             var usdBalance = 0;
 
-            // =================================================
-            // SALES ADD TO DEBT
-            // =================================================
-
             for (final sale in sales) {
               if (sale.status != 'active') {
                 continue;
@@ -445,10 +403,6 @@ class _CustomerCard extends StatelessWidget {
                 usdBalance += sale.totalMinor;
               }
             }
-
-            // =================================================
-            // PAYMENTS SUBTRACT FROM DEBT
-            // =================================================
 
             for (final payment in paymentSnapshot.data!) {
               if (payment.status != 'active') {
@@ -518,25 +472,18 @@ class _CustomerCardContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     final colors = theme.colorScheme;
-
-    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
     return Material(
       color: colors.surfaceContainerLowest,
       borderRadius: BorderRadius.circular(22),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(22),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
           child: Row(
             children: [
-              // =================================================
-              // AVATAR
-              // =================================================
               CircleAvatar(
                 radius: 25,
                 backgroundColor: colors.primaryContainer,
@@ -553,9 +500,6 @@ class _CustomerCardContent extends StatelessWidget {
 
               const SizedBox(width: 13),
 
-              // =================================================
-              // NAME / DUPLICATE PHONE
-              // =================================================
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -566,13 +510,11 @@ class _CustomerCardContent extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-
                     if (showPhone) ...[
                       const SizedBox(height: 3),
-
                       Row(
                         children: [
                           Icon(
@@ -580,9 +522,7 @@ class _CustomerCardContent extends StatelessWidget {
                             size: 14,
                             color: colors.onSurfaceVariant,
                           ),
-
                           const SizedBox(width: 5),
-
                           Expanded(
                             child: Text(
                               customer.phone,
@@ -602,9 +542,6 @@ class _CustomerCardContent extends StatelessWidget {
 
               const SizedBox(width: 8),
 
-              // =================================================
-              // OUTSTANDING BALANCE
-              // =================================================
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 125),
                 child: _BalanceDisplay(
@@ -617,9 +554,6 @@ class _CustomerCardContent extends StatelessWidget {
 
               const SizedBox(width: 7),
 
-              // =================================================
-              // TRAILING
-              // =================================================
               if (archived)
                 Container(
                   padding: const EdgeInsets.all(8),
@@ -627,11 +561,7 @@ class _CustomerCardContent extends StatelessWidget {
                     color: colors.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(11),
                   ),
-                  child: Icon(
-                    AppIcons.archive,
-                    size: 18,
-                    color: colors.onSurfaceVariant,
-                  ),
+                  child: const Icon(AppIcons.archive, size: 18),
                 )
               else
                 const Icon(AppIcons.chevronRight, size: 20),
@@ -664,7 +594,6 @@ class _BalanceDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     final colors = theme.colorScheme;
 
     if (error) {
@@ -689,7 +618,6 @@ class _BalanceDisplay extends StatelessWidget {
     }
 
     final hasKhr = khrBalance > 0;
-
     final hasUsd = usdBalance > 0;
 
     if (!hasKhr && !hasUsd) {
@@ -701,32 +629,28 @@ class _BalanceDisplay extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (hasKhr)
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerRight,
-            child: Text(
-              MoneyUtils.format(khrBalance, MoneyCurrency.khr),
-              maxLines: 1,
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: colors.error,
-                fontWeight: FontWeight.w600,
-              ),
+          Text(
+            MoneyUtils.format(khrBalance, MoneyCurrency.khr),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: colors.error,
+              fontWeight: FontWeight.w600,
             ),
           ),
 
         if (hasKhr && hasUsd) const SizedBox(height: 2),
 
         if (hasUsd)
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerRight,
-            child: Text(
-              MoneyUtils.format(usdBalance, MoneyCurrency.usd),
-              maxLines: 1,
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: colors.error,
-                fontWeight: FontWeight.w600,
-              ),
+          Text(
+            MoneyUtils.format(usdBalance, MoneyCurrency.usd),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.right,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: colors.error,
+              fontWeight: FontWeight.w600,
             ),
           ),
       ],
@@ -752,10 +676,7 @@ class _CustomerMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     final colors = theme.colorScheme;
-
-    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
     return Center(
       child: Padding(
@@ -766,7 +687,6 @@ class _CustomerMessage extends StatelessWidget {
             Container(
               width: 72,
               height: 72,
-              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: colors.primaryContainer,
                 borderRadius: BorderRadius.circular(22),
@@ -780,7 +700,7 @@ class _CustomerMessage extends StatelessWidget {
               title,
               textAlign: TextAlign.center,
               style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+                fontWeight: FontWeight.w600,
               ),
             ),
 

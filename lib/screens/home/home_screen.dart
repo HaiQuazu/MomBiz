@@ -12,6 +12,7 @@ import '../customers/customers_screen.dart';
 import '../products/products_screen.dart';
 import '../queue/chick_queue_screen.dart';
 import '../sales/sale_form_screen.dart';
+import '../settings/chick_product_screen.dart';
 import '../settings/exchange_rate_screen.dart';
 import 'dashboard_screen.dart';
 
@@ -251,16 +252,13 @@ class _MoreScreen extends StatelessWidget {
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: titleWeight),
                 ),
-
                 const SizedBox(height: 5),
-
                 Text(
                   l10n.chooseLanguage,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
                 ),
-
                 const SizedBox(height: 14),
 
                 _LanguageOption(
@@ -324,16 +322,13 @@ class _MoreScreen extends StatelessWidget {
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: titleWeight),
                 ),
-
                 const SizedBox(height: 5),
-
                 Text(
                   l10n.chooseTheme,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
                 ),
-
                 const SizedBox(height: 14),
 
                 _ThemeOption(
@@ -474,6 +469,8 @@ class _MoreScreen extends StatelessWidget {
         children: [
           // =================================================
           // FIXED HEADER
+          // Same position as Customers / Queue.
+          // This part never scrolls.
           // =================================================
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -510,6 +507,7 @@ class _MoreScreen extends StatelessWidget {
 
           // =================================================
           // SCROLLABLE BODY
+          // Only this part scrolls.
           // =================================================
           Expanded(
             child: ListView(
@@ -575,6 +573,33 @@ class _MoreScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const ProductsScreen()),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 9),
+
+                // -------------------------------------------
+                // CHICK PRODUCT
+                // -------------------------------------------
+                _MoreCard(
+                  icon: AppIcons.chick,
+                  title: _text(
+                    context,
+                    en: 'Chick product',
+                    km: 'ផលិតផលកូនមាន់',
+                  ),
+                  subtitle: _text(
+                    context,
+                    en: 'Choose the product used when queue customers pick up chicks',
+                    km: 'ជ្រើសផលិតផលដែលប្រើពេលអតិថិជនមកយកកូនមាន់',
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ChickProductScreen(),
+                      ),
                     );
                   },
                 ),
