@@ -1,23 +1,22 @@
-MomBiz v1.2 UI polish
+MomBiz v1.2 — Products screen revised
 
 Replace:
-  lib/screens/customers/customer_details_screen.dart
-  lib/screens/sales/sale_form_screen.dart
+  lib/screens/products/products_screen.dart
 
-Changes only:
-1. Customer Details edit action is inset 8 px from the right edge.
-2. New Sale -> Products picker product photo is enlarged:
-   44x44 -> 52x52
-   radius 14 -> 16
-3. The small selected-product thumbnail inside the input remains 28x28.
-4. No business logic changes.
-5. Queue auto-fill and free local product pictures are preserved.
+Changes:
+- Restores the old floating Add Product button (easier access).
+- Removes the large Add Product card from above the list.
+- Products move back up into that space.
+- Main product thumbnails stay larger at 52x52.
+- Thumbnail corner radius is 16.
+- Fallback icon is slightly larger.
+- No business logic changes.
 
 After replacing:
   flutter analyze
 
-Then hot reload:
+Then:
   r
 
-If the currently open route does not visibly refresh, use:
+If needed:
   R

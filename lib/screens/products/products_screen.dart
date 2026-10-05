@@ -126,7 +126,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
                       _LocalProductThumbnail(
                         productId: product.id,
                         fallbackIcon: _iconForCategory(product.category),
-                        size: 44,
+                        size: 52,
                       ),
 
                       const SizedBox(width: 12),
@@ -384,6 +384,9 @@ class _LocalProductThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors =
+        Theme.of(context).colorScheme;
+
     return FutureBuilder<String?>(
       future: ProductImageService.instance
           .getImagePath(productId),
@@ -393,7 +396,7 @@ class _LocalProductThumbnail extends StatelessWidget {
 
         return ClipRRect(
           borderRadius:
-              BorderRadius.circular(14),
+              BorderRadius.circular(16),
           child: SizedBox(
             width: size,
             height: size,
@@ -432,7 +435,7 @@ class _LocalProductThumbnail extends StatelessWidget {
           Alignment.center,
       child: Icon(
         fallbackIcon,
-        size: 21,
+        size: 23,
         color:
             colors.onPrimaryContainer,
       ),
