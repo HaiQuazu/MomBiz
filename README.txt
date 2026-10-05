@@ -1,28 +1,23 @@
-MomBiz v1.1 - Change Chick Product setting
-
-Adds a proper setting so Mom can change which product is used by:
-Queue -> Picked Up / Create Sale
+MomBiz v1.2 UI polish
 
 Replace:
-- lib/screens/home/home_screen.dart
+  lib/screens/customers/customer_details_screen.dart
+  lib/screens/sales/sale_form_screen.dart
 
-Add:
-- lib/screens/settings/chick_product_screen.dart
-
-No Firestore migration.
-No Firebase Storage.
-No paid service.
-
-The current chick product ID is still stored in SharedPreferences through
-AppSettingsService, and Queue auto-fill continues to use it.
+Changes only:
+1. Customer Details edit action is inset 8 px from the right edge.
+2. New Sale -> Products picker product photo is enlarged:
+   44x44 -> 52x52
+   radius 14 -> 16
+3. The small selected-product thumbnail inside the input remains 28x28.
+4. No business logic changes.
+5. Queue auto-fill and free local product pictures are preserved.
 
 After replacing:
   flutter analyze
 
-Then hot restart:
-  R
+Then hot reload:
+  r
 
-Test:
-More -> Chick product -> choose Chicks -> Use for chick queue
-Then:
-Queue -> Picked Up / Create Sale
+If the currently open route does not visibly refresh, use:
+  R

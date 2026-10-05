@@ -2066,7 +2066,9 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                                               productId: product.id,
 
-                                              size: 44,
+                                              size: 52,
+
+                                              radius: 16,
 
                                             ),
 

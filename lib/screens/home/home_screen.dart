@@ -9,6 +9,7 @@ import '../../services/chick_notification_service.dart';
 import '../../services/exchange_rate_service.dart';
 import '../../theme/app_icons.dart';
 import '../customers/customers_screen.dart';
+import '../insights/business_insights_screen.dart';
 import '../products/products_screen.dart';
 import '../queue/chick_queue_screen.dart';
 import '../sales/sale_form_screen.dart';
@@ -561,6 +562,33 @@ class _MoreScreen extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 14),
+
+                // -------------------------------------------
+                // BUSINESS INSIGHTS
+                // -------------------------------------------
+                _MoreCard(
+                  icon: AppIcons.storefront,
+                  title: _text(
+                    context,
+                    en: 'Business Insights',
+                    km: 'ការវិភាគអាជីវកម្ម',
+                  ),
+                  subtitle: _text(
+                    context,
+                    en: 'Sales, debt, queue and simple business observations',
+                    km: 'ការលក់ បំណុល ជួរកូនមាន់ និងការសង្កេតអាជីវកម្ម',
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const BusinessInsightsScreen(),
+                      ),
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 9),
 
                 // -------------------------------------------
                 // PRODUCTS
