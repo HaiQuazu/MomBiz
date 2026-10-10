@@ -218,6 +218,26 @@ class _ChickProductScreenState
             ? FontWeight.w600
             : FontWeight.w700;
 
+    final compactPhone =
+        MediaQuery.sizeOf(context).width < 420;
+
+    final horizontalPadding =
+        compactPhone ? 16.0 : 20.0;
+
+    final bottomSystemInset =
+        MediaQuery.viewPaddingOf(context).bottom;
+
+    final keyboardInset =
+        MediaQuery.viewInsetsOf(context).bottom;
+
+    final keyboardOpen =
+        keyboardInset > 0;
+
+    final actionBottomPadding =
+        keyboardOpen
+            ? 12.0
+            : 12.0 + bottomSystemInset;
+
     final filteredProducts =
         _products.where((product) {
       if (_search.isEmpty) {
@@ -236,6 +256,8 @@ class _ChickProductScreenState
     }).toList();
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
+
       appBar: AppBar(
         title: Text(
           _text(
@@ -257,18 +279,18 @@ class _ChickProductScreenState
           children: [
             Padding(
               padding:
-                  const EdgeInsets.fromLTRB(
-                20,
-                8,
-                20,
+                  EdgeInsets.fromLTRB(
+                horizontalPadding,
+                compactPhone ? 6 : 8,
+                horizontalPadding,
                 0,
               ),
               child: Container(
                 width:
                     double.infinity,
                 padding:
-                    const EdgeInsets.all(
-                  16,
+                    EdgeInsets.all(
+                  compactPhone ? 12 : 16,
                 ),
                 decoration:
                     BoxDecoration(
@@ -288,8 +310,8 @@ class _ChickProductScreenState
                           .start,
                   children: [
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: compactPhone ? 40 : 44,
+                      height: compactPhone ? 40 : 44,
                       alignment:
                           Alignment.center,
                       decoration:
@@ -304,14 +326,14 @@ class _ChickProductScreenState
                       ),
                       child: Icon(
                         AppIcons.chick,
-                        size: 22,
+                        size: compactPhone ? 20 : 22,
                         color: colors
                             .onPrimaryContainer,
                       ),
                     ),
 
-                    const SizedBox(
-                      width: 12,
+                    SizedBox(
+                      width: compactPhone ? 10 : 12,
                     ),
 
                     Expanded(
@@ -331,6 +353,10 @@ class _ChickProductScreenState
                                 .textTheme
                                 .titleSmall
                                 ?.copyWith(
+                              fontSize:
+                                  compactPhone ? 13 : null,
+                              height:
+                                  compactPhone ? 1.22 : null,
                               fontWeight:
                                   isKhmer
                                       ? FontWeight
@@ -340,8 +366,8 @@ class _ChickProductScreenState
                             ),
                           ),
 
-                          const SizedBox(
-                            height: 4,
+                          SizedBox(
+                            height: compactPhone ? 2 : 4,
                           ),
 
                           Text(
@@ -355,6 +381,10 @@ class _ChickProductScreenState
                                 .textTheme
                                 .bodySmall
                                 ?.copyWith(
+                              fontSize:
+                                  compactPhone ? 11.5 : null,
+                              height:
+                                  compactPhone ? 1.22 : null,
                               color: colors
                                   .onSurfaceVariant,
                             ),
@@ -367,15 +397,15 @@ class _ChickProductScreenState
               ),
             ),
 
-            const SizedBox(
-              height: 14,
+            SizedBox(
+              height: compactPhone ? 10 : 14,
             ),
 
             Padding(
               padding:
-                  const EdgeInsets
+                  EdgeInsets
                       .symmetric(
-                horizontal: 20,
+                horizontal: horizontalPadding,
               ),
               child: SearchBar(
                 controller:
@@ -391,6 +421,13 @@ class _ChickProductScreenState
                     const WidgetStatePropertyAll(
                   0,
                 ),
+                constraints:
+                    compactPhone
+                        ? const BoxConstraints(
+                            minHeight: 48,
+                            maxHeight: 48,
+                          )
+                        : null,
                 onChanged: (value) {
                   setState(() {
                     _search =
@@ -422,8 +459,8 @@ class _ChickProductScreenState
               ),
             ),
 
-            const SizedBox(
-              height: 14,
+            SizedBox(
+              height: compactPhone ? 10 : 14,
             ),
 
             Expanded(
@@ -453,12 +490,15 @@ class _ChickProductScreenState
                               ScrollViewKeyboardDismissBehavior
                                   .onDrag,
                           padding:
-                              const EdgeInsets
+                              EdgeInsets
                                   .fromLTRB(
-                            20,
+                            horizontalPadding,
                             0,
-                            20,
-                            110,
+                            horizontalPadding,
+                            (compactPhone
+                                    ? 96.0
+                                    : 110.0) +
+                                keyboardInset,
                           ),
                           itemCount:
                               filteredProducts
@@ -468,8 +508,8 @@ class _ChickProductScreenState
                             context,
                             index,
                           ) =>
-                                  const SizedBox(
-                            height: 8,
+                                  SizedBox(
+                            height: compactPhone ? 6 : 8,
                           ),
                           itemBuilder:
                               (
@@ -519,18 +559,20 @@ class _ChickProductScreenState
                                       },
                                 child: Padding(
                                   padding:
-                                      const EdgeInsets
+                                      EdgeInsets
                                           .symmetric(
                                     horizontal:
-                                        14,
+                                        compactPhone ? 12 : 14,
                                     vertical:
-                                        11,
+                                        compactPhone ? 8 : 11,
                                   ),
                                   child: Row(
                                     children: [
                                       _ProductThumbnail(
                                         productId:
                                             product.id,
+                                        size:
+                                            compactPhone ? 56 : 44,
                                       ),
 
                                       const SizedBox(
@@ -665,18 +707,26 @@ class _ChickProductScreenState
         ),
       ),
 
-      bottomSheet: SafeArea(
-        top: false,
+      bottomSheet: AnimatedPadding(
+        duration:
+            const Duration(
+          milliseconds: 180,
+        ),
+        curve: Curves.easeOutCubic,
+        padding:
+            EdgeInsets.only(
+          bottom: keyboardInset,
+        ),
         child: Material(
           color: theme
               .scaffoldBackgroundColor,
           child: Padding(
             padding:
-                const EdgeInsets.fromLTRB(
-              20,
-              12,
-              20,
-              16,
+                EdgeInsets.fromLTRB(
+              horizontalPadding,
+              compactPhone ? 10 : 12,
+              horizontalPadding,
+              actionBottomPadding,
             ),
             child: SizedBox(
               width:
@@ -731,9 +781,11 @@ class _ProductThumbnail
     extends StatelessWidget {
   const _ProductThumbnail({
     required this.productId,
+    required this.size,
   });
 
   final String productId;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
@@ -753,11 +805,11 @@ class _ProductThumbnail
         return ClipRRect(
           borderRadius:
               BorderRadius.circular(
-            14,
+            size >= 48 ? 15 : 14,
           ),
           child: SizedBox(
-            width: 44,
-            height: 44,
+            width: size,
+            height: size,
             child: path != null &&
                     path
                         .trim()
@@ -802,7 +854,7 @@ class _ProductThumbnail
           .primaryContainer,
       child: Icon(
         AppIcons.chick,
-        size: 21,
+        size: size >= 56 ? 25 : 21,
         color: colors
             .onPrimaryContainer,
       ),

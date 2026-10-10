@@ -134,20 +134,15 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         await showDialog<void>(
           context: context,
           builder: (dialogContext) {
-            final colors = Theme.of(dialogContext).colorScheme;
-
-            final isKhmer =
-                Localizations.localeOf(dialogContext).languageCode == 'km';
-
             return AlertDialog(
-              icon: Icon(AppIcons.archive, color: colors.primary),
+              icon: Icon(
+                AppIcons.archive,
+                color: Theme.of(dialogContext).colorScheme.primary,
+              ),
               title: Text(
                 _text(
                   en: 'Cannot delete this customer',
                   km: 'មិនអាចលុបអតិថិជននេះបានទេ',
-                ),
-                style: Theme.of(dialogContext).textTheme.titleLarge?.copyWith(
-                  fontWeight: isKhmer ? FontWeight.w600 : FontWeight.w700,
                 ),
               ),
               content: Text(
@@ -176,18 +171,12 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         builder: (dialogContext) {
           final colors = Theme.of(dialogContext).colorScheme;
 
-          final isKhmer =
-              Localizations.localeOf(dialogContext).languageCode == 'km';
-
           return AlertDialog(
             icon: Icon(AppIcons.delete, color: colors.error),
             title: Text(
               _text(
                 en: 'Delete customer permanently?',
                 km: 'លុបអតិថិជននេះជាអចិន្ត្រៃយ៍?',
-              ),
-              style: Theme.of(dialogContext).textTheme.titleLarge?.copyWith(
-                fontWeight: isKhmer ? FontWeight.w600 : FontWeight.w700,
               ),
             ),
             content: Text(
@@ -263,8 +252,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
 
@@ -272,33 +260,40 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
 
     final pageTitleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
 
+    final bottomSystemInset = MediaQuery.viewPaddingOf(context).bottom;
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final keyboardOpen = keyboardInset > 0;
+
+    final actionBottomPadding =
+        keyboardOpen ? 12.0 : 12.0 + bottomSystemInset;
+
+    final bodyBottomPadding =
+        (_isEditing ? 150.0 : 100.0) + keyboardInset;
+
     return Scaffold(
-      // ====================================================
-      // FIXED APP BAR
-      // ====================================================
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(
           _isEditing ? l10n.editCustomer : l10n.newCustomer,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: pageTitleWeight,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: pageTitleWeight),
         ),
       ),
 
-      // ====================================================
-      // SCROLLABLE BODY
-      // ====================================================
       body: SafeArea(
-        top: false,
+        bottom: false,
         child: Form(
           key: _formKey,
           child: ListView(
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 170),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              8,
+              20,
+              bodyBottomPadding,
+            ),
             children: [
-              // ------------------------------------------------
-              // NAME
-              // ------------------------------------------------
               TextFormField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
@@ -321,9 +316,6 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
 
               const SizedBox(height: 14),
 
-              // ------------------------------------------------
-              // PHONE
-              // ------------------------------------------------
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
@@ -338,9 +330,6 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
 
               const SizedBox(height: 14),
 
-              // ------------------------------------------------
-              // NOTE
-              // ------------------------------------------------
               TextFormField(
                 controller: _noteController,
                 minLines: 3,
@@ -359,21 +348,22 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         ),
       ),
 
-      // ====================================================
-      // FIXED ACTION AREA
-      // ====================================================
-      bottomSheet: SafeArea(
-        top: false,
+      bottomSheet: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.only(bottom: keyboardInset),
         child: Material(
-          color: theme.scaffoldBackgroundColor,
+          color: Theme.of(context).scaffoldBackgroundColor,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              12,
+              20,
+              actionBottomPadding,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // --------------------------------------------
-                // SAVE / ADD CUSTOMER
-                // --------------------------------------------
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
@@ -398,20 +388,14 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
                   ),
                 ),
 
-                // --------------------------------------------
-                // DELETE
-                // --------------------------------------------
                 if (_isEditing) ...[
-                  const SizedBox(height: 8),
-
+                  const SizedBox(height: 6),
                   SizedBox(
                     width: double.infinity,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: colors.error,
-                        side: BorderSide(
-                          color: colors.error.withValues(alpha: 0.45),
-                        ),
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: colors.errorContainer,
+                        foregroundColor: colors.onErrorContainer,
                       ),
                       onPressed: _busy ? null : _deleteCustomer,
                       icon: _checkingDelete || _deleting
@@ -420,7 +404,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: colors.error,
+                                color: colors.onErrorContainer,
                               ),
                             )
                           : const Icon(AppIcons.delete, size: 20),

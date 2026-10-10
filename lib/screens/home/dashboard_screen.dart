@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -11,7 +13,7 @@ import '../receipts/sale_receipt_screen.dart';
 import '../reports/today_payments_screen.dart';
 import '../reports/today_sales_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({
     super.key,
     required this.onCustomersTap,
@@ -20,6 +22,125 @@ class DashboardScreen extends StatelessWidget {
 
   final VoidCallback onCustomersTap;
   final VoidCallback onNewSaleTap;
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  StreamSubscription<List<Sale>>? _saleSubscription;
+  StreamSubscription<List<CustomerPayment>>? _paymentSubscription;
+
+  List<Sale>? _sales;
+  List<CustomerPayment>? _payments;
+
+  Object? _saleError;
+  Object? _paymentError;
+
+  Timer? _startupSettleTimer;
+
+  bool _startupReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _saleSubscription = SaleService.instance.watchAllSales().listen(
+      _onSales,
+      onError: _onSaleError,
+    );
+
+    _paymentSubscription = PaymentService.instance.watchAllPayments().listen(
+      _onPayments,
+      onError: _onPaymentError,
+    );
+  }
+
+  @override
+  void dispose() {
+    _startupSettleTimer?.cancel();
+    _saleSubscription?.cancel();
+    _paymentSubscription?.cancel();
+
+    super.dispose();
+  }
+
+  void _onSales(List<Sale> sales) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _sales = sales;
+      _saleError = null;
+    });
+
+    _scheduleStartupReady();
+  }
+
+  void _onPayments(List<CustomerPayment> payments) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _payments = payments;
+      _paymentError = null;
+    });
+
+    _scheduleStartupReady();
+  }
+
+  void _onSaleError(Object error) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _saleError = error;
+    });
+  }
+
+  void _onPaymentError(Object error) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _paymentError = error;
+    });
+  }
+
+  void _scheduleStartupReady() {
+    if (_startupReady || _sales == null || _payments == null) {
+      return;
+    }
+
+    _startupSettleTimer?.cancel();
+
+    final hasStoredBusinessData =
+        _sales!.isNotEmpty || _payments!.isNotEmpty;
+
+    // Firestore can briefly emit an empty cached snapshot while the app is
+    // opening, then immediately replace it with the real server/cache data.
+    //
+    // Do not render "0៛" / "No activity" during that short startup window.
+    // Existing business data settles quickly; a genuinely empty account gets
+    // a longer grace period before its true empty state is shown.
+    final delay = hasStoredBusinessData
+        ? const Duration(milliseconds: 450)
+        : const Duration(seconds: 3);
+
+    _startupSettleTimer = Timer(delay, () {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _startupReady = true;
+      });
+    });
+  }
 
   bool _isToday(DateTime date) {
     final now = DateTime.now();
@@ -33,135 +154,119 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return StreamBuilder<List<Sale>>(
-      stream: SaleService.instance.watchAllSales(),
-      builder: (context, saleSnapshot) {
-        if (saleSnapshot.hasError) {
-          return _DashboardError(message: l10n.couldNotLoadSales);
+    if (_saleError != null) {
+      return _DashboardError(
+        message: l10n.couldNotLoadSales,
+      );
+    }
+
+    if (_paymentError != null) {
+      return _DashboardError(
+        message: l10n.couldNotLoadPayments,
+      );
+    }
+
+    if (!_startupReady || _sales == null || _payments == null) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    final sales = _sales!;
+    final payments = _payments!;
+
+    var khrOutstanding = 0;
+    var usdOutstanding = 0;
+
+    var todaySalesKhr = 0;
+    var todaySalesUsd = 0;
+
+    var todayPaymentsKhr = 0;
+    var todayPaymentsUsd = 0;
+
+    for (final sale in sales) {
+      if (sale.status != 'active') {
+        continue;
+      }
+
+      if (sale.currency == MoneyCurrency.khr) {
+        khrOutstanding += sale.totalMinor;
+
+        if (_isToday(sale.saleDate)) {
+          todaySalesKhr += sale.totalMinor;
         }
+      } else {
+        usdOutstanding += sale.totalMinor;
 
-        if (!saleSnapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
+        if (_isToday(sale.saleDate)) {
+          todaySalesUsd += sale.totalMinor;
         }
+      }
+    }
 
-        final sales = saleSnapshot.data!;
+    for (final payment in payments) {
+      if (payment.status != 'active') {
+        continue;
+      }
 
-        return StreamBuilder<List<CustomerPayment>>(
-          stream: PaymentService.instance.watchAllPayments(),
-          builder: (context, paymentSnapshot) {
-            if (paymentSnapshot.hasError) {
-              return _DashboardError(message: l10n.couldNotLoadPayments);
-            }
+      if (payment.appliedCurrency == MoneyCurrency.khr) {
+        khrOutstanding -= payment.appliedAmountMinor;
+      } else {
+        usdOutstanding -= payment.appliedAmountMinor;
+      }
 
-            if (!paymentSnapshot.hasData) {
-              return const Center(child: CircularProgressIndicator());
-            }
+      if (_isToday(payment.paymentDate)) {
+        if (payment.paidCurrency == MoneyCurrency.khr) {
+          todayPaymentsKhr += payment.paidAmountMinor;
+        } else {
+          todayPaymentsUsd += payment.paidAmountMinor;
+        }
+      }
+    }
 
-            final payments = paymentSnapshot.data!;
+    if (khrOutstanding < 0) {
+      khrOutstanding = 0;
+    }
 
-            var khrOutstanding = 0;
-            var usdOutstanding = 0;
+    if (usdOutstanding < 0) {
+      usdOutstanding = 0;
+    }
 
-            var todaySalesKhr = 0;
-            var todaySalesUsd = 0;
+    final activities = <_DashboardActivity>[];
 
-            var todayPaymentsKhr = 0;
-            var todayPaymentsUsd = 0;
-
-            // =================================================
-            // SALES
-            // =================================================
-
-            for (final sale in sales) {
-              if (sale.status != 'active') {
-                continue;
-              }
-
-              if (sale.currency == MoneyCurrency.khr) {
-                khrOutstanding += sale.totalMinor;
-
-                if (_isToday(sale.saleDate)) {
-                  todaySalesKhr += sale.totalMinor;
-                }
-              } else {
-                usdOutstanding += sale.totalMinor;
-
-                if (_isToday(sale.saleDate)) {
-                  todaySalesUsd += sale.totalMinor;
-                }
-              }
-            }
-
-            // =================================================
-            // PAYMENTS
-            // =================================================
-
-            for (final payment in payments) {
-              if (payment.status != 'active') {
-                continue;
-              }
-
-              if (payment.appliedCurrency == MoneyCurrency.khr) {
-                khrOutstanding -= payment.appliedAmountMinor;
-              } else {
-                usdOutstanding -= payment.appliedAmountMinor;
-              }
-
-              // Dashboard "Received Today" shows what Mom
-              // actually received, not the converted debt amount.
-              if (_isToday(payment.paymentDate)) {
-                if (payment.paidCurrency == MoneyCurrency.khr) {
-                  todayPaymentsKhr += payment.paidAmountMinor;
-                } else {
-                  todayPaymentsUsd += payment.paidAmountMinor;
-                }
-              }
-            }
-
-            if (khrOutstanding < 0) {
-              khrOutstanding = 0;
-            }
-
-            if (usdOutstanding < 0) {
-              usdOutstanding = 0;
-            }
-
-            // =================================================
-            // RECENT ACTIVITY
-            // =================================================
-
-            final activities = <_DashboardActivity>[];
-
-            for (final sale in sales) {
-              if (sale.status == 'active') {
-                activities.add(_DashboardActivity.sale(sale));
-              }
-            }
-
-            for (final payment in payments) {
-              if (payment.status == 'active') {
-                activities.add(_DashboardActivity.payment(payment));
-              }
-            }
-
-            activities.sort((a, b) => b.date.compareTo(a.date));
-
-            final recentActivities = activities.take(5).toList();
-
-            return _DashboardContent(
-              khrOutstanding: khrOutstanding,
-              usdOutstanding: usdOutstanding,
-              todaySalesKhr: todaySalesKhr,
-              todaySalesUsd: todaySalesUsd,
-              todayPaymentsKhr: todayPaymentsKhr,
-              todayPaymentsUsd: todayPaymentsUsd,
-              activities: recentActivities,
-              onCustomersTap: onCustomersTap,
-              onNewSaleTap: onNewSaleTap,
-            );
-          },
+    for (final sale in sales) {
+      if (sale.status == 'active') {
+        activities.add(
+          _DashboardActivity.sale(sale),
         );
-      },
+      }
+    }
+
+    for (final payment in payments) {
+      if (payment.status == 'active') {
+        activities.add(
+          _DashboardActivity.payment(payment),
+        );
+      }
+    }
+
+    activities.sort(
+      (a, b) => b.date.compareTo(a.date),
+    );
+
+    final recentActivities =
+        activities.take(5).toList();
+
+    return _DashboardContent(
+      khrOutstanding: khrOutstanding,
+      usdOutstanding: usdOutstanding,
+      todaySalesKhr: todaySalesKhr,
+      todaySalesUsd: todaySalesUsd,
+      todayPaymentsKhr: todayPaymentsKhr,
+      todayPaymentsUsd: todayPaymentsUsd,
+      activities: recentActivities,
+      onCustomersTap: widget.onCustomersTap,
+      onNewSaleTap: widget.onNewSaleTap,
     );
   }
 }
@@ -195,8 +300,7 @@ class _DashboardContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
 
@@ -211,9 +315,9 @@ class _DashboardContent extends StatelessWidget {
     return SafeArea(
       child: Column(
         children: [
-          // =================================================
-          // FIXED HEADER
-          // =================================================
+          // -----------------------
+          // HEADER
+          // -----------------------
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
             child: Row(
@@ -225,16 +329,13 @@ class _DashboardContent extends StatelessWidget {
                     children: [
                       Text(
                         l10n.appName,
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: headingWeight,
-                        ),
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(fontWeight: headingWeight),
                       ),
-
                       const SizedBox(height: 2),
-
                       Text(
                         l10n.businessOverview,
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
                       ),
@@ -245,7 +346,6 @@ class _DashboardContent extends StatelessWidget {
                 Container(
                   width: 46,
                   height: 46,
-                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: colors.primaryContainer,
                     borderRadius: BorderRadius.circular(15),
@@ -262,16 +362,13 @@ class _DashboardContent extends StatelessWidget {
 
           const SizedBox(height: 14),
 
-          // =================================================
-          // SCROLLABLE DASHBOARD BODY
-          // =================================================
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 40),
               children: [
-                // =================================================
-                // OUTSTANDING CUSTOMER DEBT
-                // =================================================
+                // -----------------------
+                // OUTSTANDING DEBT
+                // -----------------------
                 Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
@@ -286,9 +383,12 @@ class _DashboardContent extends StatelessWidget {
                           Expanded(
                             child: Text(
                               l10n.outstandingCustomerDebt,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: colors.onPrimary.withValues(alpha: 0.82),
-                              ),
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: colors.onPrimary.withValues(
+                                      alpha: 0.82,
+                                    ),
+                                  ),
                             ),
                           ),
 
@@ -297,7 +397,6 @@ class _DashboardContent extends StatelessWidget {
                           Container(
                             width: 38,
                             height: 38,
-                            alignment: Alignment.center,
                             decoration: BoxDecoration(
                               color: colors.onPrimary.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(12),
@@ -318,16 +417,16 @@ class _DashboardContent extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Text(
                           MoneyUtils.format(khrOutstanding, MoneyCurrency.khr),
-                          style: theme.textTheme.headlineLarge?.copyWith(
-                            color: colors.onPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: Theme.of(context).textTheme.headlineLarge
+                              ?.copyWith(
+                                color: colors.onPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
                       ),
 
                       if (usdOutstanding > 0) ...[
                         const SizedBox(height: 3),
-
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
@@ -336,10 +435,11 @@ class _DashboardContent extends StatelessWidget {
                               usdOutstanding,
                               MoneyCurrency.usd,
                             ),
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              color: colors.onPrimary,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(
+                                  color: colors.onPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                         ),
                       ],
@@ -350,7 +450,7 @@ class _DashboardContent extends StatelessWidget {
                         noDebt
                             ? l10n.noOutstandingDebt
                             : l10n.acrossAllCustomers,
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colors.onPrimary.withValues(alpha: 0.72),
                         ),
                       ),
@@ -360,11 +460,9 @@ class _DashboardContent extends StatelessWidget {
 
                 const SizedBox(height: 14),
 
-                // =================================================
+                // -----------------------
                 // TODAY
-                //
-                // Both cards now open their full report pages.
-                // =================================================
+                // -----------------------
                 Row(
                   children: [
                     Expanded(
@@ -407,14 +505,14 @@ class _DashboardContent extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // =================================================
+                // -----------------------
                 // QUICK ACTIONS
-                // =================================================
+                // -----------------------
                 Text(
                   l10n.quickActions,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: sectionWeight,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: sectionWeight),
                 ),
 
                 const SizedBox(height: 8),
@@ -443,16 +541,16 @@ class _DashboardContent extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // =================================================
+                // -----------------------
                 // RECENT ACTIVITY
-                // =================================================
+                // -----------------------
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: Text(
                         l10n.recentActivity,
-                        style: theme.textTheme.titleLarge?.copyWith(
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: sectionWeight,
                         ),
                       ),
@@ -461,7 +559,7 @@ class _DashboardContent extends StatelessWidget {
                     if (activities.isNotEmpty)
                       Text(
                         l10n.latestCount(activities.length),
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                         ),
                       ),
@@ -488,11 +586,12 @@ class _DashboardContent extends StatelessWidget {
 
                         Text(
                           l10n.noActivityYet,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: isKhmer
-                                ? FontWeight.w500
-                                : FontWeight.w600,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: isKhmer
+                                    ? FontWeight.w500
+                                    : FontWeight.w600,
+                              ),
                         ),
 
                         const SizedBox(height: 4),
@@ -500,9 +599,8 @@ class _DashboardContent extends StatelessWidget {
                         Text(
                           l10n.activityWillAppearHere,
                           textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colors.onSurfaceVariant,
-                          ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: colors.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -523,10 +621,6 @@ class _DashboardContent extends StatelessWidget {
   }
 }
 
-// ============================================================
-// TODAY CARD
-// ============================================================
-
 class _TodayCard extends StatelessWidget {
   const _TodayCard({
     required this.icon,
@@ -538,101 +632,89 @@ class _TodayCard extends StatelessWidget {
 
   final IconData icon;
   final String title;
-
   final int khr;
   final int usd;
-
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
 
     return Material(
       color: colors.surfaceContainerLowest,
       borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
-        child: ConstrainedBox(
+        child: Container(
           constraints: const BoxConstraints(minHeight: 118),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: colors.primaryContainer,
-                        borderRadius: BorderRadius.circular(11),
-                      ),
-                      child: Icon(
-                        icon,
-                        size: 18,
-                        color: colors.onPrimaryContainer,
-                      ),
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: colors.primaryContainer,
+                      borderRadius: BorderRadius.circular(11),
                     ),
-
-                    const Spacer(),
-
-                    Icon(
-                      AppIcons.chevronRight,
-                      size: 17,
-                      color: colors.onSurfaceVariant,
+                    child: Icon(
+                      icon,
+                      size: 18,
+                      color: colors.onPrimaryContainer,
                     ),
-                  ],
-                ),
-
-                const SizedBox(height: 8),
-
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  ),
+                  const Spacer(),
+                  Icon(
+                    AppIcons.chevronRight,
+                    size: 17,
                     color: colors.onSurfaceVariant,
                   ),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
+              ),
+
+              const SizedBox(height: 4),
+
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  MoneyUtils.format(khr, MoneyCurrency.khr),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
+              ),
 
-                const SizedBox(height: 4),
-
+              if (usd > 0) ...[
+                const SizedBox(height: 2),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    MoneyUtils.format(khr, MoneyCurrency.khr),
-                    maxLines: 1,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                    MoneyUtils.format(usd, MoneyCurrency.usd),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                 ),
-
-                if (usd > 0) ...[
-                  const SizedBox(height: 2),
-
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      MoneyUtils.format(usd, MoneyCurrency.usd),
-                      maxLines: 1,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
         ),
       ),
@@ -640,10 +722,12 @@ class _TodayCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-// QUICK ACTION
-// ============================================================
-
+// Matches Customer Details:
+// padding vertical 16
+// icon 24
+// gap 7
+// titleSmall w600
+// no forced fixed height
 class _QuickAction extends StatelessWidget {
   const _QuickAction({
     required this.icon,
@@ -657,8 +741,7 @@ class _QuickAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
 
     final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
@@ -667,7 +750,6 @@ class _QuickAction extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
@@ -683,7 +765,7 @@ class _QuickAction extends StatelessWidget {
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
                 ),
               ),
@@ -694,10 +776,6 @@ class _QuickAction extends StatelessWidget {
     );
   }
 }
-
-// ============================================================
-// DASHBOARD ACTIVITY MODEL
-// ============================================================
 
 class _DashboardActivity {
   const _DashboardActivity({required this.date, this.sale, this.payment});
@@ -717,10 +795,6 @@ class _DashboardActivity {
 
   bool get isSale => sale != null;
 }
-
-// ============================================================
-// ACTIVITY CARD
-// ============================================================
 
 class _ActivityCard extends StatelessWidget {
   const _ActivityCard({required this.activity});
@@ -772,16 +846,9 @@ class _ActivityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
-
-    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
-
-    // ========================================================
-    // SALE
-    // ========================================================
 
     if (activity.isSale) {
       final sale = activity.sale!;
@@ -791,7 +858,6 @@ class _ActivityCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          borderRadius: BorderRadius.circular(18),
           onTap: () {
             Navigator.push(
               context,
@@ -809,7 +875,6 @@ class _ActivityCard extends StatelessWidget {
                   Container(
                     width: 42,
                     height: 42,
-                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: colors.primaryContainer,
                       borderRadius: BorderRadius.circular(13),
@@ -832,11 +897,8 @@ class _ActivityCard extends StatelessWidget {
                           sale.customerName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: isKhmer
-                                ? FontWeight.w500
-                                : FontWeight.w600,
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
 
                         const SizedBox(height: 2),
@@ -846,9 +908,8 @@ class _ActivityCard extends StatelessWidget {
                           '${_date(sale.saleDate)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colors.onSurfaceVariant,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: colors.onSurfaceVariant),
                         ),
                       ],
                     ),
@@ -863,8 +924,7 @@ class _ActivityCard extends StatelessWidget {
                       alignment: Alignment.centerRight,
                       child: Text(
                         '+${MoneyUtils.format(sale.totalMinor, sale.currency)}',
-                        maxLines: 1,
-                        style: theme.textTheme.titleSmall?.copyWith(
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: colors.error,
                           fontWeight: FontWeight.w700,
                         ),
@@ -878,10 +938,6 @@ class _ActivityCard extends StatelessWidget {
         ),
       );
     }
-
-    // ========================================================
-    // PAYMENT
-    // ========================================================
 
     final payment = activity.payment!;
 
@@ -897,7 +953,6 @@ class _ActivityCard extends StatelessWidget {
           Container(
             width: 42,
             height: 42,
-            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: colors.secondaryContainer,
               borderRadius: BorderRadius.circular(13),
@@ -920,8 +975,8 @@ class _ActivityCard extends StatelessWidget {
                   payment.customerName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
 
@@ -932,7 +987,7 @@ class _ActivityCard extends StatelessWidget {
                   '${_date(payment.paymentDate)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
                 ),
@@ -949,8 +1004,7 @@ class _ActivityCard extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: Text(
                 '-${MoneyUtils.format(payment.appliedAmountMinor, payment.appliedCurrency)}',
-                maxLines: 1,
-                style: theme.textTheme.titleSmall?.copyWith(
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: colors.primary,
                   fontWeight: FontWeight.w700,
                 ),
@@ -963,10 +1017,6 @@ class _ActivityCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-// ERROR STATE
-// ============================================================
-
 class _DashboardError extends StatelessWidget {
   const _DashboardError({required this.message});
 
@@ -974,8 +1024,7 @@ class _DashboardError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
 
     final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
@@ -993,7 +1042,7 @@ class _DashboardError extends StatelessWidget {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: isKhmer ? FontWeight.w500 : FontWeight.w600,
                 ),
               ),

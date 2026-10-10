@@ -110,7 +110,7 @@ class ProductService {
       'defaultPriceMinor':
           defaultPriceMinor,
       'defaultPriceCurrency':
-          defaultPriceCurrency.code,
+          defaultPriceCurrency.code,  
 
       'isArchived': false,
 

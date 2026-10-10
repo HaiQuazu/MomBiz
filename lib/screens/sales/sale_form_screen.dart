@@ -20,6 +20,7 @@ import '../../services/sale_service.dart';
 import '../../theme/app_icons.dart';
 
 import '../../utils/money_utils.dart';
+import '../../widgets/app_bottom_action_bar.dart';
 
 import '../receipts/sale_receipt_screen.dart';
 
@@ -348,6 +349,12 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
         final titleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
 
+        final compactPhone =
+            MediaQuery.sizeOf(sheetContext).width < 420;
+
+        final horizontalPadding =
+            compactPhone ? 16.0 : 20.0;
+
         return StatefulBuilder(
 
           builder: (context, setSheetState) {
@@ -410,7 +417,9 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
                       Padding(
 
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: horizontalPadding,
+                        ),
 
                         child: SearchBar(
 
@@ -438,11 +447,11 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
                           ),
 
-                          constraints: const BoxConstraints(
+                          constraints: BoxConstraints(
 
-                            minHeight: 52,
+                            minHeight: compactPhone ? 56 : 52,
 
-                            maxHeight: 52,
+                            maxHeight: compactPhone ? 48 : 52,
 
                           ),
 
@@ -484,7 +493,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
                       ),
 
-                      const SizedBox(height: 14),
+                      SizedBox(height: compactPhone ? 10 : 14),
 
                       Expanded(
 
@@ -566,15 +575,15 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
                                     ScrollViewKeyboardDismissBehavior.onDrag,
 
-                                padding: const EdgeInsets.fromLTRB(
+                                padding: EdgeInsets.fromLTRB(
 
-                                  20,
+                                  horizontalPadding,
 
                                   0,
 
-                                  20,
+                                  horizontalPadding,
 
-                                  24,
+                                  compactPhone ? 20 : 24,
 
                                 ),
 
@@ -582,7 +591,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
                                 separatorBuilder: (context, index) =>
 
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: compactPhone ? 6 : 8),
 
                                 itemBuilder: (context, index) {
 
@@ -1159,6 +1168,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
 
       // ====================================================
 
@@ -1618,59 +1628,45 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
       // ====================================================
 
-      bottomSheet: SafeArea(
+      bottomNavigationBar: AppBottomActionBar(
 
-        top: false,
+        child: SizedBox(
 
-        child: Material(
+          width: double.infinity,
 
-          color: theme.scaffoldBackgroundColor,
+          child: FilledButton.icon(
 
-          child: Padding(
+            onPressed: _saving ? null : _save,
 
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+            icon: _saving
 
-            child: SizedBox(
+                ? const SizedBox(
 
-              width: double.infinity,
+                    width: 20,
 
-              child: FilledButton.icon(
+                    height: 20,
 
-                onPressed: _saving ? null : _save,
+                    child: CircularProgressIndicator(strokeWidth: 2),
 
-                icon: _saving
+                  )
 
-                    ? const SizedBox(
+                : const Icon(AppIcons.check, size: 20),
 
-                        width: 20,
+            label: Text(
 
-                        height: 20,
+              _saving
 
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                  ? l10n.saving
 
-                      )
+                  : l10n.saveSaleAmount(
 
-                    : const Icon(AppIcons.check, size: 20),
+                      MoneyUtils.format(_total, _currency),
 
-                label: Text(
+                    ),
 
-                  _saving
+              maxLines: 1,
 
-                      ? l10n.saving
-
-                      : l10n.saveSaleAmount(
-
-                          MoneyUtils.format(_total, _currency),
-
-                        ),
-
-                  maxLines: 1,
-
-                  overflow: TextOverflow.ellipsis,
-
-                ),
-
-              ),
+              overflow: TextOverflow.ellipsis,
 
             ),
 
@@ -1796,6 +1792,15 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
         final titleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
 
+        // Responsive values for this Products bottom sheet.
+        // Narrow real phones get a denser layout; wider emulator keeps
+        // the larger layout.
+        final compactPhone =
+            MediaQuery.sizeOf(sheetContext).width < 420;
+
+        final horizontalPadding =
+            compactPhone ? 16.0 : 20.0;
+
         return StatefulBuilder(
 
           builder: (context, setSheetState) {
@@ -1830,7 +1835,8 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                 child: SizedBox(
 
-                  height: MediaQuery.sizeOf(context).height * 0.68,
+                  height: MediaQuery.sizeOf(context).height *
+                      (compactPhone ? 0.64 : 0.68),
 
                   child: Column(
 
@@ -1840,13 +1846,21 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                       Padding(
 
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+                        padding: EdgeInsets.fromLTRB(
+                          horizontalPadding,
+                          0,
+                          horizontalPadding,
+                          compactPhone ? 10 : 14,
+                        ),
 
                         child: Text(
 
                           l10n.products,
 
-                          style: theme.textTheme.titleLarge?.copyWith(
+                          style: (compactPhone
+                                  ? theme.textTheme.titleMedium
+                                  : theme.textTheme.titleLarge)
+                              ?.copyWith(
 
                             fontWeight: titleWeight,
 
@@ -1858,7 +1872,9 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                       Padding(
 
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: horizontalPadding,
+                        ),
 
                         child: SearchBar(
 
@@ -1886,11 +1902,11 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                           ),
 
-                          constraints: const BoxConstraints(
+                          constraints: BoxConstraints(
 
-                            minHeight: 52,
+                            minHeight: compactPhone ? 48 : 52,
 
-                            maxHeight: 52,
+                            maxHeight: compactPhone ? 48 : 52,
 
                           ),
 
@@ -1932,7 +1948,7 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                       ),
 
-                      const SizedBox(height: 14),
+                      SizedBox(height: compactPhone ? 10 : 14),
 
                       Expanded(
 
@@ -1996,15 +2012,15 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                                     ScrollViewKeyboardDismissBehavior.onDrag,
 
-                                padding: const EdgeInsets.fromLTRB(
+                                padding: EdgeInsets.fromLTRB(
 
-                                  20,
+                                  horizontalPadding,
 
                                   0,
 
-                                  20,
+                                  horizontalPadding,
 
-                                  24,
+                                  compactPhone ? 20 : 24,
 
                                 ),
 
@@ -2012,7 +2028,7 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                                 separatorBuilder: (context, index) =>
 
-                                    const SizedBox(height: 8),
+                                    SizedBox(height: compactPhone ? 6 : 8),
 
                                 itemBuilder: (context, index) {
 
@@ -2050,11 +2066,13 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                                       child: Padding(
 
-                                        padding: const EdgeInsets.symmetric(
+                                        padding: EdgeInsets.symmetric(
 
-                                          horizontal: 14,
+                                          horizontal:
+                                              compactPhone ? 12 : 14,
 
-                                          vertical: 11,
+                                          vertical:
+                                              compactPhone ? 8 : 11,
 
                                         ),
 
@@ -2066,9 +2084,11 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                                               productId: product.id,
 
-                                              size: 52,
+                                              size:
+                                                  compactPhone ? 56 : 52,
 
-                                              radius: 16,
+                                              radius:
+                                                  compactPhone ? 16 : 16,
 
                                             ),
 
@@ -2695,7 +2715,7 @@ class _SaleLocalProductThumbnail extends StatelessWidget {
 
         AppIcons.product,
 
-        size: size <= 30 ? 16 : 21,
+        size: size <= 30 ? 16 : (size >= 56 ? 25 : 21),
 
         color: colors.onPrimaryContainer,
 

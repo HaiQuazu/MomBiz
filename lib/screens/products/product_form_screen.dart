@@ -10,6 +10,7 @@ import '../../services/product_image_service.dart';
 import '../../services/product_service.dart';
 import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
+import '../../widgets/app_bottom_action_bar.dart';
 
 class ProductFormScreen extends StatefulWidget {
   const ProductFormScreen({
@@ -486,7 +487,9 @@ class _ProductFormScreenState
         _pickedImageBytes != null ||
             _hasExistingImage;
 
+
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(
           _isEditing
@@ -942,17 +945,9 @@ class _ProductFormScreenState
         ),
       ),
 
-      bottomSheet: SafeArea(
-        child: Container(
-          color: theme
-              .scaffoldBackgroundColor,
-          padding:
-              const EdgeInsets.fromLTRB(
-            20,
-            12,
-            20,
-            16,
-          ),
+      bottomNavigationBar: AppBottomActionBar(
+        child: SizedBox(
+          width: double.infinity,
           child: FilledButton.icon(
             onPressed:
                 _saving ? null : _save,

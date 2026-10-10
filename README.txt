@@ -1,22 +1,23 @@
-MomBiz v1.2 — Products screen revised
+MomBiz — Dashboard Today cards tappable
 
-Replace:
-  lib/screens/products/products_screen.dart
+Replace only:
+  lib/screens/home/dashboard_screen.dart
 
-Changes:
-- Restores the old floating Add Product button (easier access).
-- Removes the large Add Product card from above the list.
-- Products move back up into that space.
-- Main product thumbnails stay larger at 52x52.
-- Thumbnail corner radius is 16.
-- Fallback icon is slightly larger.
-- No business logic changes.
+Changes only:
+- Tap Sales today -> opens TodaySalesScreen
+- Tap Received today -> opens TodayPaymentsScreen
+- Small right arrow added to both Today cards
+- Quick Actions unchanged
+- Recent Activity unchanged
+- Dashboard calculations unchanged
+- No other UI/business logic changed
+
+Expected existing report files:
+  lib/screens/reports/today_sales_screen.dart
+  lib/screens/reports/today_payments_screen.dart
 
 After replacing:
   flutter analyze
 
 Then:
   r
-
-If needed:
-  R

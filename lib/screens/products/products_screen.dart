@@ -74,6 +74,15 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
     final isKhmer = Localizations.localeOf(context).languageCode == 'km';
 
+    // TECNO / narrower real phones use a slightly denser layout.
+    // Wider emulator/tablet-like logical widths keep the existing layout.
+    final compactPhone = MediaQuery.sizeOf(context).width < 420;
+    final horizontalPadding = compactPhone ? 16.0 : 20.0;
+    final itemHorizontalPadding = compactPhone ? 12.0 : 14.0;
+    final itemVerticalPadding = compactPhone ? 9.0 : 12.0;
+    final thumbnailSize = compactPhone ? 48.0 : 52.0;
+    final listGap = compactPhone ? 6.0 : 8.0;
+
     return StreamBuilder<List<Product>>(
       stream: stream,
       builder: (context, snapshot) {
@@ -103,10 +112,15 @@ class _ProductsScreenState extends State<ProductsScreen> {
           key: PageStorageKey(
             archived ? 'archived_products_list' : 'active_products_list',
           ),
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 110),
+          padding: EdgeInsets.fromLTRB(
+            horizontalPadding,
+            0,
+            horizontalPadding,
+            compactPhone ? 96 : 110,
+          ),
           itemCount: products.length,
           // ignore: unnecessary_underscores
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          separatorBuilder: (_, __) => SizedBox(height: listGap),
           itemBuilder: (context, index) {
             final product = products[index];
 
@@ -117,16 +131,16 @@ class _ProductsScreenState extends State<ProductsScreen> {
               child: InkWell(
                 onTap: () => _editProduct(product),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: itemHorizontalPadding,
+                    vertical: itemVerticalPadding,
                   ),
                   child: Row(
                     children: [
                       _LocalProductThumbnail(
                         productId: product.id,
                         fallbackIcon: _iconForCategory(product.category),
-                        size: 52,
+                        size: thumbnailSize,
                       ),
 
                       const SizedBox(width: 12),
@@ -208,6 +222,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
     final headingWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
 
+    final compactPhone = MediaQuery.sizeOf(context).width < 420;
+    final horizontalPadding = compactPhone ? 16.0 : 20.0;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -233,12 +250,20 @@ class _ProductsScreenState extends State<ProductsScreen> {
           // SEARCH
           // -------------------------
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 6, 20, 0),
+            padding: EdgeInsets.fromLTRB(
+              horizontalPadding,
+              compactPhone ? 4 : 6,
+              horizontalPadding,
+              0,
+            ),
             child: SearchBar(
               controller: _searchController,
               hintText: l10n.searchProducts,
               leading: const Icon(AppIcons.search, size: 21),
               elevation: const WidgetStatePropertyAll(0),
+              constraints: compactPhone
+                  ? const BoxConstraints(minHeight: 48, maxHeight: 48)
+                  : null,
               onChanged: (value) {
                 setState(() {
                   _search = value.trim().toLowerCase();
@@ -260,7 +285,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
             ),
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: compactPhone ? 10 : 12),
 
           // -------------------------
           // ACTIVE / ARCHIVED
@@ -269,7 +294,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
           // -------------------------
           Center(
             child: SizedBox(
-              width: 240,
+              width: compactPhone ? 220 : 240,
               child: SegmentedButton<bool>(
                 expandedInsets: EdgeInsets.zero,
                 selectedIcon: const Icon(AppIcons.check, size: 18),
@@ -280,7 +305,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   ),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   padding: WidgetStateProperty.all(
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    EdgeInsets.symmetric(
+                      horizontal: compactPhone ? 8 : 10,
+                      vertical: compactPhone ? 7 : 8,
+                    ),
                   ),
                 ),
                 segments: [
@@ -315,7 +343,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
             ),
           ),
 
-          const SizedBox(height: 14),
+          SizedBox(height: compactPhone ? 10 : 14),
 
           // -------------------------
           // LISTS
@@ -384,9 +412,6 @@ class _LocalProductThumbnail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors =
-        Theme.of(context).colorScheme;
-
     return FutureBuilder<String?>(
       future: ProductImageService.instance
           .getImagePath(productId),
@@ -435,7 +460,7 @@ class _LocalProductThumbnail extends StatelessWidget {
           Alignment.center,
       child: Icon(
         fallbackIcon,
-        size: 23,
+        size: size < 50 ? 21 : 23,
         color:
             colors.onPrimaryContainer,
       ),

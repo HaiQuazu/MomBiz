@@ -20,7 +20,9 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   await AppSettingsService.instance.load();
 
@@ -35,9 +37,8 @@ Future<void> main() async {
     ThemeMode.system => platformBrightness,
   };
 
-  final initialTheme = initialBrightness == Brightness.dark
-      ? AppTheme.dark
-      : AppTheme.light;
+  final initialTheme =
+      initialBrightness == Brightness.dark ? AppTheme.dark : AppTheme.light;
 
   SystemChrome.setSystemUIOverlayStyle(
     _systemUiStyle(
@@ -55,21 +56,16 @@ SystemUiOverlayStyle _systemUiStyle({
 }) {
   final isDark = brightness == Brightness.dark;
 
-  final baseStyle = isDark
-      ? SystemUiOverlayStyle.light
-      : SystemUiOverlayStyle.dark;
+  final baseStyle =
+      isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark;
 
   return baseStyle.copyWith(
     statusBarColor: backgroundColor,
-
-    statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-
+    statusBarIconBrightness:
+        isDark ? Brightness.light : Brightness.dark,
     systemNavigationBarColor: backgroundColor,
-
-    systemNavigationBarIconBrightness: isDark
-        ? Brightness.light
-        : Brightness.dark,
-
+    systemNavigationBarIconBrightness:
+        isDark ? Brightness.light : Brightness.dark,
     systemNavigationBarDividerColor: Colors.transparent,
   );
 }
@@ -84,21 +80,14 @@ class MomBizApp extends StatelessWidget {
       builder: (context, _) {
         return MaterialApp(
           title: 'MomBiz',
-
           debugShowCheckedModeBanner: false,
-
           locale: AppSettingsService.instance.locale,
-
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-
+          localizationsDelegates:
+              AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-
           theme: AppTheme.light,
-
           darkTheme: AppTheme.dark,
-
           themeMode: AppSettingsService.instance.themeMode,
-
           builder: (context, child) {
             final theme = Theme.of(context);
 
@@ -114,7 +103,6 @@ class MomBizApp extends StatelessWidget {
               child: child ?? const SizedBox.shrink(),
             );
           },
-
           home: const AuthGate(),
         );
       },
@@ -155,10 +143,13 @@ class _AuthGateState extends State<AuthGate> {
 
         await ChickNotificationService.instance.requestPermission();
 
-        await preferences.setBool(_notificationPermissionAskedKey, true);
+        await preferences.setBool(
+          _notificationPermissionAskedKey,
+          true,
+        );
       } catch (_) {
-        // Notification permission problems
-        // must never prevent MomBiz from opening.
+        // Notification permission problems must never
+        // prevent MomBiz from opening.
       }
     });
   }
@@ -167,21 +158,26 @@ class _AuthGateState extends State<AuthGate> {
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
       stream: AuthService.instance.authStateChanges,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
 
-        final user = snapshot.data;
+      // Firebase has already been initialized before runApp().
+      // Supplying the cached user prevents a one-frame loading screen
+      // every time MomBiz opens.
+      initialData: AuthService.instance.currentUser,
+
+      builder: (context, snapshot) {
+        final user =
+            snapshot.data ?? AuthService.instance.currentUser;
 
         if (user != null) {
           _scheduleNotificationPermissionCheck();
 
-          return _SignedInHome(key: ValueKey(user.uid));
+          return _SignedInHome(
+            key: ValueKey(user.uid),
+          );
         }
 
+        // Do not show a temporary spinner before Login.
+        // If the user is signed out, Login is the correct stable screen.
         return const LoginScreen();
       },
     );
@@ -197,7 +193,7 @@ class _SignedInHome extends StatefulWidget {
 
 class _SignedInHomeState extends State<_SignedInHome> {
   late final StreamSubscription<List<ChickReservation>>
-  _reservationSubscription;
+      _reservationSubscription;
 
   List<ChickReservation>? _latestReservations;
 
@@ -209,14 +205,13 @@ class _SignedInHomeState extends State<_SignedInHome> {
   void initState() {
     super.initState();
 
-    _lastLanguageCode = AppSettingsService.instance.locale.languageCode;
+    _lastLanguageCode =
+        AppSettingsService.instance.locale.languageCode;
 
-    // Watch MomBiz settings so changing
-    // English <-> Khmer rebuilds existing
-    // scheduled chick reminders.
-    AppSettingsService.instance.addListener(_onAppSettingsChanged);
+    AppSettingsService.instance.addListener(
+      _onAppSettingsChanged,
+    );
 
-    // Keep reminders synchronized with Firestore.
     _reservationSubscription = ChickQueueService.instance
         .watchReservations()
         .listen(
@@ -228,16 +223,21 @@ class _SignedInHomeState extends State<_SignedInHome> {
         );
   }
 
-  void _onReservationsChanged(List<ChickReservation> reservations) {
-    _latestReservations = List<ChickReservation>.from(reservations);
+  void _onReservationsChanged(
+    List<ChickReservation> reservations,
+  ) {
+    _latestReservations =
+        List<ChickReservation>.from(reservations);
 
-    _queueNotificationSync(_latestReservations!);
+    _queueNotificationSync(
+      _latestReservations!,
+    );
   }
 
   void _onAppSettingsChanged() {
-    final newLanguageCode = AppSettingsService.instance.locale.languageCode;
+    final newLanguageCode =
+        AppSettingsService.instance.locale.languageCode;
 
-    // Ignore theme changes and other settings.
     if (newLanguageCode == _lastLanguageCode) {
       return;
     }
@@ -250,20 +250,20 @@ class _SignedInHomeState extends State<_SignedInHome> {
       return;
     }
 
-    // Cancel old scheduled reminders and rebuild
-    // them using the newly selected language.
     _queueNotificationSync(reservations);
   }
 
-  void _queueNotificationSync(List<ChickReservation> reservations) {
-    final snapshot = List<ChickReservation>.from(reservations);
+  void _queueNotificationSync(
+    List<ChickReservation> reservations,
+  ) {
+    final snapshot =
+        List<ChickReservation>.from(reservations);
 
-    // Run notification updates one after another.
-    // This prevents English/Khmer rescheduling
-    // operations from racing each other.
-    _notificationSyncQueue = _notificationSyncQueue.then((_) async {
+    _notificationSyncQueue =
+        _notificationSyncQueue.then((_) async {
       try {
-        await ChickNotificationService.instance.syncReservations(snapshot);
+        await ChickNotificationService.instance
+            .syncReservations(snapshot);
       } catch (_) {
         // Scheduling problems must never affect
         // the Chick Queue itself.
@@ -273,7 +273,9 @@ class _SignedInHomeState extends State<_SignedInHome> {
 
   @override
   void dispose() {
-    AppSettingsService.instance.removeListener(_onAppSettingsChanged);
+    AppSettingsService.instance.removeListener(
+      _onAppSettingsChanged,
+    );
 
     _reservationSubscription.cancel();
 

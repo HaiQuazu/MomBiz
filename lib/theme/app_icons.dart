@@ -70,6 +70,7 @@ class AppIcons {
 
   // Receipt / auth
   static const IconData share = LucideIcons.share2;
+  static const IconData download = LucideIcons.download;
   static const IconData email = LucideIcons.mail;
   static const IconData lock = LucideIcons.lock;
   static const IconData visibility = LucideIcons.eye;

@@ -103,35 +103,50 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: screens),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(AppIcons.home, size: 21),
-            selectedIcon: const Icon(AppIcons.home, size: 22),
-            label: l10n.home,
-          ),
-          NavigationDestination(
-            icon: const Icon(AppIcons.customers, size: 21),
-            selectedIcon: const Icon(AppIcons.customers, size: 22),
-            label: l10n.customers,
-          ),
-          NavigationDestination(
-            icon: const Icon(AppIcons.queue, size: 21),
-            selectedIcon: const Icon(AppIcons.queue, size: 22),
-            label: l10n.queue,
-          ),
-          NavigationDestination(
-            icon: const Icon(AppIcons.more, size: 21),
-            selectedIcon: const Icon(AppIcons.more, size: 22),
-            label: l10n.more,
-          ),
-        ],
+      bottomNavigationBar: Theme(
+        // Remove the temporary grey pressed/ripple overlay.
+        // The NavigationBar's green selected indicator still animates normally.
+        data: Theme.of(context).copyWith(
+          splashFactory: NoSplash.splashFactory,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          hoverColor: Colors.transparent,
+          focusColor: Colors.transparent,
+        ),
+        child: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: (index) {
+            if (index == _selectedIndex) {
+              return;
+            }
+
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(AppIcons.home, size: 21),
+              selectedIcon: const Icon(AppIcons.home, size: 22),
+              label: l10n.home,
+            ),
+            NavigationDestination(
+              icon: const Icon(AppIcons.customers, size: 21),
+              selectedIcon: const Icon(AppIcons.customers, size: 22),
+              label: l10n.customers,
+            ),
+            NavigationDestination(
+              icon: const Icon(AppIcons.queue, size: 21),
+              selectedIcon: const Icon(AppIcons.queue, size: 22),
+              label: l10n.queue,
+            ),
+            NavigationDestination(
+              icon: const Icon(AppIcons.more, size: 21),
+              selectedIcon: const Icon(AppIcons.more, size: 22),
+              label: l10n.more,
+            ),
+          ],
+        ),
       ),
     );
   }

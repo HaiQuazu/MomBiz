@@ -6,6 +6,7 @@ import '../../models/customer.dart';
 import '../../services/chick_queue_service.dart';
 import '../../services/customer_service.dart';
 import '../../theme/app_icons.dart';
+import '../../widgets/app_bottom_action_bar.dart';
 
 class ChickReservationFormScreen extends StatefulWidget {
   const ChickReservationFormScreen({
@@ -58,7 +59,6 @@ class _ChickReservationFormScreenState
   @override
   void initState() {
     super.initState();
-
     _loadCustomers();
   }
 
@@ -137,10 +137,6 @@ class _ChickReservationFormScreenState
   }
 
   Future<void> _pickCustomer() async {
-    if (_saving) {
-      return;
-    }
-
     final l10n = AppLocalizations.of(context)!;
 
     final searchController = TextEditingController();
@@ -152,8 +148,7 @@ class _ChickReservationFormScreenState
       isScrollControlled: true,
       showDragHandle: true,
       builder: (sheetContext) {
-        final theme = Theme.of(sheetContext);
-        final colors = theme.colorScheme;
+        final colors = Theme.of(sheetContext).colorScheme;
 
         final isKhmer =
             Localizations.localeOf(sheetContext).languageCode == 'km';
@@ -186,12 +181,10 @@ class _ChickReservationFormScreenState
                         padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
                         child: Text(
                           l10n.customer,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: titleWeight,
-                          ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: titleWeight),
                         ),
                       ),
-
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: SearchBar(
@@ -199,18 +192,6 @@ class _ChickReservationFormScreenState
                           hintText: l10n.searchNameOrPhone,
                           leading: const Icon(AppIcons.search, size: 21),
                           elevation: const WidgetStatePropertyAll(0),
-                          backgroundColor: WidgetStatePropertyAll(
-                            colors.surfaceContainerLow,
-                          ),
-                          shape: WidgetStatePropertyAll(
-                            RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                          ),
-                          constraints: const BoxConstraints(
-                            minHeight: 52,
-                            maxHeight: 52,
-                          ),
                           onChanged: (value) {
                             setSheetState(() {
                               search = value.trim().toLowerCase();
@@ -231,9 +212,7 @@ class _ChickReservationFormScreenState
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 14),
-
                       Expanded(
                         child: filteredCustomers.isEmpty
                             ? Center(
@@ -247,26 +226,25 @@ class _ChickReservationFormScreenState
                                         size: 38,
                                         color: colors.primary,
                                       ),
-
                                       const SizedBox(height: 10),
-
                                       Text(
                                         l10n.noCustomerFound,
-                                        textAlign: TextAlign.center,
-                                        style: theme.textTheme.titleMedium
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
                                             ?.copyWith(
                                               fontWeight: isKhmer
                                                   ? FontWeight.w500
                                                   : FontWeight.w600,
                                             ),
                                       ),
-
                                       const SizedBox(height: 4),
-
                                       Text(
                                         l10n.tryAnotherNameOrPhone,
                                         textAlign: TextAlign.center,
-                                        style: theme.textTheme.bodySmall
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
                                             ?.copyWith(
                                               color: colors.onSurfaceVariant,
                                             ),
@@ -276,8 +254,6 @@ class _ChickReservationFormScreenState
                                 ),
                               )
                             : ListView.separated(
-                                keyboardDismissBehavior:
-                                    ScrollViewKeyboardDismissBehavior.onDrag,
                                 padding: const EdgeInsets.fromLTRB(
                                   20,
                                   0,
@@ -301,7 +277,6 @@ class _ChickReservationFormScreenState
                                     borderRadius: BorderRadius.circular(18),
                                     clipBehavior: Clip.antiAlias,
                                     child: InkWell(
-                                      borderRadius: BorderRadius.circular(18),
                                       onTap: () {
                                         Navigator.pop(
                                           sheetContext,
@@ -311,7 +286,7 @@ class _ChickReservationFormScreenState
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(
                                           horizontal: 14,
-                                          vertical: 11,
+                                          vertical: 12,
                                         ),
                                         child: Row(
                                           children: [
@@ -325,7 +300,7 @@ class _ChickReservationFormScreenState
                                                     : customer.name
                                                           .trim()[0]
                                                           .toUpperCase(),
-                                                style: theme
+                                                style: Theme.of(context)
                                                     .textTheme
                                                     .titleSmall
                                                     ?.copyWith(
@@ -336,27 +311,22 @@ class _ChickReservationFormScreenState
                                                     ),
                                               ),
                                             ),
-
                                             const SizedBox(width: 12),
-
                                             Expanded(
                                               child: Text(
                                                 customer.name,
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: theme
+                                                style: Theme.of(context)
                                                     .textTheme
                                                     .titleMedium
                                                     ?.copyWith(
-                                                      fontWeight: isKhmer
-                                                          ? FontWeight.w500
-                                                          : FontWeight.w600,
+                                                      fontWeight:
+                                                          FontWeight.w600,
                                                     ),
                                               ),
                                             ),
-
                                             const SizedBox(width: 8),
-
                                             if (selected)
                                               Icon(
                                                 AppIcons.selected,
@@ -404,10 +374,6 @@ class _ChickReservationFormScreenState
   }
 
   Future<void> _pickReservationDate() async {
-    if (_saving) {
-      return;
-    }
-
     final picked = await showDatePicker(
       context: context,
       initialDate: _reservationDate,
@@ -415,7 +381,7 @@ class _ChickReservationFormScreenState
       lastDate: DateTime.now(),
     );
 
-    if (picked == null || !mounted) {
+    if (picked == null) {
       return;
     }
 
@@ -425,10 +391,6 @@ class _ChickReservationFormScreenState
   }
 
   Future<void> _pickScheduledDate() async {
-    if (_saving) {
-      return;
-    }
-
     final firstDate = _isEditing ? DateTime(2020) : DateTime.now();
 
     final picked = await showDatePicker(
@@ -438,7 +400,7 @@ class _ChickReservationFormScreenState
       lastDate: DateTime(DateTime.now().year + 3),
     );
 
-    if (picked == null || !mounted) {
+    if (picked == null) {
       return;
     }
 
@@ -530,8 +492,7 @@ class _ChickReservationFormScreenState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
 
     final l10n = AppLocalizations.of(context)!;
 
@@ -542,44 +503,27 @@ class _ChickReservationFormScreenState
     final pageTitleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
 
     if (_loading) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text(
-            _isEditing ? l10n.editChickReservation : l10n.newChickReservation,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: pageTitleWeight,
-            ),
-          ),
-        ),
-        body: const Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      // ====================================================
-      // FIXED APP BAR
-      // ====================================================
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(
           _isEditing ? l10n.editChickReservation : l10n.newChickReservation,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: pageTitleWeight,
-          ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: pageTitleWeight),
         ),
       ),
 
-      // ====================================================
-      // SCROLLABLE BODY
-      // ====================================================
       body: SafeArea(
-        top: false,
         child: ListView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 130),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           children: [
-            // ------------------------------------------------
+            // -------------------------
             // CUSTOMER
-            // ------------------------------------------------
+            // -------------------------
             InkWell(
               borderRadius: BorderRadius.circular(18),
               onTap: _saving ? null : _pickCustomer,
@@ -593,7 +537,7 @@ class _ChickReservationFormScreenState
                   selectedCustomer?.name ?? l10n.pleaseSelectCustomer,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyLarge?.copyWith(
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: selectedCustomer == null
                         ? colors.onSurfaceVariant
                         : colors.onSurface,
@@ -604,9 +548,9 @@ class _ChickReservationFormScreenState
 
             const SizedBox(height: 14),
 
-            // ------------------------------------------------
+            // -------------------------
             // QUANTITY
-            // ------------------------------------------------
+            // -------------------------
             TextField(
               controller: _quantityController,
               enabled: !_saving,
@@ -621,9 +565,9 @@ class _ChickReservationFormScreenState
 
             const SizedBox(height: 14),
 
-            // ------------------------------------------------
+            // -------------------------
             // RESERVATION DATE
-            // ------------------------------------------------
+            // -------------------------
             InkWell(
               borderRadius: BorderRadius.circular(18),
               onTap: _saving ? null : _pickReservationDate,
@@ -638,9 +582,9 @@ class _ChickReservationFormScreenState
 
             const SizedBox(height: 14),
 
-            // ------------------------------------------------
+            // -------------------------
             // SCHEDULED BATCH DATE
-            // ------------------------------------------------
+            // -------------------------
             InkWell(
               borderRadius: BorderRadius.circular(18),
               onTap: _saving ? null : _pickScheduledDate,
@@ -655,15 +599,14 @@ class _ChickReservationFormScreenState
 
             const SizedBox(height: 14),
 
-            // ------------------------------------------------
+            // -------------------------
             // NOTE
-            // ------------------------------------------------
+            // -------------------------
             TextField(
               controller: _noteController,
               enabled: !_saving,
               minLines: 3,
               maxLines: 5,
-              textInputAction: TextInputAction.newline,
               decoration: InputDecoration(
                 labelText: l10n.note,
                 hintText: l10n.optional,
@@ -671,38 +614,30 @@ class _ChickReservationFormScreenState
                 prefixIcon: const Icon(AppIcons.note, size: 21),
               ),
             ),
+
+            const SizedBox(height: 24),
           ],
         ),
       ),
 
-      // ====================================================
-      // FIXED SAVE AREA
-      // ====================================================
-      bottomSheet: SafeArea(
-        top: false,
-        child: Material(
-          color: theme.scaffoldBackgroundColor,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _saving ? null : _save,
-                icon: _saving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(AppIcons.check, size: 20),
-                label: Text(
-                  _saving
-                      ? l10n.saving
-                      : _isEditing
-                      ? l10n.saveChanges
-                      : l10n.saveReservation,
-                ),
-              ),
+      bottomNavigationBar: AppBottomActionBar(
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: _saving ? null : _save,
+            icon: _saving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(AppIcons.check, size: 20),
+            label: Text(
+              _saving
+                  ? l10n.saving
+                  : _isEditing
+                  ? l10n.saveChanges
+                  : l10n.saveReservation,
             ),
           ),
         ),
