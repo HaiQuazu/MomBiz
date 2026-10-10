@@ -67,6 +67,8 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     });
 
     try {
+      String? createdCustomerId;
+
       if (_isEditing) {
         await CustomerService.instance.updateCustomer(
           customerId: widget.customer!.id,
@@ -75,7 +77,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
           note: _noteController.text,
         );
       } else {
-        await CustomerService.instance.addCustomer(
+        createdCustomerId = await CustomerService.instance.addCustomer(
           name: _nameController.text,
           phone: _phoneController.text,
           note: _noteController.text,
@@ -86,7 +88,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         return;
       }
 
-      Navigator.pop(context);
+      Navigator.pop(context, createdCustomerId);
     } catch (_) {
       if (!mounted) {
         return;

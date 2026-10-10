@@ -50,12 +50,12 @@ class CustomerService {
     });
   }
 
-  Future<void> addCustomer({
+  Future<String> addCustomer({
     required String name,
     required String phone,
     required String note,
   }) async {
-    await _customers.add({
+    final document = await _customers.add({
       'name': name.trim(),
       'phone': phone.trim(),
       'note': note.trim(),
@@ -63,6 +63,8 @@ class CustomerService {
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    return document.id;
   }
 
   Future<void> updateCustomer({

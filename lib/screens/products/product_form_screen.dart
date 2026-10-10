@@ -412,7 +412,7 @@ class _ProductFormScreenState
 
       Navigator.pop(
         context,
-        true,
+        productId,
       );
     } catch (_) {
       if (!mounted) {

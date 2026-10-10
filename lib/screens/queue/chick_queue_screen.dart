@@ -15,6 +15,9 @@ import '../../services/product_service.dart';
 import '../../theme/app_icons.dart';
 
 import '../../utils/money_utils.dart';
+import '../../widgets/app_picker_create_tile.dart';
+
+import '../products/product_form_screen.dart';
 
 import '../sales/sale_form_screen.dart';
 
@@ -366,6 +369,7 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
   ) async {
     final searchController = TextEditingController();
     var search = '';
+    var pickerProducts = List<Product>.from(products);
 
     final selectedProduct = await showModalBottomSheet<Product>(
       context: context,
@@ -379,7 +383,7 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
 
         return StatefulBuilder(
           builder: (context, setSheetState) {
-            final filteredProducts = products.where((product) {
+            final filteredProducts = pickerProducts.where((product) {
               if (search.isEmpty) {
                 return true;
               }
@@ -465,7 +469,67 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: AppPickerCreateTile(
+                          label: AppLocalizations.of(sheetContext)!.addProduct,
+                          onTap: () async {
+                            FocusScope.of(sheetContext).unfocus();
+
+                            final newProductId = await Navigator.push<String?>(
+                              sheetContext,
+                              MaterialPageRoute(
+                                builder: (_) => const ProductFormScreen(),
+                              ),
+                            );
+
+                            if (newProductId == null || !mounted || !sheetContext.mounted) {
+                              return;
+                            }
+
+                            try {
+                              pickerProducts = await ProductService.instance
+                                  .getActiveProducts();
+
+                              Product? createdProduct;
+
+                              for (final product in pickerProducts) {
+                                if (product.id == newProductId) {
+                                  createdProduct = product;
+                                  break;
+                                }
+                              }
+
+                              if (!mounted || !sheetContext.mounted) {
+                                return;
+                              }
+
+                              if (createdProduct != null) {
+                                Navigator.pop(sheetContext, createdProduct);
+                              } else {
+                                setSheetState(() {});
+                              }
+                            } catch (_) {
+                              if (!mounted || !sheetContext.mounted) {
+                                return;
+                              }
+
+                              ScaffoldMessenger.of(sheetContext).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    _text(
+                                      en: 'Could not load products.',
+                                      km: 'មិនអាចទាញយកផលិតផលបានទេ។',
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       Expanded(
                         child: filteredProducts.isEmpty
                             ? Center(
@@ -642,21 +706,6 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
           await ProductService.instance.getActiveProducts();
 
       if (!mounted) {
-        return null;
-      }
-
-      if (products.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _text(
-                en: 'Add a chick product first.',
-                km: 'សូមបន្ថែមផលិតផលកូនមាន់ជាមុនសិន។',
-              ),
-            ),
-          ),
-        );
-
         return null;
       }
 

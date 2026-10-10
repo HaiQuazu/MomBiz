@@ -9,6 +9,8 @@ import '../../services/product_image_service.dart';
 import '../../services/product_service.dart';
 import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
+import '../../widgets/app_picker_create_tile.dart';
+import '../products/product_form_screen.dart';
 
 class ChickProductScreen extends StatefulWidget {
   const ChickProductScreen({super.key});
@@ -54,11 +56,10 @@ class _ChickProductScreenState
     _loadProducts();
   }
 
-  Future<void> _loadProducts() async {
+  Future<void> _loadProducts({String? selectProductId}) async {
     try {
       final products =
-          await ProductService.instance
-              .getActiveProducts();
+          await ProductService.instance.getActiveProducts();
 
       if (!mounted) {
         return;
@@ -66,6 +67,12 @@ class _ChickProductScreenState
 
       setState(() {
         _products = products;
+
+        if (selectProductId != null &&
+            products.any((product) => product.id == selectProductId)) {
+          _selectedProductId = selectProductId;
+        }
+
         _loading = false;
       });
     } catch (_) {
@@ -77,20 +84,38 @@ class _ChickProductScreenState
         _loading = false;
       });
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             _text(
-              en:
-                  'Could not load products.',
-              km:
-                  'មិនអាចទាញយកផលិតផលបានទេ។',
+              en: 'Could not load products.',
+              km: 'មិនអាចទាញយកផលិតផលបានទេ។',
             ),
           ),
         ),
       );
     }
+  }
+
+  Future<void> _addProduct() async {
+    if (_saving) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    final productId = await Navigator.push<String?>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ProductFormScreen(),
+      ),
+    );
+
+    if (!mounted || productId == null) {
+      return;
+    }
+
+    await _loadProducts(selectProductId: productId);
   }
 
   Product? get _selectedProduct {
@@ -460,7 +485,21 @@ class _ChickProductScreenState
             ),
 
             SizedBox(
-              height: compactPhone ? 10 : 14,
+              height: compactPhone ? 8 : 10,
+            ),
+
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+              ),
+              child: AppPickerCreateTile(
+                label: l10n.addProduct,
+                onTap: _saving ? null : _addProduct,
+              ),
+            ),
+
+            SizedBox(
+              height: compactPhone ? 8 : 10,
             ),
 
             Expanded(

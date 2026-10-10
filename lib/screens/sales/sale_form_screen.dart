@@ -21,7 +21,10 @@ import '../../theme/app_icons.dart';
 
 import '../../utils/money_utils.dart';
 import '../../widgets/app_bottom_action_bar.dart';
+import '../../widgets/app_picker_create_tile.dart';
 
+import '../customers/customer_form_screen.dart';
+import '../products/product_form_screen.dart';
 import '../receipts/sale_receipt_screen.dart';
 
 class SaleFormScreen extends StatefulWidget {
@@ -316,481 +319,299 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
   }
 
   Future<void> _pickCustomer() async {
-
     if (_saving) {
-
       return;
-
     }
 
     final l10n = AppLocalizations.of(context)!;
-
     final searchController = TextEditingController();
-
     var search = '';
 
     final selectedId = await showModalBottomSheet<String>(
-
       context: context,
-
       isScrollControlled: true,
-
       showDragHandle: true,
-
       builder: (sheetContext) {
-
         final theme = Theme.of(sheetContext);
-
         final colors = theme.colorScheme;
-
         final isKhmer =
-
             Localizations.localeOf(sheetContext).languageCode == 'km';
-
         final titleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
-
-        final compactPhone =
-            MediaQuery.sizeOf(sheetContext).width < 420;
-
-        final horizontalPadding =
-            compactPhone ? 16.0 : 20.0;
+        final compactPhone = MediaQuery.sizeOf(sheetContext).width < 420;
+        final horizontalPadding = compactPhone ? 16.0 : 20.0;
 
         return StatefulBuilder(
-
           builder: (context, setSheetState) {
-
             final filteredCustomers = _customers.where((customer) {
-
               if (search.isEmpty) {
-
                 return true;
-
               }
 
-              // Phone stays searchable but hidden.
-
               return customer.name.toLowerCase().contains(search) ||
-
                   customer.phone.toLowerCase().contains(search);
-
             }).toList();
 
             return SafeArea(
-
               top: false,
-
               child: Padding(
-
                 padding: EdgeInsets.only(
-
                   bottom: MediaQuery.of(context).viewInsets.bottom,
-
                 ),
-
                 child: SizedBox(
-
                   height: MediaQuery.sizeOf(context).height * 0.72,
-
                   child: Column(
-
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-
                     children: [
-
                       Padding(
-
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
-
-                        child: Text(
-
-                          l10n.customer,
-
-                          style: theme.textTheme.titleLarge?.copyWith(
-
-                            fontWeight: titleWeight,
-
-                          ),
-
+                        padding: EdgeInsets.fromLTRB(
+                          horizontalPadding,
+                          0,
+                          horizontalPadding,
+                          compactPhone ? 10 : 14,
                         ),
-
+                        child: Text(
+                          l10n.customer,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: titleWeight,
+                          ),
+                        ),
                       ),
-
                       Padding(
-
                         padding: EdgeInsets.symmetric(
                           horizontal: horizontalPadding,
                         ),
-
                         child: SearchBar(
-
                           controller: searchController,
-
                           hintText: l10n.searchNameOrPhone,
-
                           leading: const Icon(AppIcons.search, size: 21),
-
                           elevation: const WidgetStatePropertyAll(0),
-
                           backgroundColor: WidgetStatePropertyAll(
-
                             colors.surfaceContainerLow,
-
                           ),
-
                           shape: WidgetStatePropertyAll(
-
                             RoundedRectangleBorder(
-
                               borderRadius: BorderRadius.circular(18),
-
                             ),
-
                           ),
-
                           constraints: BoxConstraints(
-
-                            minHeight: compactPhone ? 56 : 52,
-
+                            minHeight: compactPhone ? 48 : 52,
                             maxHeight: compactPhone ? 48 : 52,
-
                           ),
-
                           onChanged: (value) {
-
                             setSheetState(() {
-
                               search = value.trim().toLowerCase();
-
                             });
-
                           },
-
                           trailing: [
-
                             if (search.isNotEmpty)
-
                               IconButton(
-
                                 onPressed: () {
-
                                   searchController.clear();
-
                                   setSheetState(() {
-
                                     search = '';
-
                                   });
-
                                 },
-
                                 icon: const Icon(AppIcons.close, size: 20),
-
                               ),
-
                           ],
-
                         ),
-
                       ),
+                      SizedBox(height: compactPhone ? 8 : 10),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: horizontalPadding,
+                        ),
+                        child: AppPickerCreateTile(
+                          label: l10n.addCustomer,
+                          onTap: () async {
+                            FocusScope.of(sheetContext).unfocus();
 
-                      SizedBox(height: compactPhone ? 10 : 14),
+                            final newCustomerId = await Navigator.push<String?>(
+                              sheetContext,
+                              MaterialPageRoute(
+                                builder: (_) => const CustomerFormScreen(),
+                              ),
+                            );
 
+                            if (newCustomerId == null || !mounted || !sheetContext.mounted) {
+                              return;
+                            }
+
+                            Navigator.pop(sheetContext, newCustomerId);
+                          },
+                        ),
+                      ),
+                      SizedBox(height: compactPhone ? 8 : 10),
                       Expanded(
-
                         child: filteredCustomers.isEmpty
-
                             ? Center(
-
                                 child: Padding(
-
                                   padding: const EdgeInsets.all(30),
-
                                   child: Column(
-
                                     mainAxisSize: MainAxisSize.min,
-
                                     children: [
-
                                       Icon(
-
                                         AppIcons.customers,
-
                                         size: 38,
-
                                         color: colors.primary,
-
                                       ),
-
                                       const SizedBox(height: 10),
-
                                       Text(
-
                                         l10n.noCustomerFound,
-
                                         textAlign: TextAlign.center,
-
                                         style: theme.textTheme.titleMedium
-
                                             ?.copyWith(
-
                                               fontWeight: isKhmer
-
                                                   ? FontWeight.w500
-
                                                   : FontWeight.w600,
-
                                             ),
-
                                       ),
-
                                       const SizedBox(height: 4),
-
                                       Text(
-
                                         l10n.tryAnotherNameOrPhone,
-
                                         textAlign: TextAlign.center,
-
                                         style: theme.textTheme.bodySmall
-
                                             ?.copyWith(
-
                                               color: colors.onSurfaceVariant,
-
                                             ),
-
                                       ),
-
                                     ],
-
                                   ),
-
                                 ),
-
                               )
-
                             : ListView.separated(
-
                                 keyboardDismissBehavior:
-
                                     ScrollViewKeyboardDismissBehavior.onDrag,
-
                                 padding: EdgeInsets.fromLTRB(
-
                                   horizontalPadding,
-
                                   0,
-
                                   horizontalPadding,
-
                                   compactPhone ? 20 : 24,
-
                                 ),
-
                                 itemCount: filteredCustomers.length,
-
                                 separatorBuilder: (context, index) =>
-
                                     SizedBox(height: compactPhone ? 6 : 8),
-
                                 itemBuilder: (context, index) {
-
                                   final customer = filteredCustomers[index];
-
                                   final selected = customer.id == _customerId;
 
                                   return Material(
-
                                     color: selected
-
                                         ? colors.primaryContainer.withValues(
-
                                             alpha: 0.7,
-
                                           )
-
                                         : colors.surfaceContainerLowest,
-
                                     borderRadius: BorderRadius.circular(18),
-
                                     clipBehavior: Clip.antiAlias,
-
                                     child: InkWell(
-
                                       borderRadius: BorderRadius.circular(18),
-
                                       onTap: () {
-
                                         Navigator.pop(
-
                                           sheetContext,
-
                                           customer.id,
-
                                         );
-
                                       },
-
                                       child: Padding(
-
                                         padding: const EdgeInsets.symmetric(
-
                                           horizontal: 14,
-
                                           vertical: 10,
-
                                         ),
-
                                         child: Row(
-
                                           children: [
-
                                             CircleAvatar(
-
                                               radius: 21,
-
                                               backgroundColor:
-
                                                   colors.primaryContainer,
-
                                               child: Text(
-
                                                 customer.name.trim().isEmpty
-
                                                     ? '?'
-
                                                     : customer.name
-
-                                                          .trim()[0]
-
-                                                          .toUpperCase(),
-
-                                                style: theme
-
-                                                    .textTheme
-
-                                                    .titleSmall
-
+                                                        .trim()[0]
+                                                        .toUpperCase(),
+                                                style: theme.textTheme.titleSmall
                                                     ?.copyWith(
-
                                                       color: colors
-
                                                           .onPrimaryContainer,
-
                                                       fontWeight:
-
                                                           FontWeight.w600,
-
                                                     ),
-
                                               ),
-
                                             ),
-
                                             const SizedBox(width: 12),
-
                                             Expanded(
-
                                               child: Text(
-
                                                 customer.name,
-
                                                 maxLines: 1,
-
                                                 overflow: TextOverflow.ellipsis,
-
-                                                style: theme
-
-                                                    .textTheme
-
-                                                    .titleMedium
-
+                                                style: theme.textTheme.titleMedium
                                                     ?.copyWith(
-
                                                       fontWeight: isKhmer
-
                                                           ? FontWeight.w500
-
                                                           : FontWeight.w600,
-
                                                     ),
-
                                               ),
-
                                             ),
-
                                             const SizedBox(width: 8),
-
                                             if (selected)
-
                                               Icon(
-
                                                 AppIcons.selected,
-
                                                 size: 21,
-
                                                 color: colors.primary,
-
                                               )
-
                                             else
-
                                               const Icon(
-
                                                 AppIcons.chevronRight,
-
                                                 size: 20,
-
                                               ),
-
                                           ],
-
                                         ),
-
                                       ),
-
                                     ),
-
                                   );
-
                                 },
-
                               ),
-
                       ),
-
                     ],
-
                   ),
-
                 ),
-
               ),
-
             );
-
           },
-
         );
-
       },
-
     );
 
     searchController.dispose();
 
     if (!mounted || selectedId == null) {
-
       return;
+    }
 
+    var customers = _customers;
+
+    if (!customers.any((customer) => customer.id == selectedId)) {
+      try {
+        customers = await CustomerService.instance.getActiveCustomers();
+      } catch (_) {
+        if (!mounted) {
+          return;
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.couldNotLoadCustomersOrProducts)),
+        );
+        return;
+      }
+    }
+
+    if (!mounted) {
+      return;
     }
 
     setState(() {
-
+      _customers = customers;
       _customerId = selectedId;
-
     });
-
   }
 
   String _editablePrice(int amountMinor, MoneyCurrency currency) {
@@ -1759,571 +1580,359 @@ class _SaleItemCard extends StatefulWidget {
 class _SaleItemCardState extends State<_SaleItemCard> {
 
   Future<void> _pickProduct() async {
-
     if (!widget.enabled) {
-
       return;
-
     }
 
     final l10n = AppLocalizations.of(context)!;
 
-    final searchController = TextEditingController();
+    var pickerProducts = List<Product>.from(widget.products);
 
+    try {
+      pickerProducts = await ProductService.instance.getActiveProducts();
+    } catch (_) {
+      // Fall back to the products already loaded by the sale form.
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    final searchController = TextEditingController();
     var search = '';
 
     final selectedProduct = await showModalBottomSheet<Product>(
-
       context: context,
-
       isScrollControlled: true,
-
       showDragHandle: true,
-
       builder: (sheetContext) {
-
         final theme = Theme.of(sheetContext);
-
         final colors = theme.colorScheme;
-
         final isKhmer =
-
             Localizations.localeOf(sheetContext).languageCode == 'km';
-
         final titleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
-
-        // Responsive values for this Products bottom sheet.
-        // Narrow real phones get a denser layout; wider emulator keeps
-        // the larger layout.
-        final compactPhone =
-            MediaQuery.sizeOf(sheetContext).width < 420;
-
-        final horizontalPadding =
-            compactPhone ? 16.0 : 20.0;
+        final compactPhone = MediaQuery.sizeOf(sheetContext).width < 420;
+        final horizontalPadding = compactPhone ? 16.0 : 20.0;
 
         return StatefulBuilder(
-
           builder: (context, setSheetState) {
-
-            final filteredProducts = widget.products.where((product) {
-
+            final filteredProducts = pickerProducts.where((product) {
               if (search.isEmpty) {
-
                 return true;
-
               }
 
               return product.name.toLowerCase().contains(search) ||
-
                   product.category.toLowerCase().contains(search) ||
-
                   product.unit.toLowerCase().contains(search);
-
             }).toList();
 
             return SafeArea(
-
               top: false,
-
               child: Padding(
-
                 padding: EdgeInsets.only(
-
                   bottom: MediaQuery.of(context).viewInsets.bottom,
-
                 ),
-
                 child: SizedBox(
-
                   height: MediaQuery.sizeOf(context).height *
-                      (compactPhone ? 0.64 : 0.68),
-
+                      (compactPhone ? 0.68 : 0.72),
                   child: Column(
-
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-
                     children: [
-
                       Padding(
-
                         padding: EdgeInsets.fromLTRB(
                           horizontalPadding,
                           0,
                           horizontalPadding,
                           compactPhone ? 10 : 14,
                         ),
-
                         child: Text(
-
                           l10n.products,
-
                           style: (compactPhone
                                   ? theme.textTheme.titleMedium
                                   : theme.textTheme.titleLarge)
-                              ?.copyWith(
-
-                            fontWeight: titleWeight,
-
-                          ),
-
+                              ?.copyWith(fontWeight: titleWeight),
                         ),
-
                       ),
-
                       Padding(
-
                         padding: EdgeInsets.symmetric(
                           horizontal: horizontalPadding,
                         ),
-
                         child: SearchBar(
-
                           controller: searchController,
-
                           hintText: l10n.searchProducts,
-
                           leading: const Icon(AppIcons.search, size: 21),
-
                           elevation: const WidgetStatePropertyAll(0),
-
                           backgroundColor: WidgetStatePropertyAll(
-
                             colors.surfaceContainerLow,
-
                           ),
-
                           shape: WidgetStatePropertyAll(
-
                             RoundedRectangleBorder(
-
                               borderRadius: BorderRadius.circular(18),
-
                             ),
-
                           ),
-
                           constraints: BoxConstraints(
-
                             minHeight: compactPhone ? 48 : 52,
-
                             maxHeight: compactPhone ? 48 : 52,
-
                           ),
-
                           onChanged: (value) {
-
                             setSheetState(() {
-
                               search = value.trim().toLowerCase();
-
                             });
-
                           },
-
                           trailing: [
-
                             if (search.isNotEmpty)
-
                               IconButton(
-
                                 onPressed: () {
-
                                   searchController.clear();
-
                                   setSheetState(() {
-
                                     search = '';
-
                                   });
-
                                 },
-
                                 icon: const Icon(AppIcons.close, size: 20),
-
                               ),
-
                           ],
-
                         ),
-
                       ),
+                      SizedBox(height: compactPhone ? 8 : 10),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: horizontalPadding,
+                        ),
+                        child: AppPickerCreateTile(
+                          label: l10n.addProduct,
+                          onTap: () async {
+                            FocusScope.of(sheetContext).unfocus();
 
-                      SizedBox(height: compactPhone ? 10 : 14),
+                            final newProductId = await Navigator.push<String?>(
+                              sheetContext,
+                              MaterialPageRoute(
+                                builder: (_) => const ProductFormScreen(),
+                              ),
+                            );
 
+                            if (newProductId == null || !mounted || !sheetContext.mounted) {
+                              return;
+                            }
+
+                            try {
+                              pickerProducts = await ProductService.instance
+                                  .getActiveProducts();
+
+                              Product? createdProduct;
+
+                              for (final product in pickerProducts) {
+                                if (product.id == newProductId) {
+                                  createdProduct = product;
+                                  break;
+                                }
+                              }
+
+                              if (!mounted || !sheetContext.mounted) {
+                                return;
+                              }
+
+                              if (createdProduct != null) {
+                                Navigator.pop(sheetContext, createdProduct);
+                              } else {
+                                setSheetState(() {});
+                              }
+                            } catch (_) {
+                              if (!mounted || !sheetContext.mounted) {
+                                return;
+                              }
+
+                              ScaffoldMessenger.of(sheetContext).showSnackBar(
+                                SnackBar(content: Text(l10n.couldNotLoadProducts)),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                      SizedBox(height: compactPhone ? 8 : 10),
                       Expanded(
-
                         child: filteredProducts.isEmpty
-
                             ? Center(
-
                                 child: Padding(
-
                                   padding: const EdgeInsets.all(30),
-
                                   child: Column(
-
                                     mainAxisSize: MainAxisSize.min,
-
                                     children: [
-
                                       Icon(
-
                                         AppIcons.product,
-
                                         size: 38,
-
                                         color: colors.primary,
-
                                       ),
-
                                       const SizedBox(height: 10),
-
                                       Text(
-
                                         l10n.noProductsYet,
-
                                         textAlign: TextAlign.center,
-
                                         style: theme.textTheme.titleMedium
-
                                             ?.copyWith(
-
                                               fontWeight: isKhmer
-
                                                   ? FontWeight.w500
-
                                                   : FontWeight.w600,
-
                                             ),
-
                                       ),
-
                                     ],
-
                                   ),
-
                                 ),
-
                               )
-
                             : ListView.separated(
-
                                 keyboardDismissBehavior:
-
                                     ScrollViewKeyboardDismissBehavior.onDrag,
-
                                 padding: EdgeInsets.fromLTRB(
-
                                   horizontalPadding,
-
                                   0,
-
                                   horizontalPadding,
-
                                   compactPhone ? 20 : 24,
-
                                 ),
-
                                 itemCount: filteredProducts.length,
-
                                 separatorBuilder: (context, index) =>
-
                                     SizedBox(height: compactPhone ? 6 : 8),
-
                                 itemBuilder: (context, index) {
-
                                   final product = filteredProducts[index];
-
                                   final selected =
-
                                       widget.item.product?.id == product.id;
 
                                   return Material(
-
                                     color: selected
-
                                         ? colors.primaryContainer.withValues(
-
                                             alpha: 0.7,
-
                                           )
-
                                         : colors.surfaceContainerLowest,
-
                                     borderRadius: BorderRadius.circular(18),
-
                                     clipBehavior: Clip.antiAlias,
-
                                     child: InkWell(
-
                                       borderRadius: BorderRadius.circular(18),
-
                                       onTap: () {
-
                                         Navigator.pop(sheetContext, product);
-
                                       },
-
                                       child: Padding(
-
                                         padding: EdgeInsets.symmetric(
-
-                                          horizontal:
-                                              compactPhone ? 12 : 14,
-
-                                          vertical:
-                                              compactPhone ? 8 : 11,
-
+                                          horizontal: compactPhone ? 12 : 14,
+                                          vertical: compactPhone ? 8 : 11,
                                         ),
-
                                         child: Row(
-
                                           children: [
-
                                             _SaleLocalProductThumbnail(
-
                                               productId: product.id,
-
-                                              size:
-                                                  compactPhone ? 56 : 52,
-
-                                              radius:
-                                                  compactPhone ? 16 : 16,
-
+                                              size: compactPhone ? 56 : 52,
+                                              radius: 16,
                                             ),
-
                                             const SizedBox(width: 12),
-
                                             Expanded(
-
                                               child: Column(
-
                                                 crossAxisAlignment:
-
                                                     CrossAxisAlignment.start,
-
                                                 children: [
-
                                                   Text(
-
                                                     product.name,
-
                                                     maxLines: 1,
-
                                                     overflow:
-
                                                         TextOverflow.ellipsis,
-
                                                     style: theme
-
-                                                        .textTheme
-
-                                                        .titleMedium
-
+                                                        .textTheme.titleMedium
                                                         ?.copyWith(
-
                                                           fontWeight: isKhmer
-
                                                               ? FontWeight.w500
-
                                                               : FontWeight.w600,
-
                                                         ),
-
                                                   ),
-
                                                   if (product.category
-
                                                           .trim()
-
                                                           .isNotEmpty ||
-
                                                       product.unit
-
                                                           .trim()
-
                                                           .isNotEmpty) ...[
-
                                                     const SizedBox(height: 2),
-
                                                     Text(
-
                                                       [
-
                                                         if (product.category
-
                                                             .trim()
-
                                                             .isNotEmpty)
-
                                                           product.category,
-
                                                         if (product.unit
-
                                                             .trim()
-
                                                             .isNotEmpty)
-
                                                           product.unit,
-
                                                       ].join(' • '),
-
                                                       maxLines: 1,
-
                                                       overflow:
-
                                                           TextOverflow.ellipsis,
-
                                                       style: theme
-
-                                                          .textTheme
-
-                                                          .bodySmall
-
+                                                          .textTheme.bodySmall
                                                           ?.copyWith(
-
                                                             color: colors
-
                                                                 .onSurfaceVariant,
-
                                                           ),
-
                                                     ),
-
                                                   ],
-
-                                                  if (product
-
-                                                          .defaultPriceMinor >
-
+                                                  if (product.defaultPriceMinor >
                                                       0) ...[
-
                                                     const SizedBox(height: 3),
-
                                                     Text(
-
                                                       MoneyUtils.format(
-
+                                                        product.defaultPriceMinor,
                                                         product
-
-                                                            .defaultPriceMinor,
-
-                                                        product
-
                                                             .defaultPriceCurrency,
-
                                                       ),
-
                                                       maxLines: 1,
-
                                                       overflow:
-
                                                           TextOverflow.ellipsis,
-
                                                       style: theme
-
-                                                          .textTheme
-
-                                                          .bodySmall
-
+                                                          .textTheme.bodySmall
                                                           ?.copyWith(
-
-                                                            color:
-
-                                                                colors.primary,
-
+                                                            color: colors.primary,
                                                             fontWeight:
-
-                                                                FontWeight.w500,
-
+                                                                FontWeight.w600,
                                                           ),
-
                                                     ),
-
                                                   ],
-
                                                 ],
-
                                               ),
-
                                             ),
-
                                             const SizedBox(width: 8),
-
                                             if (selected)
-
                                               Icon(
-
                                                 AppIcons.selected,
-
                                                 size: 21,
-
                                                 color: colors.primary,
-
                                               )
-
                                             else
-
                                               const Icon(
-
                                                 AppIcons.chevronRight,
-
                                                 size: 20,
-
                                               ),
-
                                           ],
-
                                         ),
-
                                       ),
-
                                     ),
-
                                   );
-
                                 },
-
                               ),
-
                       ),
-
                     ],
-
                   ),
-
                 ),
-
               ),
-
             );
-
           },
-
         );
-
       },
-
     );
 
     searchController.dispose();
 
     if (!mounted || selectedProduct == null) {
-
       return;
-
     }
 
     setState(() {
-
       widget.item.product = selectedProduct;
-
     });
 
     widget.onProductChanged(selectedProduct);
-
     widget.onChanged();
-
   }
 
   @override
