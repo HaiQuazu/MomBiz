@@ -66,10 +66,21 @@ class _ChickReservationFormScreenState
 
   Future<void> _loadCustomers() async {
     try {
-      final customers = await CustomerService.instance.getActiveCustomers();
+      var customers = await CustomerService.instance.getActiveCustomers();
 
       if (_isEditing) {
         final reservation = widget.reservation!;
+
+        if (!customers.any(
+          (customer) => customer.id == reservation.customerId,
+        )) {
+          final reservationCustomer = await CustomerService.instance
+              .getCustomer(reservation.customerId);
+
+          if (reservationCustomer != null) {
+            customers = [...customers, reservationCustomer];
+          }
+        }
 
         if (!mounted) {
           return;

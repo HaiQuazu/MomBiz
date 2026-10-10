@@ -57,13 +57,9 @@ class MoneyUtils {
 
     switch (currency) {
       case MoneyCurrency.khr:
-        final value = num.tryParse(cleaned);
-
-        if (value == null) {
-          return null;
-        }
-
-        return value.round();
+        // KHR is stored as whole riel. Reject decimal input instead of
+        // silently rounding financial values.
+        return int.tryParse(cleaned);
 
       case MoneyCurrency.usd:
         final value = double.tryParse(cleaned);

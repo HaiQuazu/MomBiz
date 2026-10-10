@@ -39,6 +39,8 @@ class SaleFormScreen extends StatefulWidget {
 
     this.initialProductId,
 
+    this.pickupReservationId,
+
   });
 
   final String? initialCustomerId;
@@ -46,6 +48,10 @@ class SaleFormScreen extends StatefulWidget {
   final int? initialQuantity;
 
   final String? initialProductId;
+
+  /// When set, saving the sale and marking this chick reservation picked up
+  /// happen in one Firestore transaction.
+  final String? pickupReservationId;
 
   @override
 
@@ -99,25 +105,41 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
       ]);
 
+      var customers = results[0] as List<Customer>;
+
+      final products = results[1] as List<Product>;
+
+      final initialCustomerId = widget.initialCustomerId;
+
+      if (initialCustomerId != null &&
+          !customers.any((customer) => customer.id == initialCustomerId)) {
+        final initialCustomer =
+            await CustomerService.instance.getCustomer(initialCustomerId);
+
+        if (initialCustomer != null) {
+          customers = [...customers, initialCustomer];
+        }
+      }
+
       if (!mounted) {
 
         return;
 
       }
 
-      _customers = results[0] as List<Customer>;
+      _customers = customers;
 
-      _products = results[1] as List<Product>;
+      _products = products;
 
-      if (widget.initialCustomerId != null &&
+      if (initialCustomerId != null &&
 
           _customers.any(
 
-            (customer) => customer.id == widget.initialCustomerId,
+            (customer) => customer.id == initialCustomerId,
 
           )) {
 
-        _customerId = widget.initialCustomerId;
+        _customerId = initialCustomerId;
 
       }
 
@@ -800,7 +822,21 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
     }
 
-    final discount = MoneyUtils.parse(_discountController.text, _currency) ?? 0;
+    final discountText = _discountController.text.trim();
+    final parsedDiscount = discountText.isEmpty
+        ? 0
+        : MoneyUtils.parse(discountText, _currency);
+
+    if (parsedDiscount == null) {
+      _showError(
+        Localizations.localeOf(context).languageCode == 'km'
+            ? 'សូមបញ្ចូលការបញ្ចុះតម្លៃឱ្យបានត្រឹមត្រូវ។'
+            : 'Please enter a valid discount.',
+      );
+      return;
+    }
+
+    final discount = parsedDiscount;
 
     if (discount < 0 || discount > _subtotal) {
 
@@ -818,29 +854,34 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
     try {
 
-      final saleId = await SaleService.instance.createSale(
+      final pickupReservationId = widget.pickupReservationId;
 
-        customerId: customer.id,
-
-        customerName: customer.name,
-
-        buyerName: '',
-
-        currency: _currency,
-
-        items: saleItems,
-
-        subtotalMinor: _subtotal,
-
-        discountMinor: discount,
-
-        totalMinor: _total,
-
-        saleDate: _saleDate,
-
-        note: _noteController.text,
-
-      );
+      final saleId = pickupReservationId == null
+          ? await SaleService.instance.createSale(
+              customerId: customer.id,
+              customerName: customer.name,
+              buyerName: '',
+              currency: _currency,
+              items: saleItems,
+              subtotalMinor: _subtotal,
+              discountMinor: discount,
+              totalMinor: _total,
+              saleDate: _saleDate,
+              note: _noteController.text,
+            )
+          : await SaleService.instance.createSaleForChickPickup(
+              reservationId: pickupReservationId,
+              customerId: customer.id,
+              customerName: customer.name,
+              buyerName: '',
+              currency: _currency,
+              items: saleItems,
+              subtotalMinor: _subtotal,
+              discountMinor: discount,
+              totalMinor: _total,
+              saleDate: _saleDate,
+              note: _noteController.text,
+            );
 
       if (!mounted) {
 

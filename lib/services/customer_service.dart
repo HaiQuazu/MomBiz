@@ -114,6 +114,16 @@ class CustomerService {
         .toList();
   }
 
+  Future<Customer?> getCustomer(String customerId) async {
+    final document = await _customers.doc(customerId).get();
+
+    if (!document.exists) {
+      return null;
+    }
+
+    return Customer.fromFirestore(document);
+  }
+
   // ------------------------------------------------
   // PERMANENT DELETE CHECK
   // ------------------------------------------------

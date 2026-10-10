@@ -185,11 +185,25 @@ class _CustomersScreenState extends State<CustomersScreen> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      l10n.customers,
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            l10n.customers,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        _CustomerCountBadge(
+                          stream: _showArchived
+                              ? _archivedCustomersStream
+                              : _activeCustomersStream,
+                        ),
+                      ],
                     ),
                   ),
                   Container(
@@ -332,6 +346,47 @@ class _CustomersScreenState extends State<CustomersScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+
+// ============================================================
+// CUSTOMER COUNT BADGE
+// ============================================================
+
+class _CustomerCountBadge extends StatelessWidget {
+  const _CustomerCountBadge({required this.stream});
+
+  final Stream<List<Customer>> stream;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return StreamBuilder<List<Customer>>(
+      stream: stream,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            color: colors.primaryContainer,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            snapshot.data!.length.toString(),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: colors.onPrimaryContainer,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -884,53 +884,29 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
 
           initialProductId: chickProduct.id,
 
+          pickupReservationId: reservation.id,
+
         ),
 
       ),
 
     );
 
-    if (saleSaved != true) {
+    if (saleSaved != true || !mounted) {
 
       return;
 
     }
 
-    try {
+    ScaffoldMessenger.of(context).showSnackBar(
 
-      await ChickQueueService.instance.markPickedUp(reservation.id);
+      SnackBar(
 
-      if (!mounted) {
+        content: Text(l10n.customerMarkedPickedUp(reservation.customerName)),
 
-        return;
+      ),
 
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(
-
-          content: Text(l10n.customerMarkedPickedUp(reservation.customerName)),
-
-        ),
-
-      );
-
-    } catch (_) {
-
-      if (!mounted) {
-
-        return;
-
-      }
-
-      ScaffoldMessenger.of(
-
-        context,
-
-      ).showSnackBar(SnackBar(content: Text(l10n.saleSavedButPickupFailed)));
-
-    }
+    );
 
   }
 

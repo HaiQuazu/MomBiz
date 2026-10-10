@@ -435,6 +435,104 @@ class _ProductFormScreenState
     }
   }
 
+  Future<void> _changeArchiveState() async {
+    final product = widget.product;
+
+    if (product == null || _saving) {
+      return;
+    }
+
+    final restoring = product.isArchived;
+
+    if (!restoring) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: Text(
+              _text(
+                en: 'Archive product?',
+                km: 'ដាក់ផលិតផលក្នុងប័ណ្ណសារ?',
+              ),
+            ),
+            content: Text(
+              _text(
+                en:
+                    'This product will be hidden from active product pickers. Existing sales and receipts will not change.',
+                km:
+                    'ផលិតផលនេះនឹងត្រូវលាក់ពីបញ្ជីផលិតផលសកម្ម។ ការលក់ និងបង្កាន់ដៃដែលមានស្រាប់នឹងមិនផ្លាស់ប្តូរទេ។',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(
+                  _text(
+                    en: 'Cancel',
+                    km: 'បោះបង់',
+                  ),
+                ),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(
+                  _text(
+                    en: 'Archive',
+                    km: 'ដាក់ក្នុងប័ណ្ណសារ',
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirmed != true || !mounted) {
+        return;
+      }
+    }
+
+    setState(() {
+      _saving = true;
+    });
+
+    try {
+      if (restoring) {
+        await ProductService.instance.restoreProduct(product.id);
+      } else {
+        await ProductService.instance.archiveProduct(product.id);
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.pop(context);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      _showError(
+        restoring
+            ? _text(
+                en: 'Could not restore product.',
+                km: 'មិនអាចស្ដារផលិតផលបានទេ។',
+              )
+            : _text(
+                en: 'Could not archive product.',
+                km: 'មិនអាចដាក់ផលិតផលក្នុងប័ណ្ណសារបានទេ។',
+              ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+        });
+      }
+    }
+  }
+
   void _showError(
     String message,
   ) {
@@ -946,34 +1044,66 @@ class _ProductFormScreenState
       ),
 
       bottomNavigationBar: AppBottomActionBar(
-        child: SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            onPressed:
-                _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child:
-                        CircularProgressIndicator(
-                      strokeWidth: 2,
-                    ),
-                  )
-                : const Icon(
-                    AppIcons.check,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed:
+                    _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child:
+                            CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(
+                        AppIcons.check,
+                        size: 20,
+                      ),
+                label: Text(
+                  _saving
+                      ? l10n.saving
+                      : _isEditing
+                          ? l10n
+                              .saveChanges
+                          : l10n
+                              .addProduct,
+                ),
+              ),
+            ),
+            if (_isEditing) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed:
+                      _saving ? null : _changeArchiveState,
+                  icon: Icon(
+                    widget.product!.isArchived
+                        ? AppIcons.restore
+                        : AppIcons.archive,
                     size: 20,
                   ),
-            label: Text(
-              _saving
-                  ? l10n.saving
-                  : _isEditing
-                      ? l10n
-                          .saveChanges
-                      : l10n
-                          .addProduct,
-            ),
-          ),
+                  label: Text(
+                    widget.product!.isArchived
+                        ? _text(
+                            en: 'Restore product',
+                            km: 'ស្ដារផលិតផល',
+                          )
+                        : _text(
+                            en: 'Archive product',
+                            km: 'ដាក់ផលិតផលក្នុងប័ណ្ណសារ',
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

@@ -450,6 +450,7 @@ class _CustomerDetailsContent extends StatelessWidget {
                     icon: AppIcons.sale,
                     label: l10n.newSale,
                     onTap: onNewSale,
+                    enabled: !customer.isArchived,
                   ),
                 ),
 
