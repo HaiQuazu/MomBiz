@@ -103,49 +103,177 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: screens),
-      bottomNavigationBar: Theme(
-        // Remove the temporary grey pressed/ripple overlay.
-        // The NavigationBar's green selected indicator still animates normally.
-        data: Theme.of(context).copyWith(
-          splashFactory: NoSplash.splashFactory,
-          splashColor: Colors.transparent,
-          highlightColor: Colors.transparent,
-          hoverColor: Colors.transparent,
-          focusColor: Colors.transparent,
-        ),
-        child: NavigationBar(
-          selectedIndex: _selectedIndex,
-          onDestinationSelected: (index) {
-            if (index == _selectedIndex) {
-              return;
-            }
+      bottomNavigationBar: _MomBizBottomNavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (index) {
+          if (index == _selectedIndex) {
+            return;
+          }
 
-            setState(() {
-              _selectedIndex = index;
-            });
-          },
-          destinations: [
-            NavigationDestination(
-              icon: const Icon(AppIcons.home, size: 21),
-              selectedIcon: const Icon(AppIcons.home, size: 22),
-              label: l10n.home,
-            ),
-            NavigationDestination(
-              icon: const Icon(AppIcons.customers, size: 21),
-              selectedIcon: const Icon(AppIcons.customers, size: 22),
-              label: l10n.customers,
-            ),
-            NavigationDestination(
-              icon: const Icon(AppIcons.queue, size: 21),
-              selectedIcon: const Icon(AppIcons.queue, size: 22),
-              label: l10n.queue,
-            ),
-            NavigationDestination(
-              icon: const Icon(AppIcons.more, size: 21),
-              selectedIcon: const Icon(AppIcons.more, size: 22),
-              label: l10n.more,
-            ),
-          ],
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        items: [
+          _MomBizBottomNavItemData(
+            icon: AppIcons.home,
+            label: l10n.home,
+          ),
+          _MomBizBottomNavItemData(
+            icon: AppIcons.customers,
+            label: l10n.customers,
+          ),
+          _MomBizBottomNavItemData(
+            icon: AppIcons.queue,
+            label: l10n.queue,
+          ),
+          _MomBizBottomNavItemData(
+            icon: AppIcons.more,
+            label: l10n.more,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+class _MomBizBottomNavItemData {
+  const _MomBizBottomNavItemData({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+}
+
+class _MomBizBottomNavigationBar extends StatelessWidget {
+  const _MomBizBottomNavigationBar({
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+    required this.items,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onDestinationSelected;
+  final List<_MomBizBottomNavItemData> items;
+
+  static const _animationDuration = Duration(milliseconds: 220);
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return SafeArea(
+      top: false,
+      child: Material(
+        color: colors.surface,
+        child: SizedBox(
+          height: 70,
+          child: Row(
+            children: List.generate(items.length, (index) {
+              final item = items[index];
+
+              return Expanded(
+                child: _MomBizBottomNavDestination(
+                  icon: item.icon,
+                  label: item.label,
+                  selected: index == selectedIndex,
+                  duration: _animationDuration,
+                  onTap: () => onDestinationSelected(index),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MomBizBottomNavDestination extends StatelessWidget {
+  const _MomBizBottomNavDestination({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.duration,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final Duration duration;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final isKhmer = Localizations.localeOf(context).languageCode == 'km';
+
+    final selectedColor = colors.onPrimaryContainer;
+    final unselectedColor = colors.onSurfaceVariant;
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          splashFactory: NoSplash.splashFactory,
+          overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 64,
+                height: 34,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    AnimatedScale(
+                      scale: selected ? 1 : 0.72,
+                      duration: duration,
+                      curve: Curves.easeInOutCubic,
+                      child: AnimatedOpacity(
+                        opacity: selected ? 1 : 0,
+                        duration: duration,
+                        curve: Curves.easeInOutCubic,
+                        child: Container(
+                          width: 64,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: colors.primaryContainer,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Icon(
+                      icon,
+                      size: 22,
+                      color: selected ? selectedColor : unselectedColor,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium!.copyWith(
+                  color: selected ? colors.primary : unselectedColor,
+                  fontWeight: selected
+                      ? (isKhmer ? FontWeight.w600 : FontWeight.w600)
+                      : FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

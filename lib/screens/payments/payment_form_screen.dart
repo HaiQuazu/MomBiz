@@ -8,6 +8,7 @@ import '../../services/exchange_rate_service.dart';
 import '../../services/payment_service.dart';
 import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
+import '../../utils/riel_input_formatter.dart';
 
 class PaymentFormScreen extends StatefulWidget {
   const PaymentFormScreen({
@@ -418,15 +419,6 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
 
     final pageTitleWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
 
-    final bottomSystemInset = MediaQuery.viewPaddingOf(context).bottom;
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-    final keyboardOpen = keyboardInset > 0;
-
-    final actionBottomPadding =
-        keyboardOpen ? 12.0 : 12.0 + bottomSystemInset;
-
-    final bodyBottomPadding = 120.0 + keyboardInset;
-
     final balanceSegments = <ButtonSegment<MoneyCurrency>>[];
 
     if (widget.khrOutstanding > 0) {
@@ -470,8 +462,6 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
     );
 
     return Scaffold(
-      resizeToAvoidBottomInset: false,
-
       appBar: AppBar(
         title: Text(
           l10n.recordPayment,
@@ -482,15 +472,8 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
       ),
 
       body: SafeArea(
-        bottom: false,
         child: ListView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: EdgeInsets.fromLTRB(
-            20,
-            8,
-            20,
-            bodyBottomPadding,
-          ),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 140),
           children: [
             // -------------------------
             // CUSTOMER
@@ -597,15 +580,16 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                       alignment: Alignment.centerRight,
                       child: SegmentedButton<MoneyCurrency>(
                         style: compactSegmentStyle,
-                        segments: const [
-                          ButtonSegment(
+                        segments: [
+                          const ButtonSegment(
                             value: MoneyCurrency.khr,
-                            label: Text('KHR ៛'),
+                            label: Text('រៀល'),
                           ),
-                          ButtonSegment(
-                            value: MoneyCurrency.usd,
-                            label: Text('USD \$'),
-                          ),
+                          if (widget.usdOutstanding > 0)
+                            const ButtonSegment(
+                              value: MoneyCurrency.usd,
+                              label: Text('USD \$'),
+                            ),
                         ],
                         selected: {_paidCurrency},
                         onSelectionChanged: (selection) async {
@@ -636,9 +620,12 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
             // -------------------------
             TextField(
               controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
+              keyboardType: _paidCurrency == MoneyCurrency.khr
+                  ? TextInputType.number
+                  : const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: _paidCurrency == MoneyCurrency.khr
+                  ? const [RielInputFormatter()]
+                  : null,
               onChanged: (_) {
                 setState(() {});
               },
@@ -649,7 +636,7 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
                     : l10n.example2500,
                 prefixIcon: const Icon(AppIcons.payment, size: 21),
                 prefixText: _paidCurrency == MoneyCurrency.usd ? '\$ ' : null,
-                suffixText: _paidCurrency == MoneyCurrency.khr ? '៛' : null,
+                suffixText: _paidCurrency == MoneyCurrency.khr ? 'រៀល' : null,
               ),
             ),
 
@@ -775,33 +762,20 @@ class _PaymentFormScreenState extends State<PaymentFormScreen> {
       // -------------------------
       // SAVE
       // -------------------------
-      bottomSheet: AnimatedPadding(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOutCubic,
-        padding: EdgeInsets.only(bottom: keyboardInset),
-        child: Material(
+      bottomSheet: SafeArea(
+        child: Container(
           color: Theme.of(context).scaffoldBackgroundColor,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              20,
-              12,
-              20,
-              actionBottomPadding,
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: _saving ? null : _save,
-                icon: _saving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(AppIcons.check, size: 20),
-                label: Text(_saving ? l10n.saving : l10n.savePayment),
-              ),
-            ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+          child: FilledButton.icon(
+            onPressed: _saving ? null : _save,
+            icon: _saving
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(AppIcons.check, size: 20),
+            label: Text(_saving ? l10n.saving : l10n.savePayment),
           ),
         ),
       ),
@@ -1028,9 +1002,8 @@ class _SummaryRow extends StatelessWidget {
               (strong
                       ? Theme.of(context).textTheme.titleLarge
                       : Theme.of(context).textTheme.bodyMedium)
-                  ?.copyWith(
-                    fontWeight: strong ? FontWeight.w700 : FontWeight.w600,
-                  ),
+                  ?.copyWith(                      fontWeight: strong ? FontWeight.w700 : FontWeight.w600,
+                    ),
         ),
       ],
     );

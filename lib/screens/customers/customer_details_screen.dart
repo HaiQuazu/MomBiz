@@ -197,8 +197,8 @@ class CustomerDetailsScreen extends StatelessWidget {
 
                 final payments = paymentSnapshot.data!;
 
-                var khrBalance = 0;
-                var usdBalance = 0;
+                var khrBalance = customer.openingDebtKhrMinor;
+                var usdBalance = customer.openingDebtUsdMinor;
 
                 for (final sale in sales) {
                   if (sale.status != 'active') {
@@ -429,7 +429,14 @@ class _CustomerDetailsContent extends StatelessWidget {
                   const SizedBox(height: 7),
 
                   Text(
-                    hasDebt ? l10n.salesMinusPayments : l10n.customerFullyPaid,
+                    hasDebt
+                        ? (customer.openingDebtKhrMinor > 0 ||
+                                  customer.openingDebtUsdMinor > 0
+                              ? (isKhmer
+                                    ? 'បំណុលចាស់ + ការលក់ − ការទូទាត់'
+                                    : 'Previous debt + sales − payments')
+                              : l10n.salesMinusPayments)
+                        : l10n.customerFullyPaid,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: colors.onPrimary.withValues(alpha: 0.75),
                     ),
@@ -558,6 +565,29 @@ class _CustomerDetailsContent extends StatelessWidget {
               clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
+                  if (customer.openingDebtKhrMinor > 0 ||
+                      customer.openingDebtUsdMinor > 0) ...[
+                    _InfoTile(
+                      icon: AppIcons.payment,
+                      title: isKhmer
+                          ? 'បំណុលចាស់មុនប្រើ MomBiz'
+                          : 'Debt before MomBiz',
+                      value: [
+                        if (customer.openingDebtKhrMinor > 0)
+                          MoneyUtils.format(
+                            customer.openingDebtKhrMinor,
+                            MoneyCurrency.khr,
+                          ),
+                        if (customer.openingDebtUsdMinor > 0)
+                          MoneyUtils.format(
+                            customer.openingDebtUsdMinor,
+                            MoneyCurrency.usd,
+                          ),
+                      ].join(' • '),
+                    ),
+                    const Divider(height: 1),
+                  ],
+
                   _InfoTile(
                     icon: AppIcons.phone,
                     title: l10n.phone,

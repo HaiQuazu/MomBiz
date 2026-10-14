@@ -11,16 +11,47 @@ import '../../models/sale.dart';
 import '../../services/sale_service.dart';
 import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
+import '../sales/sale_form_screen.dart';
 
-class SaleReceiptScreen extends StatelessWidget {
+class SaleReceiptScreen extends StatefulWidget {
   const SaleReceiptScreen({super.key, required this.saleId});
 
   final String saleId;
+
+  @override
+  State<SaleReceiptScreen> createState() => _SaleReceiptScreenState();
+}
+
+class _SaleReceiptScreenState extends State<SaleReceiptScreen> {
+  late Future<Sale?> _saleFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _saleFuture = SaleService.instance.getSale(widget.saleId);
+  }
 
   String _date(DateTime value) {
     return '${value.day.toString().padLeft(2, '0')}/'
         '${value.month.toString().padLeft(2, '0')}/'
         '${value.year}';
+  }
+
+  Future<void> _editSale(Sale sale) async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SaleFormScreen(saleToEdit: sale),
+      ),
+    );
+
+    if (updated != true || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _saleFuture = SaleService.instance.getSale(widget.saleId);
+    });
   }
 
   @override
@@ -41,7 +72,7 @@ class SaleReceiptScreen extends StatelessWidget {
         ),
       ),
       body: FutureBuilder<Sale?>(
-        future: SaleService.instance.getSale(saleId),
+        future: _saleFuture,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text(l10n.couldNotLoadReceipt));
@@ -57,7 +88,13 @@ class SaleReceiptScreen extends StatelessWidget {
             return Center(child: Text(l10n.saleNotFound));
           }
 
-          return _ReceiptContent(sale: sale, dateText: _date(sale.saleDate));
+          return _ReceiptContent(
+            sale: sale,
+            dateText: _date(sale.saleDate),
+            onEdit: sale.status == 'active' && sale.currency == MoneyCurrency.khr
+                ? () => _editSale(sale)
+                : null,
+          );
         },
       ),
     );
@@ -65,10 +102,15 @@ class SaleReceiptScreen extends StatelessWidget {
 }
 
 class _ReceiptContent extends StatefulWidget {
-  const _ReceiptContent({required this.sale, required this.dateText});
+  const _ReceiptContent({
+    required this.sale,
+    required this.dateText,
+    required this.onEdit,
+  });
 
   final Sale sale;
   final String dateText;
+  final VoidCallback? onEdit;
 
   @override
   State<_ReceiptContent> createState() => _ReceiptContentState();
@@ -81,6 +123,10 @@ class _ReceiptContentState extends State<_ReceiptContent> {
   bool _savingToDevice = false;
 
   bool get _busy => _sharing || _savingToDevice;
+
+  String _text({required String en, required String km}) {
+    return Localizations.localeOf(context).languageCode == 'km' ? km : en;
+  }
 
   Future<Uint8List> _createReceiptPng() async {
     await Future.delayed(const Duration(milliseconds: 100));
@@ -181,7 +227,7 @@ class _ReceiptContentState extends State<_ReceiptContent> {
         SnackBar(
           content: Text(
             isKhmer
-                ? 'បានរក្សាទុកបង្កាន់ដៃក្នុងរូបថត។'
+                ? 'បានរក្សាទុកបង្កាន់ដៃក្នុងរូបថត'
                 : 'Receipt saved to Photos.',
           ),
         ),
@@ -195,7 +241,7 @@ class _ReceiptContentState extends State<_ReceiptContent> {
         SnackBar(
           content: Text(
             isKhmer
-                ? 'មិនអាចរក្សាទុកបង្កាន់ដៃបានទេ។'
+                ? 'មិនអាចរក្សាទុកបង្កាន់ដៃបានទេ'
                 : 'Could not save the receipt.',
           ),
         ),
@@ -440,6 +486,23 @@ class _ReceiptContentState extends State<_ReceiptContent> {
           ),
 
           const SizedBox(height: 18),
+
+          // -------------------------
+          // EDIT SAVED SALE
+          // -------------------------
+          if (widget.onEdit != null) ...[
+            OutlinedButton.icon(
+              onPressed: _busy ? null : widget.onEdit,
+              icon: const Icon(AppIcons.edit, size: 20),
+              label: Text(
+                _text(
+                  en: 'Edit sale',
+                  km: 'កែសម្រួលការលក់',
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
 
           // -------------------------
           // SHARE

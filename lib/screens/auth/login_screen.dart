@@ -80,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _errorMessage = _text(
           en: 'Something went wrong. Please try again.',
-          km: 'មានបញ្ហាមួយបានកើតឡើង។ សូមព្យាយាមម្តងទៀត។',
+          km: 'មានបញ្ហាមួយបានកើតឡើង សូមព្យាយាមម្តងទៀត',
         );
       });
     } finally {
@@ -137,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
           en:
               'Unable to sign in with Google. Please try again.',
           km:
-              'មិនអាចចូលដោយប្រើ Google បានទេ។ សូមព្យាយាមម្តងទៀត។',
+              'មិនអាចចូលដោយប្រើ Google បានទេ សូមព្យាយាមម្តងទៀត',
         );
       });
     } finally {
@@ -161,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
           en:
               'Google sign-in is not configured correctly yet.',
           km:
-              'ការចូលដោយប្រើ Google មិនទាន់បានកំណត់ត្រឹមត្រូវទេ។',
+              'ការចូលដោយប្រើ Google មិនទាន់បានកំណត់ត្រឹមត្រូវទេ',
         );
 
       case GoogleSignInExceptionCode.interrupted:
@@ -170,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
           en:
               'Google sign-in could not open. Please try again.',
           km:
-              'មិនអាចបើកការចូលដោយប្រើ Google បានទេ។ សូមព្យាយាមម្តងទៀត។',
+              'មិនអាចបើកការចូលដោយប្រើ Google បានទេ សូមព្យាយាមម្តងទៀត',
         );
 
       default:
@@ -178,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
           en:
               'Unable to sign in with Google. Please try again.',
           km:
-              'មិនអាចចូលដោយប្រើ Google បានទេ។ សូមព្យាយាមម្តងទៀត។',
+              'មិនអាចចូលដោយប្រើ Google បានទេ សូមព្យាយាមម្តងទៀត',
         );
     }
   }
@@ -191,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return _text(
           en: 'The email address is not valid.',
           km:
-              'អាសយដ្ឋានអ៊ីមែលមិនត្រឹមត្រូវទេ។',
+              'អាសយដ្ឋានអ៊ីមែលមិនត្រឹមត្រូវទេ',
         );
 
       case 'invalid-credential':
@@ -201,7 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
           en:
               'Email or password is incorrect.',
           km:
-              'អ៊ីមែល ឬ ពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ។',
+              'អ៊ីមែល ឬ ពាក្យសម្ងាត់មិនត្រឹមត្រូវទេ',
         );
 
       case 'user-disabled':
@@ -209,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
           en:
               'This account has been disabled.',
           km:
-              'គណនីនេះត្រូវបានបិទ។',
+              'គណនីនេះត្រូវបានបិទ',
         );
 
       case 'too-many-requests':
@@ -217,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
           en:
               'Too many attempts. Please try again later.',
           km:
-              'មានការព្យាយាមច្រើនពេក។ សូមព្យាយាមម្តងទៀតពេលក្រោយ។',
+              'មានការព្យាយាមច្រើនពេក សូមព្យាយាមម្តងទៀតពេលក្រោយ',
         );
 
       case 'network-request-failed':
@@ -225,7 +225,7 @@ class _LoginScreenState extends State<LoginScreen> {
           en:
               'No internet connection. Please try again.',
           km:
-              'គ្មានការតភ្ជាប់អ៊ីនធឺណិត។ សូមព្យាយាមម្តងទៀត។',
+              'គ្មានការតភ្ជាប់អ៊ីនធឺណិត សូមព្យាយាមម្តងទៀត',
         );
 
       case 'operation-not-allowed':
@@ -233,7 +233,7 @@ class _LoginScreenState extends State<LoginScreen> {
           en:
               'This sign-in method is not enabled yet.',
           km:
-              'វិធីចូលនេះមិនទាន់បានបើកប្រើទេ។',
+              'វិធីចូលនេះមិនទាន់បានបើកប្រើទេ',
         );
 
       case 'google-missing-id-token':
@@ -241,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
           en:
               'Google sign-in could not be completed.',
           km:
-              'មិនអាចបញ្ចប់ការចូលដោយប្រើ Google បានទេ។',
+              'មិនអាចបញ្ចប់ការចូលដោយប្រើ Google បានទេ',
         );
 
       default:
@@ -249,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
           en:
               'Unable to sign in. Please try again.',
           km:
-              'មិនអាចចូលបានទេ។ សូមព្យាយាមម្តងទៀត។',
+              'មិនអាចចូលបានទេ សូមព្យាយាមម្តងទៀត',
         );
     }
   }
@@ -286,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
               en:
                   'Your business, organized simply.',
               km:
-                  'រៀបចំអាជីវកម្មរបស់អ្នកឱ្យសាមញ្ញ។',
+                  'រៀបចំអាជីវកម្មរបស់អ្នកឱ្យសាមញ្ញ',
             ),
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyLarge
@@ -344,7 +344,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   en:
                       'Sign in to continue to MomBiz.',
                   km:
-                      'ចូលដើម្បីបន្តប្រើ MomBiz។',
+                      'ចូលដើម្បីបន្តប្រើ MomBiz',
                 ),
                 style: theme
                     .textTheme.bodyMedium
@@ -384,7 +384,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       en:
                           'Please enter your email.',
                       km:
-                          'សូមបញ្ចូលអ៊ីមែល។',
+                          'សូមបញ្ចូលអ៊ីមែល',
                     );
                   }
 
@@ -393,7 +393,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       en:
                           'Please enter a valid email.',
                       km:
-                          'សូមបញ្ចូលអ៊ីមែលត្រឹមត្រូវ។',
+                          'សូមបញ្ចូលអ៊ីមែលត្រឹមត្រូវ',
                     );
                   }
 
@@ -451,7 +451,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       en:
                           'Please enter your password.',
                       km:
-                          'សូមបញ្ចូលពាក្យសម្ងាត់។',
+                          'សូមបញ្ចូលពាក្យសម្ងាត់',
                     );
                   }
 

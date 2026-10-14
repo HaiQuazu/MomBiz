@@ -14,7 +14,7 @@ enum MoneyCurrency {
   String get symbol {
     switch (this) {
       case MoneyCurrency.khr:
-        return '៛';
+        return 'រៀល';
       case MoneyCurrency.usd:
         return '\$';
     }
@@ -23,7 +23,7 @@ enum MoneyCurrency {
   String get label {
     switch (this) {
       case MoneyCurrency.khr:
-        return 'KHR';
+        return 'រៀល';
       case MoneyCurrency.usd:
         return 'USD';
     }
@@ -49,7 +49,10 @@ class MoneyUtils {
         .trim()
         .replaceAll(',', '')
         .replaceAll('៛', '')
-        .replaceAll('\$', '');
+        .replaceAll('រៀល', '')
+        .replaceAll('KHR', '')
+        .replaceAll('\$', '')
+        .replaceAll(RegExp(r'\s+'), '');
 
     if (cleaned.isEmpty) {
       return null;
@@ -72,10 +75,14 @@ class MoneyUtils {
     }
   }
 
+  static String formatRielInput(int amountRiel) {
+    return _withCommas(amountRiel);
+  }
+
   static String format(int amountMinor, MoneyCurrency currency) {
     switch (currency) {
       case MoneyCurrency.khr:
-        return '${_withCommas(amountMinor)}៛';
+        return '${_withCommas(amountMinor)} រៀល';
 
       case MoneyCurrency.usd:
         final negative = amountMinor < 0;

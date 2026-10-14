@@ -291,7 +291,7 @@ class ChickNotificationService {
 
   String get _testBody {
     if (_isKhmer) {
-      return 'ការជូនដំណឹងកូនមាន់ដំណើរការហើយ។';
+      return 'ការជូនដំណឹងកូនមាន់ដំណើរការហើយ';
     }
 
     return 'Chick notifications are working.';

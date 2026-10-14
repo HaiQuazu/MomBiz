@@ -4,6 +4,8 @@ import '../../l10n/app_localizations.dart';
 import '../../models/customer.dart';
 import '../../services/customer_service.dart';
 import '../../theme/app_icons.dart';
+import '../../utils/money_utils.dart';
+import '../../utils/riel_input_formatter.dart';
 
 class CustomerFormScreen extends StatefulWidget {
   const CustomerFormScreen({super.key, this.customer});
@@ -19,6 +21,8 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
 
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
+  late final TextEditingController _openingDebtKhrController;
+  late final TextEditingController _openingDebtUsdController;
   late final TextEditingController _noteController;
 
   bool _saving = false;
@@ -39,6 +43,20 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
       text: widget.customer?.phone ?? '',
     );
 
+    final customer = widget.customer;
+
+    _openingDebtKhrController = TextEditingController(
+      text: customer != null && customer.openingDebtKhrMinor > 0
+          ? MoneyUtils.formatRielInput(customer.openingDebtKhrMinor)
+          : '',
+    );
+
+    _openingDebtUsdController = TextEditingController(
+      text: customer != null && customer.openingDebtUsdMinor > 0
+          ? _editableUsd(customer.openingDebtUsdMinor)
+          : '',
+    );
+
     _noteController = TextEditingController(text: widget.customer?.note ?? '');
   }
 
@@ -46,6 +64,8 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _openingDebtKhrController.dispose();
+    _openingDebtUsdController.dispose();
     _noteController.dispose();
 
     super.dispose();
@@ -57,8 +77,71 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     return languageCode == 'km' ? km : en;
   }
 
+  String _editableUsd(int amountMinor) {
+    final dollars = amountMinor ~/ 100;
+    final cents = amountMinor % 100;
+
+    if (cents == 0) {
+      return dollars.toString();
+    }
+
+    return '$dollars.${cents.toString().padLeft(2, '0')}';
+  }
+
+  int? _openingDebtValue(
+    TextEditingController controller,
+    MoneyCurrency currency,
+  ) {
+    final text = controller.text.trim();
+
+    if (text.isEmpty) {
+      return 0;
+    }
+
+    return MoneyUtils.parse(text, currency);
+  }
+
+  String? _validateOpeningDebt(String? value, MoneyCurrency currency) {
+    final text = value?.trim() ?? '';
+
+    if (text.isEmpty) {
+      return null;
+    }
+
+    final parsed = MoneyUtils.parse(text, currency);
+
+    if (parsed == null || parsed < 0) {
+      return _text(
+        en: currency == MoneyCurrency.khr
+            ? 'Enter a valid whole KHR amount.'
+            : 'Enter a valid USD amount.',
+        km: currency == MoneyCurrency.khr
+            ? 'សូមបញ្ចូលចំនួនប្រាក់រៀលជាចំនួនគត់ត្រឹមត្រូវ'
+            : 'សូមបញ្ចូលចំនួនប្រាក់ដុល្លារត្រឹមត្រូវ',
+      );
+    }
+
+    return null;
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final openingDebtKhrMinor = _openingDebtValue(
+      _openingDebtKhrController,
+      MoneyCurrency.khr,
+    );
+    final openingDebtUsdMinor = _openingDebtValue(
+      _openingDebtUsdController,
+      MoneyCurrency.usd,
+    );
+
+    if (openingDebtKhrMinor == null ||
+        openingDebtKhrMinor < 0 ||
+        openingDebtUsdMinor == null ||
+        openingDebtUsdMinor < 0) {
       return;
     }
 
@@ -75,12 +158,16 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
           name: _nameController.text,
           phone: _phoneController.text,
           note: _noteController.text,
+          openingDebtKhrMinor: openingDebtKhrMinor,
+          openingDebtUsdMinor: openingDebtUsdMinor,
         );
       } else {
         createdCustomerId = await CustomerService.instance.addCustomer(
           name: _nameController.text,
           phone: _phoneController.text,
           note: _noteController.text,
+          openingDebtKhrMinor: openingDebtKhrMinor,
+          openingDebtUsdMinor: openingDebtUsdMinor,
         );
       }
 
@@ -149,8 +236,8 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
               ),
               content: Text(
                 _text(
-                  en: 'This customer has sales, payments, or chick reservation history.\n\nTo keep your business records and receipts safe, archive the customer instead.',
-                  km: 'អតិថិជននេះមានប្រវត្តិការលក់ ការទូទាត់ ឬការកក់កូនមាន់។\n\nដើម្បីរក្សាទុកប្រវត្តិអាជីវកម្ម និងវិក្កយបត្រឱ្យមានសុវត្ថិភាព សូមទុកអតិថិជននេះក្នុងបណ្ណសារជំនួសវិញ។',
+                  en: 'This customer has sales, payments, chick reservation history, or an existing debt balance.\n\nTo keep your business records and receipts safe, archive the customer instead.',
+                  km: 'អតិថិជននេះមានប្រវត្តិការលក់ ការទូទាត់ ការកក់កូនមាន់ ឬមានបំណុលចាស់\n\nដើម្បីរក្សាទុកប្រវត្តិអាជីវកម្ម និងវិក្កយបត្រឱ្យមានសុវត្ថិភាព សូមទុកអតិថិជននេះក្នុងបណ្ណសារជំនួសវិញ',
                 ),
               ),
               actions: [
@@ -184,7 +271,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
             content: Text(
               _text(
                 en: '${customer.name} has no business history, so they can be deleted safely.\n\nThis cannot be undone.',
-                km: '${customer.name} មិនមានប្រវត្តិអាជីវកម្មទេ ដូច្នេះអាចលុបបាន។\n\nសកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។',
+                km: '${customer.name} មិនមានប្រវត្តិអាជីវកម្មទេ ដូច្នេះអាចលុបបាន\n\nសកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ',
               ),
             ),
             actions: [
@@ -237,7 +324,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
           content: Text(
             _text(
               en: 'Could not delete customer.',
-              km: 'មិនអាចលុបអតិថិជនបានទេ។',
+              km: 'មិនអាចលុបអតិថិជនបានទេ',
             ),
           ),
         ),
@@ -330,7 +417,52 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
                 ),
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 22),
+
+              Text(
+                _text(
+                  en: 'Existing debt before MomBiz',
+                  km: 'បំណុលចាស់មុនប្រើ MomBiz',
+                ),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: isKhmer ? FontWeight.w600 : FontWeight.w700,
+                ),
+              ),
+
+              const SizedBox(height: 5),
+
+              Text(
+                _text(
+                  en: 'Enter only money this customer already owed before you started recording sales in MomBiz. Leave blank if there is no old debt.',
+                  km: 'បញ្ចូលតែប្រាក់ដែលអតិថិជននេះបានជំពាក់មុនពេលចាប់ផ្តើមកត់ត្រាការលក់ក្នុង MomBiz បើមិនមានបំណុលចាស់ សូមទុកទទេ',
+                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              TextFormField(
+                controller: _openingDebtKhrController,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.next,
+                enabled: !_busy,
+                decoration: InputDecoration(
+                  labelText: _text(
+                    en: 'Old debt (KHR)',
+                    km: 'បំណុលចាស់ (រៀល)',
+                  ),
+                  hintText: '100,000',
+                  prefixIcon: const Icon(AppIcons.payment, size: 21),
+                  suffixText: 'រៀល',
+                ),
+                inputFormatters: const [RielInputFormatter()],
+                validator: (value) =>
+                    _validateOpeningDebt(value, MoneyCurrency.khr),
+              ),
+
+              const SizedBox(height: 22),
 
               TextFormField(
                 controller: _noteController,

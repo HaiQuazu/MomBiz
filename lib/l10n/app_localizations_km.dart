@@ -81,7 +81,7 @@ class AppLocalizationsKm extends AppLocalizations {
   String get outstandingCustomerDebt => 'បំណុលអតិថិជននៅសល់';
 
   @override
-  String get noOutstandingDebt => 'មិនមានបំណុលអតិថិជននៅសល់ទេ។';
+  String get noOutstandingDebt => 'មិនមានបំណុលអតិថិជននៅសល់ទេ';
 
   @override
   String get acrossAllCustomers => 'សរុបពីអតិថិជនទាំងអស់';
@@ -107,16 +107,16 @@ class AppLocalizationsKm extends AppLocalizations {
   String get noActivityYet => 'មិនទាន់មានសកម្មភាព';
 
   @override
-  String get activityWillAppearHere => 'ការលក់ និងការទូទាត់នឹងបង្ហាញនៅទីនេះ។';
+  String get activityWillAppearHere => 'ការលក់ និងការទូទាត់នឹងបង្ហាញនៅទីនេះ';
 
   @override
   String get sale => 'ការលក់';
 
   @override
-  String get couldNotLoadSales => 'មិនអាចទាញយកការលក់បានទេ។';
+  String get couldNotLoadSales => 'មិនអាចទាញយកការលក់បានទេ';
 
   @override
-  String get couldNotLoadPayments => 'មិនអាចទាញយកការទូទាត់បានទេ។';
+  String get couldNotLoadPayments => 'មិនអាចទាញយកការទូទាត់បានទេ';
 
   @override
   String get addCustomer => 'បន្ថែមអតិថិជន';
@@ -134,7 +134,7 @@ class AppLocalizationsKm extends AppLocalizations {
   String get couldNotLoadCustomers => 'មិនអាចទាញយកអតិថិជនបានទេ';
 
   @override
-  String get pleaseTryAgain => 'សូមព្យាយាមម្តងទៀត។';
+  String get pleaseTryAgain => 'សូមព្យាយាមម្តងទៀត';
 
   @override
   String get noCustomerFound => 'រកមិនឃើញអតិថិជន';
@@ -146,14 +146,14 @@ class AppLocalizationsKm extends AppLocalizations {
   String get noCustomersYet => 'មិនទាន់មានអតិថិជន';
 
   @override
-  String get tryAnotherNameOrPhone => 'សាកល្បងឈ្មោះ ឬលេខទូរស័ព្ទផ្សេងទៀត។';
+  String get tryAnotherNameOrPhone => 'សាកល្បងឈ្មោះ ឬលេខទូរស័ព្ទផ្សេងទៀត';
 
   @override
   String get archivedCustomersAppearHere =>
-      'អតិថិជនដែលបានដាក់ក្នុងបណ្ណសារនឹងបង្ហាញនៅទីនេះ។';
+      'អតិថិជនដែលបានដាក់ក្នុងបណ្ណសារនឹងបង្ហាញនៅទីនេះ';
 
   @override
-  String get addFirstCustomer => 'បន្ថែមអតិថិជនដំបូងរបស់ MomBiz។';
+  String get addFirstCustomer => 'បន្ថែមអតិថិជនដំបូងរបស់ MomBiz';
 
   @override
   String get noPhoneNumber => 'គ្មានលេខទូរស័ព្ទ';
@@ -172,7 +172,7 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get onlyNameRequired =>
-      'ត្រូវការតែឈ្មោះប៉ុណ្ណោះ។ លេខទូរស័ព្ទ និងកំណត់ចំណាំអាចបន្ថែមពេលក្រោយបាន។';
+      'ត្រូវការតែឈ្មោះប៉ុណ្ណោះ លេខទូរស័ព្ទ និងកំណត់ចំណាំអាចបន្ថែមពេលក្រោយបាន';
 
   @override
   String get customerName => 'ឈ្មោះអតិថិជន';
@@ -181,7 +181,7 @@ class AppLocalizationsKm extends AppLocalizations {
   String get exampleDara => 'ឧទាហរណ៍៖ ដារ៉ា';
 
   @override
-  String get pleaseEnterCustomerName => 'សូមបញ្ចូលឈ្មោះអតិថិជន។';
+  String get pleaseEnterCustomerName => 'សូមបញ្ចូលឈ្មោះអតិថិជន';
 
   @override
   String get phoneNumber => 'លេខទូរស័ព្ទ';
@@ -200,17 +200,17 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get couldNotSaveCustomer =>
-      'មិនអាចរក្សាទុកអតិថិជនបានទេ។ សូមព្យាយាមម្តងទៀត។';
+      'មិនអាចរក្សាទុកអតិថិជនបានទេ សូមព្យាយាមម្តងទៀត';
 
   @override
-  String get noOutstandingBalance => 'អតិថិជននេះមិនមានបំណុលនៅសល់ទេ។';
+  String get noOutstandingBalance => 'អតិថិជននេះមិនមានបំណុលនៅសល់ទេ';
 
   @override
   String get archiveCustomerQuestion => 'ដាក់អតិថិជនក្នុងបណ្ណសារ?';
 
   @override
   String archiveCustomerMessage(String name) {
-    return '$name នឹងត្រូវលាក់ពីបញ្ជីអតិថិជនកំពុងប្រើ។\n\nប្រវត្តិការលក់ និងការទូទាត់របស់ពួកគេនឹងនៅដដែល។';
+    return '$name នឹងត្រូវលាក់ពីបញ្ជីអតិថិជនកំពុងប្រើ\n\nប្រវត្តិការលក់ និងការទូទាត់របស់ពួកគេនឹងនៅដដែល';
   }
 
   @override
@@ -218,14 +218,14 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String customerRestored(String name) {
-    return 'បានស្ដារ $name។';
+    return 'បានស្ដារ $name';
   }
 
   @override
-  String get couldNotLoadCustomer => 'មិនអាចទាញយកអតិថិជនបានទេ។';
+  String get couldNotLoadCustomer => 'មិនអាចទាញយកអតិថិជនបានទេ';
 
   @override
-  String get customerNotFound => 'រកមិនឃើញអតិថិជន។';
+  String get customerNotFound => 'រកមិនឃើញអតិថិជន';
 
   @override
   String get outstandingBalance => 'បំណុលនៅសល់';
@@ -234,7 +234,7 @@ class AppLocalizationsKm extends AppLocalizations {
   String get salesMinusPayments => 'ការលក់ ដក ការទូទាត់';
 
   @override
-  String get customerFullyPaid => 'អតិថិជននេះបានបង់ប្រាក់គ្រប់ហើយ។';
+  String get customerFullyPaid => 'អតិថិជននេះបានបង់ប្រាក់គ្រប់ហើយ';
 
   @override
   String get activity => 'សកម្មភាព';
@@ -274,7 +274,7 @@ class AppLocalizationsKm extends AppLocalizations {
   String get recordPayment => 'កត់ត្រាការទូទាត់';
 
   @override
-  String get recordMoneyReceived => 'កត់ត្រាប្រាក់ដែលបានទទួលពីអតិថិជននេះ។';
+  String get recordMoneyReceived => 'កត់ត្រាប្រាក់ដែលបានទទួលពីអតិថិជននេះ';
 
   @override
   String get payingWhichBalance => 'បង់បំណុលមួយណា?';
@@ -286,7 +286,7 @@ class AppLocalizationsKm extends AppLocalizations {
   String get amountReceived => 'ចំនួនប្រាក់ដែលបានទទួល';
 
   @override
-  String get example100000 => 'ឧទាហរណ៍៖ 100000';
+  String get example100000 => 'ឧទាហរណ៍៖ 100,000';
 
   @override
   String get example2500 => 'ឧទាហរណ៍៖ 25.00';
@@ -339,27 +339,27 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get couldNotGetNbcRateForDate =>
-      'មិនអាចទាញយកអត្រា NBC សម្រាប់កាលបរិច្ឆេទនេះបានទេ។';
+      'មិនអាចទាញយកអត្រា NBC សម្រាប់កាលបរិច្ឆេទនេះបានទេ';
 
   @override
-  String get pleaseEnterPaymentAmount => 'សូមបញ្ចូលចំនួនប្រាក់ទូទាត់។';
+  String get pleaseEnterPaymentAmount => 'សូមបញ្ចូលចំនួនប្រាក់ទូទាត់';
 
   @override
   String get nbcRateRequiredForConversion =>
-      'ត្រូវការអត្រាប្តូរប្រាក់ NBC សម្រាប់ការប្តូររូបិយប័ណ្ណនេះ។';
+      'ត្រូវការអត្រាប្តូរប្រាក់ NBC សម្រាប់ការប្តូររូបិយប័ណ្ណនេះ';
 
   @override
-  String get paymentAmountInvalid => 'ចំនួនប្រាក់ទូទាត់មិនត្រឹមត្រូវ។';
+  String get paymentAmountInvalid => 'ចំនួនប្រាក់ទូទាត់មិនត្រឹមត្រូវ';
 
   @override
-  String get paymentGreaterThanBalance => 'ការទូទាត់នេះច្រើនជាងបំណុលដែលនៅសល់។';
+  String get paymentGreaterThanBalance => 'ការទូទាត់នេះច្រើនជាងបំណុលដែលនៅសល់';
 
   @override
-  String get paymentSavedSuccessfully => 'បានរក្សាទុកការទូទាត់ដោយជោគជ័យ។';
+  String get paymentSavedSuccessfully => 'បានរក្សាទុកការទូទាត់ដោយជោគជ័យ';
 
   @override
   String get couldNotSavePayment =>
-      'មិនអាចរក្សាទុកការទូទាត់បានទេ។ សូមព្យាយាមម្តងទៀត។';
+      'មិនអាចរក្សាទុកការទូទាត់បានទេ សូមព្យាយាមម្តងទៀត';
 
   @override
   String get cash => 'សាច់ប្រាក់';
@@ -410,7 +410,7 @@ class AppLocalizationsKm extends AppLocalizations {
   String get discountAmount => 'ចំនួនបញ្ចុះតម្លៃ';
 
   @override
-  String get example50000 => 'ឧទាហរណ៍៖ 50000';
+  String get example50000 => 'ឧទាហរណ៍៖ 50,000';
 
   @override
   String get example500 => 'ឧទាហរណ៍៖ 5.00';
@@ -431,32 +431,31 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get couldNotLoadCustomersOrProducts =>
-      'មិនអាចទាញយកអតិថិជន ឬផលិតផលបានទេ។';
+      'មិនអាចទាញយកអតិថិជន ឬផលិតផលបានទេ';
 
   @override
-  String get pleaseSelectCustomer => 'សូមជ្រើសរើសអតិថិជន។';
+  String get pleaseSelectCustomer => 'សូមជ្រើសរើសអតិថិជន';
 
   @override
-  String get addAtLeastOneProduct => 'សូមបន្ថែមផលិតផលយ៉ាងហោចណាស់មួយ។';
+  String get addAtLeastOneProduct => 'សូមបន្ថែមផលិតផលយ៉ាងហោចណាស់មួយ';
 
   @override
   String get pleaseSelectProductEveryItem =>
-      'សូមជ្រើសរើសផលិតផលសម្រាប់ទំនិញនីមួយៗ។';
+      'សូមជ្រើសរើសផលិតផលសម្រាប់ទំនិញនីមួយៗ';
 
   @override
-  String get quantityGreaterThanZero => 'ចំនួនត្រូវតែធំជាងសូន្យ។';
+  String get quantityGreaterThanZero => 'ចំនួនត្រូវតែធំជាងសូន្យ';
 
   @override
   String get validPriceEveryItem =>
-      'សូមបញ្ចូលតម្លៃត្រឹមត្រូវសម្រាប់ទំនិញនីមួយៗ។';
+      'សូមបញ្ចូលតម្លៃត្រឹមត្រូវសម្រាប់ទំនិញនីមួយៗ';
 
   @override
   String get discountCannotExceedSubtotal =>
-      'ការបញ្ចុះតម្លៃមិនអាចច្រើនជាងសរុបមុនបញ្ចុះតម្លៃបានទេ។';
+      'ការបញ្ចុះតម្លៃមិនអាចច្រើនជាងសរុបមុនបញ្ចុះតម្លៃបានទេ';
 
   @override
-  String get couldNotSaveSale =>
-      'មិនអាចរក្សាទុកការលក់បានទេ។ សូមព្យាយាមម្តងទៀត។';
+  String get couldNotSaveSale => 'មិនអាចរក្សាទុកការលក់បានទេ សូមព្យាយាមម្តងទៀត';
 
   @override
   String get receipt => 'បង្កាន់ដៃ';
@@ -471,10 +470,10 @@ class AppLocalizationsKm extends AppLocalizations {
   String get date => 'កាលបរិច្ឆេទ';
 
   @override
-  String get couldNotLoadReceipt => 'មិនអាចទាញយកបង្កាន់ដៃបានទេ។';
+  String get couldNotLoadReceipt => 'មិនអាចទាញយកបង្កាន់ដៃបានទេ';
 
   @override
-  String get saleNotFound => 'រកមិនឃើញការលក់។';
+  String get saleNotFound => 'រកមិនឃើញការលក់';
 
   @override
   String get amountDueForSale => 'ចំនួនត្រូវបង់សម្រាប់ការលក់នេះ';
@@ -489,7 +488,7 @@ class AppLocalizationsKm extends AppLocalizations {
   String get done => 'រួចរាល់';
 
   @override
-  String get couldNotShareReceipt => 'មិនអាចចែករំលែករូបភាពបង្កាន់ដៃបានទេ។';
+  String get couldNotShareReceipt => 'មិនអាចចែករំលែករូបភាពបង្កាន់ដៃបានទេ';
 
   @override
   String receiptForCustomer(String name) {
@@ -506,7 +505,7 @@ class AppLocalizationsKm extends AppLocalizations {
   String get searchProducts => 'ស្វែងរកផលិតផល';
 
   @override
-  String get couldNotLoadProducts => 'មិនអាចទាញយកផលិតផលបានទេ។';
+  String get couldNotLoadProducts => 'មិនអាចទាញយកផលិតផលបានទេ';
 
   @override
   String get noArchivedProducts => 'មិនមានផលិតផលក្នុងបណ្ណសារ';
@@ -516,10 +515,10 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get archivedProductsAppearHere =>
-      'ផលិតផលដែលបានដាក់ក្នុងបណ្ណសារនឹងបង្ហាញនៅទីនេះ។';
+      'ផលិតផលដែលបានដាក់ក្នុងបណ្ណសារនឹងបង្ហាញនៅទីនេះ';
 
   @override
-  String get addProductsMomSells => 'បន្ថែមផលិតផលដែលម៉ាក់លក់។';
+  String get addProductsMomSells => 'បន្ថែមផលិតផលដែលម៉ាក់លក់';
 
   @override
   String get productName => 'ឈ្មោះផលិតផល';
@@ -544,36 +543,36 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get defaultPriceHelp =>
-      'តម្លៃនេះនឹងត្រូវណែនាំពេលបង្កើតការលក់។ អ្នកនៅតែអាចកែតម្លៃសម្រាប់ការលក់នីមួយៗបាន។';
+      'តម្លៃនេះនឹងត្រូវណែនាំពេលបង្កើតការលក់ អ្នកនៅតែអាចកែតម្លៃសម្រាប់ការលក់នីមួយៗបាន';
 
   @override
   String get defaultPriceOptional =>
-      'មិនចាំបាច់ — ទុកទទេបើផលិតផលនេះមិនមានតម្លៃធម្មតា។';
+      'មិនចាំបាច់ — ទុកទទេបើផលិតផលនេះមិនមានតម្លៃធម្មតា';
 
   @override
-  String get example65000 => 'ឧទាហរណ៍៖ 65000';
+  String get example65000 => 'ឧទាហរណ៍៖ 65,000';
 
   @override
   String get example1600 => 'ឧទាហរណ៍៖ 16.00';
 
   @override
-  String get pleaseEnterProductName => 'សូមបញ្ចូលឈ្មោះផលិតផល។';
+  String get pleaseEnterProductName => 'សូមបញ្ចូលឈ្មោះផលិតផល';
 
   @override
-  String get pleaseEnterCategory => 'សូមបញ្ចូលប្រភេទផលិតផល។';
+  String get pleaseEnterCategory => 'សូមបញ្ចូលប្រភេទផលិតផល';
 
   @override
-  String get pleaseEnterUnit => 'សូមបញ្ចូលឯកតា។';
+  String get pleaseEnterUnit => 'សូមបញ្ចូលឯកតា';
 
   @override
   String get pleaseEnterValidDefaultPrice =>
-      'សូមបញ្ចូលតម្លៃធម្មតាដែលត្រឹមត្រូវ។';
+      'សូមបញ្ចូលតម្លៃធម្មតាដែលត្រឹមត្រូវ';
 
   @override
-  String get couldNotUpdateProduct => 'មិនអាចកែប្រែផលិតផលបានទេ។';
+  String get couldNotUpdateProduct => 'មិនអាចកែប្រែផលិតផលបានទេ';
 
   @override
-  String get couldNotAddProduct => 'មិនអាចបន្ថែមផលិតផលបានទេ។';
+  String get couldNotAddProduct => 'មិនអាចបន្ថែមផលិតផលបានទេ';
 
   @override
   String get chickQueue => 'ជួររង់ចាំកូនមាន់';
@@ -588,14 +587,13 @@ class AppLocalizationsKm extends AppLocalizations {
   String get history => 'ប្រវត្តិ';
 
   @override
-  String get couldNotLoadChickQueue => 'មិនអាចទាញយកជួររង់ចាំកូនមាន់បានទេ។';
+  String get couldNotLoadChickQueue => 'មិនអាចទាញយកជួររង់ចាំកូនមាន់បានទេ';
 
   @override
-  String get noHistoryYet => 'មិនទាន់មានប្រវត្តិ។';
+  String get noHistoryYet => 'មិនទាន់មានប្រវត្តិ';
 
   @override
-  String get noCustomersWaitingForChicks =>
-      'មិនមានអតិថិជនកំពុងរង់ចាំកូនមាន់ទេ។';
+  String get noCustomersWaitingForChicks => 'មិនមានអតិថិជនកំពុងរង់ចាំកូនមាន់ទេ';
 
   @override
   String batchDateValue(String date) {
@@ -639,32 +637,32 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get reservationCancelledAndMoved =>
-      'បានបោះបង់ការកក់ និងផ្លាស់ទីអតិថិជនបន្ទាប់មកមុន។';
+      'បានបោះបង់ការកក់ និងផ្លាស់ទីអតិថិជនបន្ទាប់មកមុន';
 
   @override
-  String get reservationCancelled => 'បានបោះបង់ការកក់។';
+  String get reservationCancelled => 'បានបោះបង់ការកក់';
 
   @override
-  String get couldNotCancelReservation => 'មិនអាចបោះបង់ការកក់បានទេ។';
+  String get couldNotCancelReservation => 'មិនអាចបោះបង់ការកក់បានទេ';
 
   @override
   String get customerPickedUpChicksQuestion => 'អតិថិជនបានមកយកកូនមាន់ហើយ?';
 
   @override
   String get saleCreatedBeforePickup =>
-      'ការលក់នឹងត្រូវបង្កើតមុនពេលសម្គាល់ការកក់នេះថាបានមកយកហើយ។';
+      'ការលក់នឹងត្រូវបង្កើតមុនពេលសម្គាល់ការកក់នេះថាបានមកយកហើយ';
 
   @override
   String get createSale => 'បង្កើតការលក់';
 
   @override
   String customerMarkedPickedUp(String name) {
-    return 'បានសម្គាល់ $name ថាបានមកយកហើយ។';
+    return 'បានសម្គាល់ $name ថាបានមកយកហើយ';
   }
 
   @override
   String get saleSavedButPickupFailed =>
-      'ការលក់បានរក្សាទុក ប៉ុន្តែមិនអាចសម្គាល់ការកក់ថាបានមកយកហើយបានទេ។';
+      'ការលក់បានរក្សាទុក ប៉ុន្តែមិនអាចសម្គាល់ការកក់ថាបានមកយកហើយបានទេ';
 
   @override
   String get editReservation => 'កែប្រែការកក់';
@@ -701,13 +699,13 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get pleaseEnterValidChickQuantity =>
-      'សូមបញ្ចូលចំនួនកូនមាន់ឱ្យត្រឹមត្រូវ។';
+      'សូមបញ្ចូលចំនួនកូនមាន់ឱ្យត្រឹមត្រូវ';
 
   @override
-  String get couldNotUpdateReservation => 'មិនអាចកែប្រែការកក់បានទេ។';
+  String get couldNotUpdateReservation => 'មិនអាចកែប្រែការកក់បានទេ';
 
   @override
-  String get couldNotSaveReservation => 'មិនអាចរក្សាទុកការកក់បានទេ។';
+  String get couldNotSaveReservation => 'មិនអាចរក្សាទុកការកក់បានទេ';
 
   @override
   String get saveReservation => 'រក្សាទុកការកក់';
@@ -737,17 +735,17 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String couldNotUpdateNbcRate(String error) {
-    return 'មិនអាចធ្វើបច្ចុប្បន្នភាពអត្រា NBC បានទេ។\n$error';
+    return 'មិនអាចធ្វើបច្ចុប្បន្នភាពអត្រា NBC បានទេ\n$error';
   }
 
   @override
   String couldNotLoadSavedExchangeRate(String error) {
-    return 'មិនអាចទាញយកអត្រាប្តូរប្រាក់ដែលបានរក្សាទុកបានទេ។\n\n$error';
+    return 'មិនអាចទាញយកអត្រាប្តូរប្រាក់ដែលបានរក្សាទុកបានទេ\n\n$error';
   }
 
   @override
   String get exchangeRateExplanation =>
-      'MomBiz រក្សាទុកអត្រាយោងផ្លូវការ NBC ចុងក្រោយ។ អត្រាសម្រាប់ថ្ងៃធ្វើការបន្ទាប់ជាទូទៅត្រូវបានផ្សព្វផ្សាយនៅពេលក្រោយក្នុងថ្ងៃធ្វើការ ដូច្នេះកាលបរិច្ឆេទមានប្រសិទ្ធភាពអាចនៅតែបង្ហាញថ្ងៃមុន រហូតដល់អត្រាថ្មីត្រូវបានផ្សព្វផ្សាយ។';
+      'MomBiz រក្សាទុកអត្រាយោងផ្លូវការ NBC ចុងក្រោយ អត្រាសម្រាប់ថ្ងៃធ្វើការបន្ទាប់ជាទូទៅត្រូវបានផ្សព្វផ្សាយនៅពេលក្រោយក្នុងថ្ងៃធ្វើការ ដូច្នេះកាលបរិច្ឆេទមានប្រសិទ្ធភាពអាចនៅតែបង្ហាញថ្ងៃមុន រហូតដល់អត្រាថ្មីត្រូវបានផ្សព្វផ្សាយ';
 
   @override
   String get theme => 'រូបរាងកម្មវិធី';

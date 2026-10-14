@@ -288,7 +288,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get amountReceived => 'Amount received';
 
   @override
-  String get example100000 => 'Example: 100000';
+  String get example100000 => 'Example: 100,000';
 
   @override
   String get example2500 => 'Example: 25.00';
@@ -412,7 +412,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get discountAmount => 'Discount amount';
 
   @override
-  String get example50000 => 'Example: 50000';
+  String get example50000 => 'Example: 50,000';
 
   @override
   String get example500 => 'Example: 5.00';
@@ -552,7 +552,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Optional — leave this blank if the product has no usual price.';
 
   @override
-  String get example65000 => 'Example: 65000';
+  String get example65000 => 'Example: 65,000';
 
   @override
   String get example1600 => 'Example: 16.00';

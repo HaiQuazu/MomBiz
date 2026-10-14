@@ -420,7 +420,7 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Text(
                           isKhmer
-                              ? 'MomBiz នឹងចងចាំផលិតផលនេះ ហើយជ្រើសរើសដោយស្វ័យប្រវត្តិពេលយកកូនមាន់។'
+                              ? 'MomBiz នឹងចងចាំផលិតផលនេះ ហើយជ្រើសរើសដោយស្វ័យប្រវត្តិពេលយកកូនមាន់'
                               : 'MomBiz will remember this product and select it automatically when chicks are picked up.',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: colors.onSurfaceVariant,
@@ -520,7 +520,7 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
                                   content: Text(
                                     _text(
                                       en: 'Could not load products.',
-                                      km: 'មិនអាចទាញយកផលិតផលបានទេ។',
+                                      km: 'មិនអាចទាញយកផលិតផលបានទេ',
                                     ),
                                   ),
                                 ),
@@ -742,7 +742,7 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
           content: Text(
             _text(
               en: 'Could not load products.',
-              km: 'មិនអាចទាញយកផលិតផលបានទេ។',
+              km: 'មិនអាចទាញយកផលិតផលបានទេ',
             ),
           ),
         ),
@@ -858,7 +858,7 @@ class _ChickQueueScreenState extends State<ChickQueueScreen> {
                   'This chick product has no default price. Enter the price before saving the sale.',
 
               km:
-                  'ផលិតផលកូនមាន់នេះមិនទាន់មានតម្លៃលំនាំដើមទេ។ សូមបញ្ចូលតម្លៃមុនរក្សាទុកការលក់។',
+                  'ផលិតផលកូនមាន់នេះមិនទាន់មានតម្លៃលំនាំដើមទេ សូមបញ្ចូលតម្លៃមុនរក្សាទុកការលក់',
 
             ),
 

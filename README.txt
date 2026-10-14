@@ -1,23 +1,14 @@
-MomBiz — Dashboard Today cards tappable
+MomBiz v1.2 - Bottom Navigation Text Response Fix
 
-Replace only:
-  lib/screens/home/dashboard_screen.dart
+Fix:
+- Keeps the smooth green pill enter/exit animation.
+- Makes icon and label color change immediately when a tab is tapped.
+- Removes the slow/laggy text-color transition.
+- No business logic changes.
 
-Changes only:
-- Tap Sales today -> opens TodaySalesScreen
-- Tap Received today -> opens TodayPaymentsScreen
-- Small right arrow added to both Today cards
-- Quick Actions unchanged
-- Recent Activity unchanged
-- Dashboard calculations unchanged
-- No other UI/business logic changed
+Replace:
+lib/screens/home/home_screen.dart
 
-Expected existing report files:
-  lib/screens/reports/today_sales_screen.dart
-  lib/screens/reports/today_payments_screen.dart
-
-After replacing:
-  flutter analyze
-
-Then:
-  r
+Then run:
+flutter analyze
+Hot restart with R.

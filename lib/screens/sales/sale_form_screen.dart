@@ -20,6 +20,7 @@ import '../../services/sale_service.dart';
 import '../../theme/app_icons.dart';
 
 import '../../utils/money_utils.dart';
+import '../../utils/riel_input_formatter.dart';
 import '../../widgets/app_bottom_action_bar.dart';
 import '../../widgets/app_picker_create_tile.dart';
 
@@ -41,6 +42,8 @@ class SaleFormScreen extends StatefulWidget {
 
     this.pickupReservationId,
 
+    this.saleToEdit,
+
   });
 
   final String? initialCustomerId;
@@ -52,6 +55,10 @@ class SaleFormScreen extends StatefulWidget {
   /// When set, saving the sale and marking this chick reservation picked up
   /// happen in one Firestore transaction.
   final String? pickupReservationId;
+
+  /// When set, this form edits the existing sale instead of creating a new one.
+  /// The customer and currency stay attached to the original sale.
+  final Sale? saleToEdit;
 
   @override
 
@@ -81,6 +88,12 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
   bool _saving = false;
 
+  bool get _isEditing => widget.saleToEdit != null;
+
+  String _text({required String en, required String km}) {
+    return Localizations.localeOf(context).languageCode == 'km' ? km : en;
+  }
+
   @override
 
   void initState() {
@@ -109,7 +122,9 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
       final products = results[1] as List<Product>;
 
-      final initialCustomerId = widget.initialCustomerId;
+      final editSale = widget.saleToEdit;
+      final initialCustomerId =
+          editSale?.customerId ?? widget.initialCustomerId;
 
       if (initialCustomerId != null &&
           !customers.any((customer) => customer.id == initialCustomerId)) {
@@ -143,6 +158,64 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
       }
 
+      if (editSale != null) {
+        _currency = editSale.currency;
+        _saleDate = editSale.saleDate;
+        _noteController.text = editSale.note;
+
+        if (editSale.discountMinor > 0) {
+          _discountController.text = _editablePrice(
+            editSale.discountMinor,
+            editSale.currency,
+          );
+        }
+
+        for (final saleItem in editSale.items) {
+          Product? currentProduct;
+
+          for (final product in _products) {
+            if (product.id == saleItem.productId) {
+              currentProduct = product;
+              break;
+            }
+          }
+
+          final snapshotProduct = Product(
+            id: saleItem.productId,
+            name: saleItem.productName,
+            category: currentProduct?.category ?? '',
+            unit: saleItem.unit,
+            defaultPriceMinor: currentProduct?.defaultPriceMinor ?? 0,
+            defaultPriceCurrency:
+                currentProduct?.defaultPriceCurrency ?? editSale.currency,
+            isArchived: currentProduct?.isArchived ?? false,
+            createdAt: currentProduct?.createdAt ?? editSale.createdAt,
+            updatedAt: currentProduct?.updatedAt ?? editSale.createdAt,
+          );
+
+          final item = _DraftItem();
+          item.product = snapshotProduct;
+          item.quantityController.text = saleItem.quantity.toString();
+          item.priceController.text = _editablePrice(
+            saleItem.unitPriceMinor,
+            editSale.currency,
+          );
+          item.quantityController.addListener(_refreshTotals);
+          item.priceController.addListener(_refreshTotals);
+          _items.add(item);
+        }
+
+        if (_items.isEmpty) {
+          _addItem();
+        }
+
+        setState(() {
+          _loading = false;
+        });
+
+        return;
+      }
+
       _addItem();
 
       // ===========================================================
@@ -170,7 +243,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
         if (initialProduct != null) {
 
-          _currency = initialProduct.defaultPriceCurrency;
+          _currency = MoneyCurrency.khr;
 
           _items.first.product = initialProduct;
 
@@ -642,7 +715,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
       case MoneyCurrency.khr:
 
-        return amountMinor.toString();
+        return MoneyUtils.formatRielInput(amountMinor);
 
       case MoneyCurrency.usd:
 
@@ -697,16 +770,6 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
       _currency,
 
     );
-
-  }
-
-  void _applyDefaultsForCurrentCurrency() {
-
-    for (final item in _items) {
-
-      _applyProductDefaultPrice(item, item.product);
-
-    }
 
   }
 
@@ -830,7 +893,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
     if (parsedDiscount == null) {
       _showError(
         Localizations.localeOf(context).languageCode == 'km'
-            ? 'សូមបញ្ចូលការបញ្ចុះតម្លៃឱ្យបានត្រឹមត្រូវ។'
+            ? 'សូមបញ្ចូលការបញ្ចុះតម្លៃឱ្យបានត្រឹមត្រូវ'
             : 'Please enter a valid discount.',
       );
       return;
@@ -853,6 +916,31 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
     });
 
     try {
+
+      final editSale = widget.saleToEdit;
+
+      if (editSale != null) {
+        await SaleService.instance.updateSale(
+          saleId: editSale.id,
+          customerId: editSale.customerId,
+          customerName: editSale.customerName,
+          buyerName: editSale.buyerName,
+          currency: editSale.currency,
+          items: saleItems,
+          subtotalMinor: _subtotal,
+          discountMinor: discount,
+          totalMinor: _total,
+          saleDate: _saleDate,
+          note: _noteController.text,
+        );
+
+        if (!mounted) {
+          return;
+        }
+
+        Navigator.pop(context, true);
+        return;
+      }
 
       final pickupReservationId = widget.pickupReservationId;
 
@@ -905,6 +993,34 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
       Navigator.pop(context, true);
 
+    } on SaleUpdateWouldOverpayException catch (_) {
+
+      if (!mounted) {
+        return;
+      }
+
+      _showError(
+        _text(
+          en:
+              'This correction would make the customer payments greater than the debt. Check the sale amount first.',
+          km:
+              'ការកែនេះនឹងធ្វើឱ្យប្រាក់ដែលអតិថិជនបានបង់លើសបំណុល សូមពិនិត្យតម្លៃលក់ម្តងទៀត',
+        ),
+      );
+
+    } on SaleNotEditableException catch (_) {
+
+      if (!mounted) {
+        return;
+      }
+
+      _showError(
+        _text(
+          en: 'This sale can no longer be edited. Please reopen the receipt.',
+          km: 'ការលក់នេះមិនអាចកែបានទៀតទេ សូមបើកបង្កាន់ដៃឡើងវិញ',
+        ),
+      );
+
     } catch (_) {
 
       if (!mounted) {
@@ -913,7 +1029,14 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
       }
 
-      _showError(l10n.couldNotSaveSale);
+      _showError(
+        _isEditing
+            ? _text(
+                en: 'Could not update the sale. Please try again.',
+                km: 'មិនអាចរក្សាទុកការកែប្រែការលក់បានទេ សូមព្យាយាមម្តងទៀត',
+              )
+            : l10n.couldNotSaveSale,
+      );
 
     } finally {
 
@@ -989,20 +1112,6 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
     final largeSectionWeight = isKhmer ? FontWeight.w600 : FontWeight.w700;
 
-    final compactSegmentStyle = ButtonStyle(
-
-      visualDensity: const VisualDensity(horizontal: -1, vertical: -2),
-
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-
-      padding: WidgetStateProperty.all(
-
-        const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-
-      ),
-
-    );
-
     if (_loading) {
 
       return Scaffold(
@@ -1011,7 +1120,9 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
           title: Text(
 
-            l10n.newSale,
+            _isEditing
+                ? _text(en: 'Edit sale', km: 'កែសម្រួលការលក់')
+                : l10n.newSale,
 
             style: theme.textTheme.titleLarge?.copyWith(
 
@@ -1042,7 +1153,9 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
         title: Text(
 
-          l10n.newSale,
+          _isEditing
+              ? _text(en: 'Edit sale', km: 'កែសម្រួលការលក់')
+              : l10n.newSale,
 
           style: theme.textTheme.titleLarge?.copyWith(
 
@@ -1096,7 +1209,7 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
               borderRadius: BorderRadius.circular(18),
 
-              onTap: _saving ? null : _pickCustomer,
+              onTap: _saving || _isEditing ? null : _pickCustomer,
 
               child: InputDecorator(
 
@@ -1106,7 +1219,9 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
                   prefixIcon: const Icon(AppIcons.customer, size: 21),
 
-                  suffixIcon: const Icon(AppIcons.chevronDown, size: 20),
+                  suffixIcon: _isEditing
+                      ? const Icon(AppIcons.lock, size: 19)
+                      : const Icon(AppIcons.chevronDown, size: 20),
 
                 ),
 
@@ -1186,59 +1301,39 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
             const SizedBox(height: 10),
 
-            Center(
+            Align(
 
-              child: SizedBox(
+              alignment: Alignment.centerLeft,
 
-                width: 230,
+              child: Container(
 
-                child: SegmentedButton<MoneyCurrency>(
+                padding: const EdgeInsets.symmetric(
 
-                  expandedInsets: EdgeInsets.zero,
+                  horizontal: 14,
 
-                  selectedIcon: const Icon(AppIcons.check, size: 18),
+                  vertical: 9,
 
-                  style: compactSegmentStyle,
+                ),
 
-                  segments: const [
+                decoration: BoxDecoration(
 
-                    ButtonSegment<MoneyCurrency>(
+                  color: colors.primaryContainer.withValues(alpha: 0.7),
 
-                      value: MoneyCurrency.khr,
+                  borderRadius: BorderRadius.circular(16),
 
-                      label: Text('KHR ៛', maxLines: 1, softWrap: false),
+                ),
 
-                    ),
+                child: Text(
 
-                    ButtonSegment<MoneyCurrency>(
+                  isKhmer ? 'រៀល' : 'Riel',
 
-                      value: MoneyCurrency.usd,
+                  style: theme.textTheme.labelLarge?.copyWith(
 
-                      label: Text('USD \$', maxLines: 1, softWrap: false),
+                    color: colors.onPrimaryContainer,
 
-                    ),
+                    fontWeight: FontWeight.w600,
 
-                  ],
-
-                  selected: {_currency},
-
-                  onSelectionChanged: _saving
-
-                      ? null
-
-                      : (selection) {
-
-                          setState(() {
-
-                            _currency = selection.first;
-
-                            _discountController.clear();
-
-                            _applyDefaultsForCurrentCurrency();
-
-                          });
-
-                        },
+                  ),
 
                 ),
 
@@ -1274,15 +1369,12 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
                 ),
 
-                TextButton.icon(
-
-                  onPressed: _saving ? null : _addItem,
-
-                  icon: const Icon(AppIcons.add, size: 19),
-
-                  label: Text(l10n.addItem),
-
-                ),
+                if (!_isEditing)
+                  TextButton.icon(
+                    onPressed: _saving ? null : _addItem,
+                    icon: const Icon(AppIcons.add, size: 19),
+                    label: Text(l10n.addItem),
+                  ),
 
               ],
 
@@ -1309,6 +1401,8 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
                   canRemove: _items.length > 1,
 
                   enabled: !_saving,
+
+                  priceOnly: _isEditing,
 
                   onChanged: _refreshTotals,
 
@@ -1360,27 +1454,19 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
 
               enabled: !_saving,
 
-              keyboardType: const TextInputType.numberWithOptions(
+              keyboardType: TextInputType.number,
 
-                decimal: true,
-
-              ),
+              inputFormatters: const [RielInputFormatter()],
 
               decoration: InputDecoration(
 
                 labelText: l10n.discountAmount,
 
-                hintText: _currency == MoneyCurrency.khr
-
-                    ? l10n.example50000
-
-                    : l10n.example500,
+                hintText: '50,000',
 
                 prefixIcon: const Icon(AppIcons.discount, size: 21),
 
-                prefixText: _currency == MoneyCurrency.usd ? '\$ ' : null,
-
-                suffixText: _currency == MoneyCurrency.khr ? '៛' : null,
+                suffixText: 'រៀល',
 
               ),
 
@@ -1517,13 +1603,12 @@ class _SaleFormScreenState extends State<SaleFormScreen> {
             label: Text(
 
               _saving
-
                   ? l10n.saving
-
+                  : _isEditing
+                  ? '${_text(en: 'Save changes', km: 'រក្សាទុកការកែប្រែ')} • '
+                      '${MoneyUtils.format(_total, _currency)}'
                   : l10n.saveSaleAmount(
-
                       MoneyUtils.format(_total, _currency),
-
                     ),
 
               maxLines: 1,
@@ -1588,6 +1673,8 @@ class _SaleItemCard extends StatefulWidget {
 
     required this.enabled,
 
+    required this.priceOnly,
+
     required this.onChanged,
 
     required this.onRemove,
@@ -1606,6 +1693,10 @@ class _SaleItemCard extends StatefulWidget {
 
   final bool enabled;
 
+  /// Existing sales keep their customer, products and quantities fixed.
+  /// Price corrections (plus discount/date/note in the parent form) remain editable.
+  final bool priceOnly;
+
   final VoidCallback onChanged;
 
   final VoidCallback onRemove;
@@ -1621,7 +1712,7 @@ class _SaleItemCard extends StatefulWidget {
 class _SaleItemCardState extends State<_SaleItemCard> {
 
   Future<void> _pickProduct() async {
-    if (!widget.enabled) {
+    if (!widget.enabled || widget.priceOnly) {
       return;
     }
 
@@ -2026,7 +2117,8 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                     borderRadius: BorderRadius.circular(18),
 
-                    onTap: widget.enabled ? _pickProduct : null,
+                    onTap:
+                        widget.enabled && !widget.priceOnly ? _pickProduct : null,
 
                     child: InputDecorator(
 
@@ -2054,7 +2146,9 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                               ),
 
-                        suffixIcon: const Icon(AppIcons.chevronDown, size: 20),
+                        suffixIcon: widget.priceOnly
+                            ? const Icon(AppIcons.lock, size: 18)
+                            : const Icon(AppIcons.chevronDown, size: 20),
 
                       ),
 
@@ -2084,7 +2178,7 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                 ),
 
-                if (widget.canRemove) ...[
+                if (widget.canRemove && !widget.priceOnly) ...[
 
                   const SizedBox(width: 4),
 
@@ -2122,7 +2216,7 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                     controller: widget.item.quantityController,
 
-                    enabled: widget.enabled,
+                    enabled: widget.enabled && !widget.priceOnly,
 
                     keyboardType: TextInputType.number,
 
@@ -2160,11 +2254,9 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                     enabled: widget.enabled,
 
-                    keyboardType: const TextInputType.numberWithOptions(
+                    keyboardType: TextInputType.number,
 
-                      decimal: true,
-
-                    ),
+                    inputFormatters: const [RielInputFormatter()],
 
                     onChanged: (_) {
 
@@ -2178,17 +2270,7 @@ class _SaleItemCardState extends State<_SaleItemCard> {
 
                       labelText: l10n.priceEach,
 
-                      prefixText: widget.currency == MoneyCurrency.usd
-
-                          ? '\$ '
-
-                          : null,
-
-                      suffixText: widget.currency == MoneyCurrency.khr
-
-                          ? '៛'
-
-                          : null,
+                      suffixText: 'រៀល',
 
                     ),
 

@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/customer.dart';
 import '../../models/customer_payment.dart';
 import '../../models/sale.dart';
+import '../../services/customer_service.dart';
 import '../../services/payment_service.dart';
 import '../../services/sale_service.dart';
 import '../../theme/app_icons.dart';
@@ -30,12 +32,15 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   StreamSubscription<List<Sale>>? _saleSubscription;
   StreamSubscription<List<CustomerPayment>>? _paymentSubscription;
+  StreamSubscription<List<Customer>>? _customerSubscription;
 
   List<Sale>? _sales;
   List<CustomerPayment>? _payments;
+  List<Customer>? _customers;
 
   Object? _saleError;
   Object? _paymentError;
+  Object? _customerError;
 
   Timer? _startupSettleTimer;
 
@@ -54,6 +59,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _onPayments,
       onError: _onPaymentError,
     );
+
+    _customerSubscription = CustomerService.instance.watchAllCustomers().listen(
+      _onCustomers,
+      onError: _onCustomerError,
+    );
   }
 
   @override
@@ -61,6 +71,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _startupSettleTimer?.cancel();
     _saleSubscription?.cancel();
     _paymentSubscription?.cancel();
+    _customerSubscription?.cancel();
 
     super.dispose();
   }
@@ -91,6 +102,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _scheduleStartupReady();
   }
 
+  void _onCustomers(List<Customer> customers) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _customers = customers;
+      _customerError = null;
+    });
+
+    _scheduleStartupReady();
+  }
+
   void _onSaleError(Object error) {
     if (!mounted) {
       return;
@@ -111,15 +135,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
+  void _onCustomerError(Object error) {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _customerError = error;
+    });
+  }
+
   void _scheduleStartupReady() {
-    if (_startupReady || _sales == null || _payments == null) {
+    if (_startupReady ||
+        _sales == null ||
+        _payments == null ||
+        _customers == null) {
       return;
     }
 
     _startupSettleTimer?.cancel();
 
     final hasStoredBusinessData =
-        _sales!.isNotEmpty || _payments!.isNotEmpty;
+        _sales!.isNotEmpty || _payments!.isNotEmpty || _customers!.isNotEmpty;
 
     // Firestore can briefly emit an empty cached snapshot while the app is
     // opening, then immediately replace it with the real server/cache data.
@@ -166,7 +203,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    if (!_startupReady || _sales == null || _payments == null) {
+    if (_customerError != null) {
+      return _DashboardError(
+        message: l10n.couldNotLoadCustomers,
+      );
+    }
+
+    if (!_startupReady ||
+        _sales == null ||
+        _payments == null ||
+        _customers == null) {
       return const Center(
         child: CircularProgressIndicator(),
       );
@@ -174,9 +220,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final sales = _sales!;
     final payments = _payments!;
+    final customers = _customers!;
 
-    var khrOutstanding = 0;
-    var usdOutstanding = 0;
+    final customerBalances = <String, _DashboardDebtBalance>{};
+
+    for (final customer in customers) {
+      customerBalances[customer.id] = _DashboardDebtBalance(
+        khr: customer.openingDebtKhrMinor,
+        usd: customer.openingDebtUsdMinor,
+      );
+    }
 
     var todaySalesKhr = 0;
     var todaySalesUsd = 0;
@@ -189,14 +242,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         continue;
       }
 
+      final balance = customerBalances.putIfAbsent(
+        sale.customerId,
+        _DashboardDebtBalance.new,
+      );
+
       if (sale.currency == MoneyCurrency.khr) {
-        khrOutstanding += sale.totalMinor;
+        balance.khr += sale.totalMinor;
 
         if (_isToday(sale.saleDate)) {
           todaySalesKhr += sale.totalMinor;
         }
       } else {
-        usdOutstanding += sale.totalMinor;
+        balance.usd += sale.totalMinor;
 
         if (_isToday(sale.saleDate)) {
           todaySalesUsd += sale.totalMinor;
@@ -209,10 +267,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         continue;
       }
 
+      final balance = customerBalances.putIfAbsent(
+        payment.customerId,
+        _DashboardDebtBalance.new,
+      );
+
       if (payment.appliedCurrency == MoneyCurrency.khr) {
-        khrOutstanding -= payment.appliedAmountMinor;
+        balance.khr -= payment.appliedAmountMinor;
       } else {
-        usdOutstanding -= payment.appliedAmountMinor;
+        balance.usd -= payment.appliedAmountMinor;
       }
 
       if (_isToday(payment.paymentDate)) {
@@ -224,12 +287,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     }
 
-    if (khrOutstanding < 0) {
-      khrOutstanding = 0;
-    }
+    var khrOutstanding = 0;
+    var usdOutstanding = 0;
 
-    if (usdOutstanding < 0) {
-      usdOutstanding = 0;
+    for (final balance in customerBalances.values) {
+      if (balance.khr > 0) {
+        khrOutstanding += balance.khr;
+      }
+
+      if (balance.usd > 0) {
+        usdOutstanding += balance.usd;
+      }
     }
 
     final activities = <_DashboardActivity>[];
@@ -269,6 +337,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onNewSaleTap: widget.onNewSaleTap,
     );
   }
+}
+
+
+class _DashboardDebtBalance {
+  _DashboardDebtBalance({
+    this.khr = 0,
+    this.usd = 0,
+  });
+
+  int khr;
+  int usd;
 }
 
 class _DashboardContent extends StatelessWidget {

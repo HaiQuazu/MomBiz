@@ -629,7 +629,7 @@ abstract class AppLocalizations {
   /// No description provided for @example100000.
   ///
   /// In en, this message translates to:
-  /// **'Example: 100000'**
+  /// **'Example: 100,000'**
   String get example100000;
 
   /// No description provided for @example2500.
@@ -863,7 +863,7 @@ abstract class AppLocalizations {
   /// No description provided for @example50000.
   ///
   /// In en, this message translates to:
-  /// **'Example: 50000'**
+  /// **'Example: 50,000'**
   String get example50000;
 
   /// No description provided for @example500.
@@ -1121,7 +1121,7 @@ abstract class AppLocalizations {
   /// No description provided for @example65000.
   ///
   /// In en, this message translates to:
-  /// **'Example: 65000'**
+  /// **'Example: 65,000'**
   String get example65000;
 
   /// No description provided for @example1600.

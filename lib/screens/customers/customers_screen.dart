@@ -444,8 +444,8 @@ class _CustomerCard extends StatelessWidget {
               );
             }
 
-            var khrBalance = 0;
-            var usdBalance = 0;
+            var khrBalance = customer.openingDebtKhrMinor;
+            var usdBalance = customer.openingDebtUsdMinor;
 
             for (final sale in sales) {
               if (sale.status != 'active') {

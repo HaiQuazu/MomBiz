@@ -10,6 +10,7 @@ import '../../services/product_image_service.dart';
 import '../../services/product_service.dart';
 import '../../theme/app_icons.dart';
 import '../../utils/money_utils.dart';
+import '../../utils/riel_input_formatter.dart';
 import '../../widgets/app_bottom_action_bar.dart';
 
 class ProductFormScreen extends StatefulWidget {
@@ -79,15 +80,15 @@ class _ProductFormScreenState
       _unitController.text =
           product.unit;
 
-      _priceCurrency =
-          product.defaultPriceCurrency;
+      // MomBiz's normal money-entry flow is riel-only. Keep legacy USD
+      // product data untouched unless Mom enters a new riel default price.
+      _priceCurrency = MoneyCurrency.khr;
 
-      if (product.defaultPriceMinor >
-          0) {
-        _priceController.text =
-            _editablePrice(
+      if (product.defaultPriceMinor > 0 &&
+          product.defaultPriceCurrency == MoneyCurrency.khr) {
+        _priceController.text = _editablePrice(
           product.defaultPriceMinor,
-          product.defaultPriceCurrency,
+          MoneyCurrency.khr,
         );
       }
 
@@ -143,7 +144,7 @@ class _ProductFormScreenState
   ) {
     switch (currency) {
       case MoneyCurrency.khr:
-        return amountMinor.toString();
+        return MoneyUtils.formatRielInput(amountMinor);
 
       case MoneyCurrency.usd:
         final dollars =
@@ -202,7 +203,7 @@ class _ProductFormScreenState
             en:
                 'Please choose an image smaller than 5 MB.',
             km:
-                'សូមជ្រើសរើសរូបភាពដែលមានទំហំតិចជាង 5 MB។',
+                'សូមជ្រើសរើសរូបភាពដែលមានទំហំតិចជាង 5 MB',
           ),
         );
 
@@ -233,7 +234,7 @@ class _ProductFormScreenState
           en:
               'Could not choose the photo.',
           km:
-              'មិនអាចជ្រើសរើសរូបភាពបានទេ។',
+              'មិនអាចជ្រើសរើសរូបភាពបានទេ',
         ),
       );
     } finally {
@@ -298,6 +299,7 @@ class _ProductFormScreenState
     }
 
     var defaultPriceMinor = 0;
+    var defaultPriceCurrency = MoneyCurrency.khr;
 
     final priceText =
         _priceController.text.trim();
@@ -317,8 +319,15 @@ class _ProductFormScreenState
         return;
       }
 
-      defaultPriceMinor =
-          parsed;
+      defaultPriceMinor = parsed;
+      defaultPriceCurrency = MoneyCurrency.khr;
+    } else if (_isEditing &&
+        widget.product!.defaultPriceCurrency == MoneyCurrency.usd &&
+        widget.product!.defaultPriceMinor > 0) {
+      // Preserve a legacy USD default price if Mom edits other product details
+      // but does not enter a new riel price. New sales remain riel-only.
+      defaultPriceMinor = widget.product!.defaultPriceMinor;
+      defaultPriceCurrency = widget.product!.defaultPriceCurrency;
     }
 
     setState(() {
@@ -343,7 +352,7 @@ class _ProductFormScreenState
           defaultPriceMinor:
               defaultPriceMinor,
           defaultPriceCurrency:
-              _priceCurrency,
+              defaultPriceCurrency,
         );
       } else {
         productId =
@@ -355,7 +364,7 @@ class _ProductFormScreenState
           defaultPriceMinor:
               defaultPriceMinor,
           defaultPriceCurrency:
-              _priceCurrency,
+              defaultPriceCurrency,
         );
       }
 
@@ -390,7 +399,7 @@ class _ProductFormScreenState
           en:
               'The product was saved, but the photo could not be saved on this phone. Edit the product and try the photo again.',
           km:
-              'ផលិតផលត្រូវបានរក្សាទុក ប៉ុន្តែមិនអាចរក្សារូបភាពនៅលើទូរស័ព្ទនេះបានទេ។ សូមកែផលិតផល ហើយសាកល្បងរូបភាពម្តងទៀត។',
+              'ផលិតផលត្រូវបានរក្សាទុក ប៉ុន្តែមិនអាចរក្សារូបភាពនៅលើទូរស័ព្ទនេះបានទេ សូមកែផលិតផល ហើយសាកល្បងរូបភាពម្តងទៀត',
         );
       }
 
@@ -460,7 +469,7 @@ class _ProductFormScreenState
                 en:
                     'This product will be hidden from active product pickers. Existing sales and receipts will not change.',
                 km:
-                    'ផលិតផលនេះនឹងត្រូវលាក់ពីបញ្ជីផលិតផលសកម្ម។ ការលក់ និងបង្កាន់ដៃដែលមានស្រាប់នឹងមិនផ្លាស់ប្តូរទេ។',
+                    'ផលិតផលនេះនឹងត្រូវលាក់ពីបញ្ជីផលិតផលសកម្ម ការលក់ និងបង្កាន់ដៃដែលមានស្រាប់នឹងមិនផ្លាស់ប្តូរទេ',
               ),
             ),
             actions: [
@@ -517,11 +526,11 @@ class _ProductFormScreenState
         restoring
             ? _text(
                 en: 'Could not restore product.',
-                km: 'មិនអាចស្ដារផលិតផលបានទេ។',
+                km: 'មិនអាចស្ដារផលិតផលបានទេ',
               )
             : _text(
                 en: 'Could not archive product.',
-                km: 'មិនអាចដាក់ផលិតផលក្នុងប័ណ្ណសារបានទេ។',
+                km: 'មិនអាចដាក់ផលិតផលក្នុងប័ណ្ណសារបានទេ',
               ),
       );
     } finally {
@@ -935,93 +944,46 @@ class _ProductFormScreenState
               height: 12,
             ),
 
-            Center(
-              child:
-                  SegmentedButton<
-                      MoneyCurrency>(
-                segments: const [
-                  ButtonSegment<
-                      MoneyCurrency>(
-                    value:
-                        MoneyCurrency.khr,
-                    label:
-                        Text('KHR ៛'),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: colors.primaryContainer.withValues(alpha: 0.65),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  _text(en: 'Riel', km: 'រៀល'),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: colors.onPrimaryContainer,
+                    fontWeight: FontWeight.w600,
                   ),
-                  ButtonSegment<
-                      MoneyCurrency>(
-                    value:
-                        MoneyCurrency.usd,
-                    label:
-                        Text('USD \$'),
-                  ),
-                ],
-                selected: {
-                  _priceCurrency,
-                },
-                onSelectionChanged:
-                    _saving
-                        ? null
-                        : (selection) {
-                            final newCurrency =
-                                selection
-                                    .first;
-
-                            if (newCurrency ==
-                                _priceCurrency) {
-                              return;
-                            }
-
-                            setState(() {
-                              _priceCurrency =
-                                  newCurrency;
-
-                              _priceController
-                                  .clear();
-                            });
-                          },
+                ),
               ),
             ),
 
-            const SizedBox(
-              height: 12,
-            ),
+            const SizedBox(height: 12),
 
             TextField(
               controller:
                   _priceController,
               enabled: !_saving,
-              keyboardType:
-                  const TextInputType
-                      .numberWithOptions(
-                decimal: true,
-              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: const [RielInputFormatter()],
               decoration:
                   InputDecoration(
                 labelText:
                     l10n.defaultPrice,
-                hintText: _priceCurrency ==
-                        MoneyCurrency.khr
-                    ? l10n
-                        .example65000
-                    : l10n
-                        .example1600,
+                hintText: '65,000',
                 prefixIcon:
                     const Icon(
                   AppIcons.price,
                   size: 21,
                 ),
-                prefixText:
-                    _priceCurrency ==
-                            MoneyCurrency
-                                .usd
-                        ? '\$ '
-                        : null,
-                suffixText:
-                    _priceCurrency ==
-                            MoneyCurrency
-                                .khr
-                        ? '៛'
-                        : null,
+                suffixText: 'រៀល',
               ),
             ),
 
@@ -1039,6 +1001,22 @@ class _ProductFormScreenState
                     colors.onSurfaceVariant,
               ),
             ),
+
+            if (_isEditing &&
+                widget.product!.defaultPriceCurrency == MoneyCurrency.usd &&
+                widget.product!.defaultPriceMinor > 0 &&
+                _priceController.text.trim().isEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                _text(
+                  en: 'The old USD default price is kept safely. Enter a riel price above only if you want to replace it.',
+                  km: 'តម្លៃដុល្លារចាស់ត្រូវបានរក្សាទុកដោយសុវត្ថិភាព បញ្ចូលតម្លៃជារៀលខាងលើតែបើចង់ប្តូរវា',
+                ),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
+              ),
+            ],
           ],
         ),
       ),

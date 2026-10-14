@@ -11,13 +11,16 @@ class CustomerDeleteCheck {
     required this.hasSales,
     required this.hasPayments,
     required this.hasChickReservations,
+    required this.hasOpeningDebt,
   });
 
   final bool hasSales;
   final bool hasPayments;
   final bool hasChickReservations;
+  final bool hasOpeningDebt;
 
-  bool get canDelete => !hasSales && !hasPayments && !hasChickReservations;
+  bool get canDelete =>
+      !hasSales && !hasPayments && !hasChickReservations && !hasOpeningDebt;
 
   bool get hasHistory => !canDelete;
 }
@@ -50,15 +53,25 @@ class CustomerService {
     });
   }
 
+  Stream<List<Customer>> watchAllCustomers() {
+    return _customers.orderBy('name').snapshots().map((snapshot) {
+      return snapshot.docs.map(Customer.fromFirestore).toList();
+    });
+  }
+
   Future<String> addCustomer({
     required String name,
     required String phone,
     required String note,
+    int openingDebtKhrMinor = 0,
+    int openingDebtUsdMinor = 0,
   }) async {
     final document = await _customers.add({
       'name': name.trim(),
       'phone': phone.trim(),
       'note': note.trim(),
+      'openingDebtKhrMinor': openingDebtKhrMinor,
+      'openingDebtUsdMinor': openingDebtUsdMinor,
       'isArchived': false,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -72,11 +85,15 @@ class CustomerService {
     required String name,
     required String phone,
     required String note,
+    int openingDebtKhrMinor = 0,
+    int openingDebtUsdMinor = 0,
   }) async {
     await _customers.doc(customerId).update({
       'name': name.trim(),
       'phone': phone.trim(),
       'note': note.trim(),
+      'openingDebtKhrMinor': openingDebtKhrMinor,
+      'openingDebtUsdMinor': openingDebtUsdMinor,
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
@@ -140,6 +157,8 @@ class CustomerService {
       PaymentService.instance.watchPaymentsForCustomer(customerId).first,
 
       ChickQueueService.instance.watchReservations().first,
+
+      getCustomer(customerId),
     ]);
 
     final sales = results[0] as List;
@@ -148,14 +167,22 @@ class CustomerService {
 
     final reservations = results[2] as List;
 
+    final customer = results[3] as Customer?;
+
     final hasChickReservations = reservations.any(
       (reservation) => reservation.customerId == customerId,
     );
+
+    final hasOpeningDebt =
+        customer != null &&
+        (customer.openingDebtKhrMinor > 0 ||
+            customer.openingDebtUsdMinor > 0);
 
     return CustomerDeleteCheck(
       hasSales: sales.isNotEmpty,
       hasPayments: payments.isNotEmpty,
       hasChickReservations: hasChickReservations,
+      hasOpeningDebt: hasOpeningDebt,
     );
   }
 

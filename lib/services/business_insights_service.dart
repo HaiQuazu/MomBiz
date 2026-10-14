@@ -111,6 +111,10 @@ class BusinessInsightsService {
       _userDocument
           .collection('chickReservations')
           .get(),
+
+      _userDocument
+          .collection('customers')
+          .get(),
     ]);
 
     final salesSnapshot =
@@ -121,6 +125,9 @@ class BusinessInsightsService {
 
     final queueSnapshot =
         results[2];
+
+    final customersSnapshot =
+        results[3];
 
     var salesThisMonthKhr = 0;
     var salesThisMonthUsd = 0;
@@ -133,6 +140,31 @@ class BusinessInsightsService {
 
     final customerBalances =
         <String, _CustomerBalance>{};
+
+    // Seed every customer with any debt that existed before MomBiz.
+    // This is debt only; it must not be counted as a sale for this month.
+    for (final document
+        in customersSnapshot.docs) {
+      final data =
+          document.data();
+
+      final balance =
+          customerBalances
+              .putIfAbsent(
+        document.id,
+        _CustomerBalance.new,
+      );
+
+      balance.khr +=
+          _intValue(
+        data['openingDebtKhrMinor'],
+      );
+
+      balance.usd +=
+          _intValue(
+        data['openingDebtUsdMinor'],
+      );
+    }
 
     for (final document
         in salesSnapshot.docs) {

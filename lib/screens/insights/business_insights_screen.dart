@@ -124,7 +124,7 @@ class _BusinessInsightsScreenState
                 '${data.customersWithDebt == 1 ? 'customer has' : 'customers have'} '
                 'outstanding debt.',
             km:
-                'មានអតិថិជន ${data.customersWithDebt} នាក់ដែលនៅមានបំណុល។',
+                'មានអតិថិជន ${data.customersWithDebt} នាក់ដែលនៅមានបំណុល',
           ),
         ),
       );
@@ -136,7 +136,7 @@ class _BusinessInsightsScreenState
             en:
                 'No customer currently has outstanding debt.',
             km:
-                'បច្ចុប្បន្នមិនមានអតិថិជនណាមានបំណុលនៅសល់ទេ។',
+                'បច្ចុប្បន្នមិនមានអតិថិជនណាមានបំណុលនៅសល់ទេ',
           ),
         ),
       );
@@ -150,7 +150,7 @@ class _BusinessInsightsScreenState
             en:
                 '${data.waitingChicks} chicks are currently waiting in the queue.',
             km:
-                'មានកូនមាន់ ${data.waitingChicks} ក្បាលកំពុងរង់ចាំក្នុងជួរ។',
+                'មានកូនមាន់ ${data.waitingChicks} ក្បាលកំពុងរង់ចាំក្នុងជួរ',
           ),
         ),
       );
@@ -162,7 +162,7 @@ class _BusinessInsightsScreenState
             en:
                 'There are no chicks currently waiting in the queue.',
             km:
-                'បច្ចុប្បន្នមិនមានកូនមាន់កំពុងរង់ចាំក្នុងជួរទេ។',
+                'បច្ចុប្បន្នមិនមានកូនមាន់កំពុងរង់ចាំក្នុងជួរទេ',
           ),
         ),
       );
@@ -212,7 +212,7 @@ class _BusinessInsightsScreenState
             en:
                 '${data.pickedUpThisMonthChicks} chicks were picked up this month.',
             km:
-                'ខែនេះមានកូនមាន់ ${data.pickedUpThisMonthChicks} ក្បាលត្រូវបានមកយក។',
+                'ខែនេះមានកូនមាន់ ${data.pickedUpThisMonthChicks} ក្បាលត្រូវបានមកយក',
           ),
         ),
       );
@@ -251,7 +251,7 @@ class _BusinessInsightsScreenState
               '${_format(difference, currency)}.',
           km:
               'ការលក់ $currencyName ខែនេះខ្ពស់ជាងខែមុន '
-              '${_format(difference, currency)}។',
+              '${_format(difference, currency)}',
         ),
       );
     }
@@ -268,7 +268,7 @@ class _BusinessInsightsScreenState
               '${_format(difference, currency)}.',
           km:
               'ការលក់ $currencyName ខែនេះទាបជាងខែមុន '
-              '${_format(difference, currency)}។',
+              '${_format(difference, currency)}',
         ),
       );
     }
@@ -279,7 +279,7 @@ class _BusinessInsightsScreenState
         en:
             '$currencyName sales are the same as last month.',
         km:
-            'ការលក់ $currencyName ខែនេះស្មើនឹងខែមុន។',
+            'ការលក់ $currencyName ខែនេះស្មើនឹងខែមុន',
       ),
     );
   }
@@ -363,7 +363,7 @@ class _BusinessInsightsScreenState
           en:
               'Check your connection and try again.',
           km:
-              'សូមពិនិត្យការតភ្ជាប់អ៊ីនធឺណិត ហើយសាកល្បងម្តងទៀត។',
+              'សូមពិនិត្យការតភ្ជាប់អ៊ីនធឺណិត ហើយសាកល្បងម្តងទៀត',
         ),
         retryLabel: _text(
           en: 'Try again',

@@ -89,7 +89,7 @@ class _ChickProductScreenState
           content: Text(
             _text(
               en: 'Could not load products.',
-              km: 'មិនអាចទាញយកផលិតផលបានទេ។',
+              km: 'មិនអាចទាញយកផលិតផលបានទេ',
             ),
           ),
         ),
@@ -148,7 +148,7 @@ class _ChickProductScreenState
               en:
                   'Choose a chick product first.',
               km:
-                  'សូមជ្រើសផលិតផលកូនមាន់ជាមុនសិន។',
+                  'សូមជ្រើសផលិតផលកូនមាន់ជាមុនសិន',
             ),
           ),
         ),
@@ -179,7 +179,7 @@ class _ChickProductScreenState
               en:
                   '${product.name} will now be used for chick queue sales.',
               km:
-                  '${product.name} នឹងត្រូវប្រើសម្រាប់ការលក់ពីជួរកូនមាន់។',
+                  '${product.name} នឹងត្រូវប្រើសម្រាប់ការលក់ពីជួរកូនមាន់',
             ),
           ),
         ),
@@ -202,7 +202,7 @@ class _ChickProductScreenState
               en:
                   'Could not save the chick product.',
               km:
-                  'មិនអាចរក្សាទុកផលិតផលកូនមាន់បានទេ។',
+                  'មិនអាចរក្សាទុកផលិតផលកូនមាន់បានទេ',
             ),
           ),
         ),
@@ -400,7 +400,7 @@ class _ChickProductScreenState
                               en:
                                   'You can change this anytime. MomBiz will use its default price and currency.',
                               km:
-                                  'អ្នកអាចប្តូរវាបានគ្រប់ពេល។ MomBiz នឹងប្រើតម្លៃ និងរូបិយប័ណ្ណលំនាំដើមរបស់ផលិតផលនេះ។',
+                                  'អ្នកអាចប្តូរវាបានគ្រប់ពេល MomBiz នឹងប្រើតម្លៃ និងរូបិយប័ណ្ណលំនាំដើមរបស់ផលិតផលនេះ',
                             ),
                             style: theme
                                 .textTheme
@@ -520,7 +520,7 @@ class _ChickProductScreenState
                                       en:
                                           'No matching products.',
                                       km:
-                                          'មិនមានផលិតផលត្រូវគ្នាទេ។',
+                                          'មិនមានផលិតផលត្រូវគ្នាទេ',
                                     ),
                         )
                       : ListView

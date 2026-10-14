@@ -7,6 +7,8 @@ class Customer {
     required this.phone,
     required this.note,
     required this.isArchived,
+    required this.openingDebtKhrMinor,
+    required this.openingDebtUsdMinor,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -16,6 +18,12 @@ class Customer {
   final String phone;
   final String note;
   final bool isArchived;
+
+  // Debt that already existed before the customer was first tracked in MomBiz.
+  // KHR is stored as whole riel. USD is stored in cents.
+  final int openingDebtKhrMinor;
+  final int openingDebtUsdMinor;
+
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -30,6 +38,10 @@ class Customer {
       phone: data['phone'] as String? ?? '',
       note: data['note'] as String? ?? '',
       isArchived: data['isArchived'] as bool? ?? false,
+      openingDebtKhrMinor:
+          (data['openingDebtKhrMinor'] as num?)?.toInt() ?? 0,
+      openingDebtUsdMinor:
+          (data['openingDebtUsdMinor'] as num?)?.toInt() ?? 0,
       createdAt:
           (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt:
